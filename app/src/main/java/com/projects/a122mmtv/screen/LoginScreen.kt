@@ -33,27 +33,28 @@ fun LoginScreen() {
 
     LaunchedEffect(Unit) { phoneReq.requestFocus() }
 
-    TvScaledBox { scale ->
-        val adjustedScale = scale * 1.3f // slightly enlarged for better visibility
+    TvScaledBox { s ->
+        val scale = s * 0.9f // slightly smaller for 1080p
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black)
-                .padding((32 * adjustedScale).dp)
-                .graphicsLayer(scaleX = adjustedScale, scaleY = adjustedScale),
+                .padding((32f * scale).dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Title
             Text(
                 "Choose how to sign in",
                 color = Color.White,
-                fontSize = (36 * adjustedScale).sp,
+                fontSize = (36f * scale).sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
 
-            Spacer(Modifier.height((24 * adjustedScale).dp))
+            Spacer(Modifier.height((24f * scale).dp))
 
+            // Tabs
             Row(
                 modifier = Modifier.align(Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically
@@ -64,42 +65,26 @@ fun LoginScreen() {
                     modifier = Modifier
                         .focusRequester(phoneReq)
                         .focusProperties { right = remoteReq }
-                        .onFocusChanged { s -> if (s.isFocused) selectedTab = 0 }
+                        .onFocusChanged { if (it.isFocused) selectedTab = 0 }
                         .focusable()
                 )
-                Spacer(Modifier.width((16 * adjustedScale).dp))
+                Spacer(Modifier.width((16f * scale).dp))
                 TabButton(
                     text = "Use Remote",
                     isSelected = selectedTab == 1,
                     modifier = Modifier
                         .focusRequester(remoteReq)
                         .focusProperties { left = phoneReq }
-                        .onFocusChanged { s -> if (s.isFocused) selectedTab = 1 }
+                        .onFocusChanged { if (it.isFocused) selectedTab = 1 }
                         .focusable()
                 )
             }
 
-            Spacer(Modifier.height((32 * adjustedScale).dp))
+            // ✅ More space between tabs and content
+            Spacer(Modifier.height((72f * scale).dp))
 
-            if (selectedTab == 0) PhonePage(adjustedScale) else RemotePage(adjustedScale)
+            if (selectedTab == 0) PhonePage(scale) else RemotePage(scale)
         }
-    }
-}
-
-/* ---------- Tab Button ---------- */
-@Composable
-private fun TabButton(text: String, isSelected: Boolean, modifier: Modifier = Modifier) {
-    val bg = if (isSelected) Color.White else Color(0xFF4A4A4A)
-    val fg = if (isSelected) Color.Black else Color.White
-
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(bg)
-            .border(1.dp, Color.White, RoundedCornerShape(8.dp))
-            .padding(horizontal = 20.dp, vertical = 10.dp)
-    ) {
-        Text(text, color = fg, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -110,51 +95,90 @@ private fun PhonePage(scale: Float) {
         Modifier.fillMaxSize(),
         verticalAlignment = Alignment.Top
     ) {
+        // Left section
         Column(
             Modifier.weight(1f),
             verticalArrangement = Arrangement.Top
         ) {
-            // Align everything to left edge
-            NumberedStep(
-                step = "1",
-                text = "Use your phone or tablet’s camera\nand point to the code:",
-                scale = scale
-            )
-
-            Spacer(Modifier.height((24 * scale).dp))
-
-            // QR + Code aligned left under the text, not under the circle
-            Column(
-                horizontalAlignment = Alignment.Start
+            // ✅ Number centered in circle, text top-aligned to circle top
+            Row(
+                verticalAlignment = Alignment.Top
             ) {
                 Box(
                     Modifier
-                        .size((320 * scale).dp)
-                        .background(Color(0xFF1E1E1E), RoundedCornerShape(8.dp))
-                        .border(2.dp, Color.White, RoundedCornerShape(8.dp)),
+                        .size((36f * scale).dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(Color(0xFF3A3A3A)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("QR", color = Color.White, fontSize = (48 * scale).sp)
+                    Text("1", color = Color.White, fontSize = (18f * scale).sp, fontWeight = FontWeight.Bold)
                 }
-
-                Spacer(Modifier.height((24 * scale).dp))
-
+                Spacer(Modifier.width((12f * scale).dp))
                 Text(
-                    "1 2 3 4 - 5 6 7 8",
+                    "Use your phone or tablet’s camera\nand point to the code:",
                     color = Color.White,
-                    fontSize = (56 * scale).sp,
-                    fontWeight = FontWeight.Bold
+                    fontSize = (22f * scale).sp,
+                    lineHeight = (28f * scale).sp,
+                    modifier = Modifier
+                        .padding(top = (2f * scale).dp) // small nudge upward so top aligns with circle
                 )
+            }
+
+            Spacer(Modifier.height((24f * scale).dp))
+
+            // ✅ QR box aligned left with the text
+            Box(
+                Modifier
+                    .padding(start = (48f * scale).dp) // matches number+space offset
+                    .size((300 * scale).dp)
+                    .background(Color(0xFF1E1E1E), RoundedCornerShape(8.dp))
+                    .border(2.dp, Color.White, RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("QR", color = Color.White, fontSize = (48f * scale).sp)
             }
         }
 
-        Spacer(Modifier.width((40 * scale).dp))
+        Spacer(Modifier.width((40f * scale).dp))
 
+        // Right section
         Column(
             Modifier.weight(1f),
             verticalArrangement = Arrangement.Top
         ) {
-            NumberedStep(step = "2", text = "Confirm the code on your phone or tablet", scale = scale)
+            Row(verticalAlignment = Alignment.Top) {
+                Box(
+                    Modifier
+                        .size((36f * scale).dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(Color(0xFF3A3A3A)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("2", color = Color.White, fontSize = (18f * scale).sp, fontWeight = FontWeight.Bold)
+                }
+                Spacer(Modifier.width((12f * scale).dp))
+                Text(
+                    "Confirm the code on your phone or tablet",
+                    color = Color.White,
+                    fontSize = (22f * scale).sp,
+                    lineHeight = (28f * scale).sp,
+                    modifier = Modifier
+                        .padding(top = (2f * scale).dp) // same top offset for alignment
+                )
+            }
+
+            Spacer(Modifier.height((16f * scale).dp))
+
+            // ✅ Code aligned left with "Confirm..." text
+            Text(
+                "1 2 3 4 - 5 6 7 8",
+                color = Color.White,
+                fontSize = (56f * scale).sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .padding(start = (48f * scale).dp)
+                    .align(Alignment.Start)
+            )
         }
     }
 }
@@ -174,48 +198,25 @@ private fun RemotePage(scale: Float) {
                 .border(2.dp, Color.White, RoundedCornerShape(8.dp)),
             contentAlignment = Alignment.Center
         ) {
-            Text("Keyboard", color = Color.White, fontSize = (22 * scale).sp)
+            Text("Keyboard", color = Color.White, fontSize = (22f * scale).sp)
         }
 
-        Spacer(Modifier.width((36 * scale).dp))
+        Spacer(Modifier.width((36f * scale).dp))
 
-        // Align top-right
         Column(
             Modifier
                 .weight(1f)
-                .padding(top = (8 * scale).dp),
+                .padding(top = (8f * scale).dp),
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.End
         ) {
             LabeledField(label = "Email address", scale = scale, placeholderOnly = true)
-            Spacer(Modifier.height((16 * scale).dp))
+            Spacer(Modifier.height((16f * scale).dp))
             LabeledField(label = "Password", isPassword = true, scale = scale, placeholderOnly = true)
         }
     }
 }
 
-/* ---------- Shared Helpers ---------- */
-@Composable
-private fun NumberedStep(step: String, text: String, scale: Float) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(
-            Modifier
-                .size((36 * scale).dp)
-                .clip(RoundedCornerShape(50))
-                .background(Color(0xFF3A3A3A)),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(step, color = Color.White, fontSize = (18 * scale).sp, fontWeight = FontWeight.Bold)
-        }
-        Spacer(Modifier.width((12 * scale).dp))
-        Text(
-            text,
-            color = Color.White,
-            fontSize = (22 * scale).sp,
-            lineHeight = (28 * scale).sp
-        )
-    }
-}
 
 @Composable
 private fun LabeledField(
@@ -254,5 +255,26 @@ private fun LabeledField(
                 innerTextField()
             }
         )
+    }
+}
+
+@Composable
+private fun TabButton(
+    text: String,
+    isSelected: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val bg = if (isSelected) Color.White else Color(0xFF4A4A4A)
+    val fg = if (isSelected) Color.Black else Color.White
+
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(bg)
+            .border(1.dp, Color.White, RoundedCornerShape(8.dp))
+            .padding(horizontal = 20.dp, vertical = 10.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text, color = fg, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
     }
 }
