@@ -2,6 +2,7 @@ package com.projects.a122mmtv.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -23,6 +24,14 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.focusable
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import com.projects.a122mmtv.helper.TvScaledBox // from your file
 
 @Composable
@@ -189,80 +198,107 @@ private fun PhonePage(scale: Float) {
 /* ---------- Page 2 : Use Remote ---------- */
 @Composable
 private fun RemotePage(scale: Float) {
-    Row(
-        Modifier
-            .fillMaxSize()
-            .padding(start = (40f * scale).dp), // ✅ same horizontal shift
-        verticalAlignment = Alignment.Top
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var showPass by remember { mutableStateOf(false) }
+
+    val emailReq  = remember { FocusRequester() }
+    val passReq   = remember { FocusRequester() }
+    val signInReq = remember { FocusRequester() }   // <- for focusing the Sign In button
+
+    val fieldWidth = (680f * scale).dp
+    val signInHeightDp = (72f * scale).dp           // <- increased button height
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = (40f * scale).dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            modifier = Modifier
+                .width(fieldWidth)
+                .focusRequester(emailReq),
+            singleLine = true,
+            placeholder = { Text("Email") },
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                keyboardType = KeyboardType.Email,
+                imeAction = ImeAction.Next
+            ),
+            keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                onNext = { passReq.requestFocus() }
+            ),
+            textStyle = LocalTextStyle.current.copy(fontSize = (18f * scale).sp, color = Color.White),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Color.White, unfocusedTextColor = Color.White, cursorColor = Color.White,
+                focusedBorderColor = Color(0xFFB0B0B0), unfocusedBorderColor = Color(0xFF777777),
+                focusedContainerColor = Color(0xFF202020), unfocusedContainerColor = Color(0xFF202020),
+                focusedPlaceholderColor = Color(0xFF9E9E9E), unfocusedPlaceholderColor = Color(0xFF9E9E9E)
+            ),
+            shape = RoundedCornerShape(8.dp)
+        )
+
+        Spacer(Modifier.height((16f * scale).dp))
+
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            modifier = Modifier
+                .width(fieldWidth)
+                .focusRequester(passReq),
+            singleLine = true,
+            placeholder = { Text("Password") },
+            visualTransformation = if (showPass) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                Text(
+                    if (showPass) "🙈" else "👁",
+                    color = Color(0xFFDDDDDD),
+                    modifier = Modifier
+                        .padding(end = 6.dp)
+                        .clickable { showPass = !showPass }
+                )
+            },
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                keyboardType = KeyboardType.Password,
+                imeAction = ImeAction.Done
+            ),
+            keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                // ✔ When pressing Enter on password field → focus the Sign In button
+                onDone = { signInReq.requestFocus() }
+            ),
+            textStyle = LocalTextStyle.current.copy(fontSize = (18f * scale).sp, color = Color.White),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Color.White, unfocusedTextColor = Color.White, cursorColor = Color.White,
+                focusedBorderColor = Color(0xFFB0B0B0), unfocusedBorderColor = Color(0xFF777777),
+                focusedContainerColor = Color(0xFF202020), unfocusedContainerColor = Color(0xFF202020),
+                focusedPlaceholderColor = Color(0xFF9E9E9E), unfocusedPlaceholderColor = Color(0xFF9E9E9E)
+            ),
+            shape = RoundedCornerShape(8.dp)
+        )
+
+        Spacer(Modifier.height((24f * scale).dp))
+
+        // Sign In button (focusable + taller)
         Box(
-            Modifier
-                .weight(1f)
-                .height((280 * scale).dp)
-                .background(Color(0xFF1E1E1E), RoundedCornerShape(8.dp))
-                .border(2.dp, Color.White, RoundedCornerShape(8.dp)),
+            modifier = Modifier
+                .width(fieldWidth)
+                .height(signInHeightDp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color(0xFFFF1A1A))
+                .focusRequester(signInReq)       // <- receives focus from password onDone
+                .clickable {
+                    // TODO: signIn(email, password)
+                },
             contentAlignment = Alignment.Center
         ) {
-            Text("Keyboard", color = Color.White, fontSize = (22f * scale).sp)
-        }
-
-        Spacer(Modifier.width((36f * scale).dp))
-
-        Column(
-            Modifier
-                .weight(1f)
-                .padding(top = (8f * scale).dp),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.End
-        ) {
-            LabeledField(label = "Email address", scale = scale, placeholderOnly = true)
-            Spacer(Modifier.height((16f * scale).dp))
-            LabeledField(label = "Password", isPassword = true, scale = scale, placeholderOnly = true)
+            Text("Sign In", color = Color.White, fontSize = (24f * scale).sp, fontWeight = FontWeight.Bold)
         }
     }
+    LaunchedEffect(Unit) { emailReq.requestFocus() }
 }
 
-
-
-@Composable
-private fun LabeledField(
-    label: String,
-    isPassword: Boolean = false,
-    scale: Float,
-    placeholderOnly: Boolean = false
-) {
-    var value by remember { mutableStateOf("") }
-    val shape = RoundedCornerShape(6.dp)
-
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .height((52 * scale).dp)
-            .clip(shape)
-            .background(Color(0xFF4A4A4A))
-            .border(1.dp, Color(0xFF777777), shape)
-            .padding(horizontal = (14 * scale).dp, vertical = (8 * scale).dp),
-        contentAlignment = Alignment.CenterStart
-    ) {
-        BasicTextField(
-            value = value,
-            onValueChange = { value = it },
-            textStyle = TextStyle(color = Color.White, fontSize = (18 * scale).sp),
-            visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
-            modifier = Modifier.fillMaxWidth().focusable(),
-            decorationBox = { innerTextField ->
-                if (value.isEmpty() && placeholderOnly) {
-                    Text(
-                        text = label,
-                        color = Color(0xFFBDBDBD),
-                        fontSize = (18 * scale).sp
-                    )
-                }
-                innerTextField()
-            }
-        )
-    }
-}
 
 @Composable
 fun TabButton(
@@ -290,3 +326,70 @@ fun TabButton(
         )
     }
 }
+
+@Composable
+private fun TvTextField(
+    label: String,
+    isPassword: Boolean,
+    scale: Float,
+    focusRequester: FocusRequester,
+    nextFocus: FocusRequester?
+) {
+    var value by remember { mutableStateOf("") }
+    val kb = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
+    val shape = RoundedCornerShape(6.dp)
+
+    val options = androidx.compose.foundation.text.KeyboardOptions(
+        keyboardType = if (isPassword)
+            androidx.compose.ui.text.input.KeyboardType.Password
+        else
+            androidx.compose.ui.text.input.KeyboardType.Email,
+        imeAction = if (nextFocus != null)
+            androidx.compose.ui.text.input.ImeAction.Next
+        else
+            androidx.compose.ui.text.input.ImeAction.Done
+    )
+    val actions = androidx.compose.foundation.text.KeyboardActions(
+        onNext = { nextFocus?.requestFocus() },
+        onDone = { kb?.hide() }
+    )
+
+    // Use Material3 OutlinedTextField directly — no wrapper Box, no fixed height.
+    androidx.compose.material3.OutlinedTextField(
+        value = value,
+        onValueChange = { value = it },
+        singleLine = true,
+        modifier = Modifier
+            .fillMaxWidth()
+            .focusRequester(focusRequester)
+            .onFocusChanged { if (it.isFocused) kb?.show() },
+        textStyle = TextStyle(
+            color = Color.White,
+            fontSize = (18f * scale).sp
+        ),
+        placeholder = {
+            Text(
+                text = label,
+                color = Color(0xFFBDBDBD),
+                fontSize = (18f * scale).sp
+            )
+        },
+        visualTransformation = if (isPassword)
+            PasswordVisualTransformation()
+        else
+            VisualTransformation.None,
+        keyboardOptions = options,
+        keyboardActions = actions,
+        shape = shape,
+        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+            focusedTextColor = Color.White,
+            unfocusedTextColor = Color.White,
+            cursorColor = Color.White,
+            focusedBorderColor = Color(0xFFB0B0B0),
+            unfocusedBorderColor = Color(0xFF777777),
+            focusedContainerColor = Color(0xFF4A4A4A),
+            unfocusedContainerColor = Color(0xFF4A4A4A)
+        )
+    )
+}
+

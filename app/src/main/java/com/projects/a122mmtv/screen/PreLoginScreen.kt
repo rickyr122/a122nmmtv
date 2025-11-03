@@ -6,8 +6,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -64,6 +68,10 @@ fun PreLoginScreen(
                     val btnHPad = (20.dp * s).coerceAtLeast(16.dp)
                     val btnVPad = (10.dp * s).coerceAtLeast(8.dp)
 
+                    // focus handling
+                    val signInFocus = remember { FocusRequester() }
+                    LaunchedEffect(Unit) { signInFocus.requestFocus() }
+
                     Button(
                         onClick = { navController.navigate("login") },
                         colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
@@ -71,7 +79,8 @@ fun PreLoginScreen(
                         modifier = Modifier
                             .padding(32.dp * s)
                             .width(btnW)
-                            .height(btnH),
+                            .height(btnH)
+                            .focusRequester(signInFocus), // <-- automatically focused,
                         contentPadding = PaddingValues(horizontal = btnHPad, vertical = btnVPad)
                     ) {
                         Text(

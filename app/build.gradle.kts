@@ -37,6 +37,9 @@ android {
     buildFeatures {
         compose = true
     }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.10"
+    }
 }
 
 dependencies {
@@ -61,8 +64,11 @@ dependencies {
     implementation("androidx.compose.material3:material3:1.1.2")
     implementation("androidx.compose.material:material:1.6.1")
     implementation("androidx.compose.material:material-icons-extended:1.6.1")
+    // Make sure Compose BOM is declared if you use versions without numbers elsewhere
+    implementation(platform("androidx.compose:compose-bom:2025.01.00"))
 
-    // Compose for TV
+
+            // Compose for TV
     implementation ("androidx.tv:tv-foundation:1.0.0-alpha12")
     implementation ("androidx.tv:tv-material:1.0.0") // or 1.1.0-alpha01 if you want newest previews
 
