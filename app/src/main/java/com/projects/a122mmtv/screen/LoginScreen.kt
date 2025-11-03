@@ -54,31 +54,39 @@ fun LoginScreen() {
 
             Spacer(Modifier.height((24f * scale).dp))
 
-            // Tabs
-            Row(
-                modifier = Modifier.align(Alignment.CenterHorizontally),
-                verticalAlignment = Alignment.CenterVertically
+            // Tabs container
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .background(Color(0xFF4A4A4A), RoundedCornerShape(50)) // capsule background
+                    .padding(vertical = (3f * scale).dp, horizontal = (4f * scale).dp) // smaller overall height
             ) {
-                TabButton(
-                    text = "Use Phone",
-                    isSelected = selectedTab == 0,
-                    modifier = Modifier
-                        .focusRequester(phoneReq)
-                        .focusProperties { right = remoteReq }
-                        .onFocusChanged { if (it.isFocused) selectedTab = 0 }
-                        .focusable()
-                )
-                Spacer(Modifier.width((16f * scale).dp))
-                TabButton(
-                    text = "Use Remote",
-                    isSelected = selectedTab == 1,
-                    modifier = Modifier
-                        .focusRequester(remoteReq)
-                        .focusProperties { left = phoneReq }
-                        .onFocusChanged { if (it.isFocused) selectedTab = 1 }
-                        .focusable()
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TabButton(
+                        text = "Use Phone",
+                        isSelected = selectedTab == 0,
+                        scale = scale,
+                        modifier = Modifier
+                            .focusRequester(phoneReq)
+                            .focusProperties { right = remoteReq }
+                            .onFocusChanged { if (it.isFocused) selectedTab = 0 }
+                            .focusable()
+                    )
+                    TabButton(
+                        text = "Use Remote",
+                        isSelected = selectedTab == 1,
+                        scale = scale,
+                        modifier = Modifier
+                            .focusRequester(remoteReq)
+                            .focusProperties { left = phoneReq }
+                            .onFocusChanged { if (it.isFocused) selectedTab = 1 }
+                            .focusable()
+                    )
+                }
             }
+
 
             // ✅ More space between tabs and content
             Spacer(Modifier.height((72f * scale).dp))
@@ -92,7 +100,9 @@ fun LoginScreen() {
 @Composable
 private fun PhonePage(scale: Float) {
     Row(
-        Modifier.fillMaxSize(),
+        Modifier
+            .fillMaxSize()
+            .padding(start = (40f * scale).dp), // ✅ shift both sections slightly right
         verticalAlignment = Alignment.Top
     ) {
         // Left section
@@ -100,10 +110,7 @@ private fun PhonePage(scale: Float) {
             Modifier.weight(1f),
             verticalArrangement = Arrangement.Top
         ) {
-            // ✅ Number centered in circle, text top-aligned to circle top
-            Row(
-                verticalAlignment = Alignment.Top
-            ) {
+            Row(verticalAlignment = Alignment.Top) {
                 Box(
                     Modifier
                         .size((36f * scale).dp)
@@ -119,17 +126,15 @@ private fun PhonePage(scale: Float) {
                     color = Color.White,
                     fontSize = (22f * scale).sp,
                     lineHeight = (28f * scale).sp,
-                    modifier = Modifier
-                        .padding(top = (2f * scale).dp) // small nudge upward so top aligns with circle
+                    modifier = Modifier.padding(top = (2f * scale).dp)
                 )
             }
 
             Spacer(Modifier.height((24f * scale).dp))
 
-            // ✅ QR box aligned left with the text
             Box(
                 Modifier
-                    .padding(start = (48f * scale).dp) // matches number+space offset
+                    .padding(start = (48f * scale).dp)
                     .size((300 * scale).dp)
                     .background(Color(0xFF1E1E1E), RoundedCornerShape(8.dp))
                     .border(2.dp, Color.White, RoundedCornerShape(8.dp)),
@@ -162,14 +167,12 @@ private fun PhonePage(scale: Float) {
                     color = Color.White,
                     fontSize = (22f * scale).sp,
                     lineHeight = (28f * scale).sp,
-                    modifier = Modifier
-                        .padding(top = (2f * scale).dp) // same top offset for alignment
+                    modifier = Modifier.padding(top = (2f * scale).dp)
                 )
             }
 
             Spacer(Modifier.height((16f * scale).dp))
 
-            // ✅ Code aligned left with "Confirm..." text
             Text(
                 "1 2 3 4 - 5 6 7 8",
                 color = Color.White,
@@ -187,7 +190,9 @@ private fun PhonePage(scale: Float) {
 @Composable
 private fun RemotePage(scale: Float) {
     Row(
-        Modifier.fillMaxSize(),
+        Modifier
+            .fillMaxSize()
+            .padding(start = (40f * scale).dp), // ✅ same horizontal shift
         verticalAlignment = Alignment.Top
     ) {
         Box(
@@ -216,6 +221,7 @@ private fun RemotePage(scale: Float) {
         }
     }
 }
+
 
 
 @Composable
@@ -259,22 +265,28 @@ private fun LabeledField(
 }
 
 @Composable
-private fun TabButton(
+fun TabButton(
     text: String,
     isSelected: Boolean,
+    scale: Float,
     modifier: Modifier = Modifier
 ) {
-    val bg = if (isSelected) Color.White else Color(0xFF4A4A4A)
+    val bg = if (isSelected) Color.White else Color.Transparent
     val fg = if (isSelected) Color.Black else Color.White
 
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
+            .padding(horizontal = (2f * scale).dp, vertical = (1f * scale).dp) // tighter spacing inside capsule
+            .clip(RoundedCornerShape(50))
             .background(bg)
-            .border(1.dp, Color.White, RoundedCornerShape(8.dp))
-            .padding(horizontal = 20.dp, vertical = 10.dp),
+            .padding(horizontal = (22f * scale).dp, vertical = (6f * scale).dp), // ↓ reduced vertical padding
         contentAlignment = Alignment.Center
     ) {
-        Text(text, color = fg, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+        Text(
+            text,
+            color = fg,
+            fontSize = (17f * scale).sp,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
