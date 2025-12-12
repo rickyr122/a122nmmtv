@@ -68,7 +68,13 @@ dependencies {
     implementation(platform("androidx.compose:compose-bom:2025.01.00"))
 
 
-            // Compose for TV
+    // Retrofit and Coil
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation("com.google.accompanist:accompanist-systemuicontroller:0.34.0")
+
+    // Compose for TV
     implementation ("androidx.tv:tv-foundation:1.0.0-alpha12")
     implementation ("androidx.tv:tv-material:1.0.0") // or 1.1.0-alpha01 if you want newest previews
 

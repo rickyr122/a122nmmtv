@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.Image
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,10 +29,14 @@ import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
+
+import com.projects.a122mmtv.R
 import com.projects.a122mmtv.helper.TvScaledBox // from your file
 
 @Composable
@@ -44,63 +49,80 @@ fun LoginScreen() {
 
     TvScaledBox { s ->
         val scale = s * 0.9f // slightly smaller for 1080p
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black)
-                .padding((32f * scale).dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Box(
+            modifier = Modifier.fillMaxSize()
         ) {
-            // Title
-            Text(
-                "Choose how to sign in",
-                color = Color.White,
-                fontSize = (36f * scale).sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
+            // Background image
+            Image(
+                painter = painterResource(id = R.drawable.login_bg),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
             )
 
-            Spacer(Modifier.height((24f * scale).dp))
+//            // Optional dark overlay (recommended for readability)
+//            Box(
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .background(Color.Black.copy(alpha = 0.25f))
+//            )
 
-            // Tabs container
-            Box(
+            Column(
                 modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .background(Color(0xFF4A4A4A), RoundedCornerShape(50)) // capsule background
-                    .padding(vertical = (3f * scale).dp, horizontal = (4f * scale).dp) // smaller overall height
+                    .fillMaxSize()
+                    .padding((32f * scale).dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
+                // Title
+                Text(
+                    "Choose how to sign in",
+                    color = Color.White,
+                    fontSize = (36f * scale).sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
+
+                Spacer(Modifier.height((24f * scale).dp))
+
+                // Tabs container
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .background(Color(0xFF4A4A4A), RoundedCornerShape(50)) // capsule background
+                        .padding(vertical = (3f * scale).dp, horizontal = (4f * scale).dp) // smaller overall height
                 ) {
-                    TabButton(
-                        text = "Use Phone",
-                        isSelected = selectedTab == 0,
-                        scale = scale,
-                        modifier = Modifier
-                            .focusRequester(phoneReq)
-                            .focusProperties { right = remoteReq }
-                            .onFocusChanged { if (it.isFocused) selectedTab = 0 }
-                            .focusable()
-                    )
-                    TabButton(
-                        text = "Use Remote",
-                        isSelected = selectedTab == 1,
-                        scale = scale,
-                        modifier = Modifier
-                            .focusRequester(remoteReq)
-                            .focusProperties { left = phoneReq }
-                            .onFocusChanged { if (it.isFocused) selectedTab = 1 }
-                            .focusable()
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TabButton(
+                            text = "Use Phone",
+                            isSelected = selectedTab == 0,
+                            scale = scale,
+                            modifier = Modifier
+                                .focusRequester(phoneReq)
+                                .focusProperties { right = remoteReq }
+                                .onFocusChanged { if (it.isFocused) selectedTab = 0 }
+                                .focusable()
+                        )
+                        TabButton(
+                            text = "Use Remote",
+                            isSelected = selectedTab == 1,
+                            scale = scale,
+                            modifier = Modifier
+                                .focusRequester(remoteReq)
+                                .focusProperties { left = phoneReq }
+                                .onFocusChanged { if (it.isFocused) selectedTab = 1 }
+                                .focusable()
+                        )
+                    }
                 }
+
+
+                // ✅ More space between tabs and content
+                Spacer(Modifier.height((72f * scale).dp))
+
+                if (selectedTab == 0) PhonePage(scale) else RemotePage(scale)
             }
-
-
-            // ✅ More space between tabs and content
-            Spacer(Modifier.height((72f * scale).dp))
-
-            if (selectedTab == 0) PhonePage(scale) else RemotePage(scale)
         }
     }
 }
