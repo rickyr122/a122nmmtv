@@ -13,7 +13,7 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = 1
-        versionName = "1.0.1"
+        versionName = "1.0.1-alpha"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -66,6 +66,14 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended:1.6.1")
     // Make sure Compose BOM is declared if you use versions without numbers elsewhere
     implementation(platform("androidx.compose:compose-bom:2025.01.00"))
+
+    // datastore
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+
+    implementation("com.squareup.retrofit2:converter-moshi:2.9.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:5.0.0-alpha.11")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
 
 
     // Retrofit and Coil

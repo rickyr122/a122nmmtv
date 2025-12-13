@@ -29,10 +29,15 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import androidx.compose.ui.platform.LocalContext
 import com.projects.a122mmtv.R
+import com.projects.a122mmtv.auth.AuthApiService
+import com.projects.a122mmtv.auth.AuthRepository
+import com.projects.a122mmtv.auth.TokenStore
+import com.projects.a122mmtv.dataclass.AuthNetwork
+import com.projects.a122mmtv.getDeviceId
 import com.projects.a122mmtv.helper.TvScaledBox
 
 private const val TEMP_PROFILE_URL =
-    "https://drive.google.com/uc?export=download&id=1tEQ4LO-mqGyns-OfTFhIMD-yemyr85g7"
+    "https://drive.google.com/uc?export=download&id=1o-g_kS8vTb-gGAAVKBeFkQxBQWoH57ya"
 
 @Composable
 fun PreLoginScreen(
@@ -70,21 +75,39 @@ fun PreLoginScreen(
             val topPadding = (56.dp * s).coerceAtLeast(28.dp)
 
             // Focus control
-            val leftFocus = remember { FocusRequester() }
+//            val leftFocus = remember { FocusRequester() }
             val rightFocus = remember { FocusRequester() }
 
             // 0 = profile, 1 = add account
             var lastFocused by rememberSaveable { mutableIntStateOf(0) }
 
-            // Restore focus when screen becomes visible again
-            LaunchedEffect(lastFocused) {
-                if (lastFocused == 1) {
-                    rightFocus.requestFocus()
-                } else {
-                    leftFocus.requestFocus()
-                }
+//            // Restore focus when screen becomes visible again
+//            LaunchedEffect(lastFocused) {
+//                if (lastFocused == 1) {
+//                    rightFocus.requestFocus()
+//                } else {
+//                    leftFocus.requestFocus()
+//                }
+//            }
+
+            val context = LocalContext.current
+
+            val repo = remember {
+                AuthRepository(
+                    publicApi = AuthNetwork.publicAuthApi,
+                    authedApi = AuthNetwork.authedAuthApi(context),
+                    store = TokenStore(context)
+                )
             }
 
+            var tvUsers by remember { mutableStateOf<List<AuthApiService.TvUserDto>>(emptyList()) }
+
+            LaunchedEffect(Unit) {
+                val deviceId = getDeviceId(context)
+                repo.getTvUsersOnDevice(context, deviceId)
+                    .onSuccess { tvUsers = it }
+                    .onFailure { tvUsers = emptyList() }
+            }
 
             Column(
                 modifier = Modifier
@@ -102,42 +125,60 @@ fun PreLoginScreen(
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                // Center tiles
+                // Center tiles (multiple profiles)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    ProfileCircleTile(
-                        modifier = Modifier.focusRequester(leftFocus),
-                        size = circleSize,
-                        borderWidth = circleBorder,
-                        imageUrl = TEMP_PROFILE_URL,
-                        title = "Ricky Rahadian",
-                        titleSize = nameTextSize,
-                        onFocused = { lastFocused = 0 },
-                        onClick = {
-                            lastFocused = 0
-                            navController.navigate("login")
+                    // Show every user returned by API
+                    tvUsers.forEachIndexed { index, u ->
+                        // Create a FocusRequester per profile
+                        val fr = remember(u.user_id) { FocusRequester() }
+
+                        // Optional: restore focus to last selected profile index
+                        // lastFocused: 0..N-1 for profiles, N for Add Account
+                        LaunchedEffect(lastFocused, tvUsers.size) {
+                            if (tvUsers.isNotEmpty() && lastFocused == index) {
+                                fr.requestFocus()
+                            }
                         }
-                    )
 
-                    Spacer(modifier = Modifier.width(gapBetweenTiles))
+                        ProfileCircleTile(
+                            modifier = Modifier.focusRequester(fr),
+                            size = circleSize,
+                            borderWidth = circleBorder,
+                            imageUrl = u.pp_link?.takeIf { it.isNotBlank() } ?: TEMP_PROFILE_URL,
+                            title = u.username,
+                            email = u.email,
+                            titleSize = nameTextSize,
+                            onFocused = { lastFocused = index },
+                            onClick = {
+                                lastFocused = index
+                                // TODO: You probably want to select this user and go Home.
+                                // For now, keep your current behavior:
+                                navController.navigate("login")
+                            }
+                        )
 
+                        Spacer(modifier = Modifier.width(gapBetweenTiles))
+                    }
+
+                    // Add Account (focus index = tvUsers.size)
                     AddAccountCircleTile(
                         modifier = Modifier.focusRequester(rightFocus),
                         size = circleSize,
                         borderWidth = circleBorder,
                         title = "Add Account",
                         titleSize = subTextSize,
-                        onFocused = { lastFocused = 1 },
+                        onFocused = { lastFocused = tvUsers.size },
                         onClick = {
-                            lastFocused = 1
+                            lastFocused = tvUsers.size
                             navController.navigate("login")
                         }
                     )
-
                 }
+
 
                 Spacer(modifier = Modifier.weight(1f))
             }
@@ -152,6 +193,7 @@ private fun ProfileCircleTile(
     borderWidth: androidx.compose.ui.unit.Dp,
     imageUrl: String,
     title: String,
+    email: String,
     titleSize: androidx.compose.ui.unit.TextUnit,
     onFocused: () -> Unit,
     onClick: () -> Unit
@@ -182,7 +224,7 @@ private fun ProfileCircleTile(
                     focused = it.isFocused
                     if (it.isFocused) onFocused()
                 }
-                //.clickable { onClick() }
+                .clickable { onClick() }
                 .focusable()
         ) {
             AsyncImage(
@@ -198,12 +240,28 @@ private fun ProfileCircleTile(
 
         Spacer(modifier = Modifier.height(18.dp))
 
+        // Title
         Text(
             text = title,
             color = Color.White,
             fontSize = titleSize,
             fontWeight = FontWeight.Normal
         )
+
+        // Email area (fixed height so title never moves)
+        Spacer(modifier = Modifier.height(2.dp))
+
+        Box(
+            modifier = Modifier.height(18.dp) // ✅ reserve space always (adjust if you want)
+        ) {
+            Text(
+                text = email,
+                color = Color.White.copy(alpha = if (focused && email.isNotBlank()) 0.75f else 0f),
+                fontSize = (titleSize.value * 0.75f).sp,
+                maxLines = 1
+            )
+        }
+
     }
 }
 
@@ -235,7 +293,7 @@ private fun AddAccountCircleTile(
                 .scale(scale)
                 .clip(CircleShape)
                 .background(
-                    if (focused) Color.White else Color(0xFF5A5A5A) // ✅ WHITE when focused
+                    if (focused) Color.White else Color.Gray // ✅ WHITE when focused
                 )
                 .border(
                     width = borderWidth,

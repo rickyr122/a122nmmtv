@@ -35,15 +35,37 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
-
+import androidx.navigation.NavHostController
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
+import com.projects.a122mmtv.auth.AuthRepository
+import com.projects.a122mmtv.auth.LoginViewModel
+import com.projects.a122mmtv.auth.LoginUiState
+import com.projects.a122mmtv.auth.TokenStore
+import com.projects.a122mmtv.dataclass.AuthNetwork
 import com.projects.a122mmtv.R
+import com.projects.a122mmtv.auth.AuthApiService
 import com.projects.a122mmtv.helper.TvScaledBox // from your file
 
 @Composable
-fun LoginScreen() {
+fun LoginScreen(modifier: Modifier = Modifier, navController: NavHostController) {
     var selectedTab by remember { mutableStateOf(0) }
     val phoneReq = remember { FocusRequester() }
     val remoteReq = remember { FocusRequester() }
+
+    val context = LocalContext.current
+
+    val repo = remember {
+        AuthRepository(
+            publicApi = AuthNetwork.publicAuthApi,
+            authedApi = AuthNetwork.authedAuthApi(context),
+            store = TokenStore(context)
+        )
+    }
+
+    val vm = remember { LoginViewModel(repo) }
+    val ui = vm.ui.collectAsState().value
 
     LaunchedEffect(Unit) { phoneReq.requestFocus() }
 
@@ -121,7 +143,17 @@ fun LoginScreen() {
                 // ✅ More space between tabs and content
                 Spacer(Modifier.height((72f * scale).dp))
 
-                if (selectedTab == 0) PhonePage(scale) else RemotePage(scale)
+                if (selectedTab == 0) {
+                    PhonePage(scale)
+                } else {
+                    RemotePage(
+                        scale = scale,
+                        vm = vm,
+                        ui = ui,
+                        navController = navController
+                    )
+                }
+
             }
         }
     }
@@ -219,7 +251,12 @@ private fun PhonePage(scale: Float) {
 
 /* ---------- Page 2 : Use Remote ---------- */
 @Composable
-private fun RemotePage(scale: Float) {
+private fun RemotePage(
+    scale: Float,
+    vm: LoginViewModel,
+    ui: LoginUiState,
+    navController: NavHostController
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var showPass by remember { mutableStateOf(false) }
@@ -230,6 +267,26 @@ private fun RemotePage(scale: Float) {
 
     val fieldWidth = (680f * scale).dp
     val signInHeightDp = (72f * scale).dp           // <- increased button height
+
+    val context = LocalContext.current
+
+    LaunchedEffect(ui) {
+        when (ui) {
+            is LoginUiState.Success -> {
+                navController.navigate("home") {
+                    popUpTo("login") { inclusive = true }
+                }
+            }
+            is LoginUiState.Error -> {
+                val msg = ui.msg.ifBlank {
+                    "User Name or Password incorrect or not found"
+                }
+                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            }
+            else -> Unit
+        }
+    }
+
 
     Column(
         modifier = Modifier
@@ -311,8 +368,9 @@ private fun RemotePage(scale: Float) {
                 .background(Color(0xFFFF1A1A))
                 .focusRequester(signInReq)       // <- receives focus from password onDone
                 .clickable {
-                    // TODO: signIn(email, password)
-                },
+                    vm.doLogin(context, email.trim(), password)
+                }
+            ,
             contentAlignment = Alignment.Center
         ) {
             Text("Sign In", color = Color.White, fontSize = (24f * scale).sp, fontWeight = FontWeight.Bold)

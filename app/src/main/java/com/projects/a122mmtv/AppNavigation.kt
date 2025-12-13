@@ -20,7 +20,7 @@ fun AppNavigation (
         }
 
         composable("login") {
-           LoginScreen() //modifier, navController)
+           LoginScreen(modifier, navController)
         }
 
         composable("home") {
