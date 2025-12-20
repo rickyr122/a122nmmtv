@@ -5,6 +5,7 @@ import retrofit2.http.Body
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.Headers
 import retrofit2.http.POST
 import retrofit2.http.Query
@@ -152,8 +153,51 @@ interface AuthApiService {
 
     @GET("gettvdevices")
     suspend fun getTvDevices(
+        @Header("X-No-Refresh") noRefresh: String = "1",
         @Query("device_id") deviceId: String,
         @Query("tz_offset_minutes") tzOffsetMinutes: Int
     ): Response<List<TvUserDto>>
+
+//    @GET("gettvusers_device.php")
+//    suspend fun getTvUsersByDeviceToken(
+//        @Query("device_id") deviceId: String,
+//        @Query("device_token") deviceToken: String,
+//        @Query("tz_offset_minutes") tzOffsetMinutes: Int
+//    ): retrofit2.Response<List<TvUserDto>>
+
+    @GET("gettvusers_device.php")
+    suspend fun getTvUsersByDeviceId(
+        @Query("device_id") deviceId: String
+    ): Response<List<TvUserDto>>
+
+
+
+    data class TvPairStartDto(
+        val pair_code: String,
+        val poll_token: String,
+        val expires_in: Int,
+        val verify_url: String
+    )
+
+    @POST("tv_pair_start.php")
+    @FormUrlEncoded
+    suspend fun tvPairStart(
+        @Field("device_id") deviceId: String
+    ): Response<TvPairStartDto>
+
+    data class TvPairStatusDto(
+        val status: String,
+        val access_token: String? = null,
+        val refresh_token: String? = null,
+        val expires_in: Int? = null,
+        val error: String? = null
+    )
+
+    @GET("tv_pair_status.php")
+    suspend fun tvPairStatus(
+        @Query("device_id") deviceId: String,
+        @Query("poll_token") pollToken: String,
+        @Query("device_name") deviceName: String
+    ): Response<TvPairStatusDto>
 
 }

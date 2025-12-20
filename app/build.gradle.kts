@@ -86,5 +86,9 @@ dependencies {
     implementation ("androidx.tv:tv-foundation:1.0.0-alpha12")
     implementation ("androidx.tv:tv-material:1.0.0") // or 1.1.0-alpha01 if you want newest previews
 
+    // QR
+    implementation ("com.google.zxing:core:3.5.3")
+
+
 
 }

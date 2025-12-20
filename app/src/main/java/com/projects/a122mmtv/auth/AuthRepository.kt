@@ -11,9 +11,9 @@ import retrofit2.HttpException
 import java.io.IOException
 
 class AuthRepository(
-    private val publicApi: AuthApiService,
-    private val authedApi: AuthApiService,
-    private val store: TokenStore
+    val publicApi: AuthApiService,
+    val authedApi: AuthApiService,
+    val store: TokenStore
 ) {
     // ⬇️ changed: added `context` and build LoginReq with device fields
     suspend fun login(context: Context, email: String, password: String): Result<Unit> {
@@ -255,22 +255,62 @@ class AuthRepository(
         }
     }
 
-    suspend fun getTvUsersOnDevice(context: Context, deviceId: String): Result<List<AuthApiService.TvUserDto>> {
+//    suspend fun getTvUsersByDeviceToken(
+//        deviceId: String,
+//        deviceToken: String
+//    ): Result<List<AuthApiService.TvUserDto>> {
+//        return try {
+//            if (deviceToken.isBlank()) {
+//                return Result.failure(Exception("Missing device token"))
+//            }
+//
+//            val resp = publicApi.getTvUsersByDeviceToken(
+//                deviceId = deviceId,
+//                deviceToken = deviceToken,
+//                tzOffsetMinutes = tzOffsetMinutesNow()
+//            )
+//
+//            if (resp.isSuccessful && resp.body() != null) {
+//                Result.success(resp.body()!!)
+//            } else {
+//                Result.failure(Exception(extractError(resp.code(), resp.errorBody()?.string())))
+//            }
+//        } catch (t: Throwable) {
+//            Result.failure(Exception(t.message ?: "Request failed"))
+//        }
+//    }
+
+    suspend fun getTvUsersByDeviceId(
+        deviceId: String
+    ): Result<List<AuthApiService.TvUserDto>> {
         return try {
-            val resp = authedApi.getTvDevices(
-                deviceId = deviceId,
-                tzOffsetMinutes = tzOffsetMinutesNow()
-            )
+            val resp = publicApi.getTvUsersByDeviceId(deviceId)
             if (resp.isSuccessful && resp.body() != null) {
                 Result.success(resp.body()!!)
             } else {
-                Result.failure(Exception(extractError(resp.code(), resp.errorBody()?.string())))
+                Result.failure(Exception("HTTP ${resp.code()}"))
             }
         } catch (t: Throwable) {
             Result.failure(Exception(t.message ?: "Request failed"))
         }
     }
 
+    suspend fun tvPairStart(deviceId: String): Result<AuthApiService.TvPairStartDto> = try {
+        val r = publicApi.tvPairStart(deviceId)
+        if (r.isSuccessful && r.body() != null) Result.success(r.body()!!)
+        else Result.failure(Exception("HTTP ${r.code()}"))
+    } catch (t: Throwable) {
+        Result.failure(t)
+    }
+
+    suspend fun tvPairStatus(deviceId: String, pollToken: String, deviceName: String): Result<AuthApiService.TvPairStatusDto> =
+        try {
+            val r = publicApi.tvPairStatus(deviceId, pollToken, deviceName)
+            if (r.isSuccessful && r.body() != null) Result.success(r.body()!!)
+            else Result.failure(Exception("HTTP ${r.code()}"))
+        } catch (t: Throwable) {
+            Result.failure(t)
+        }
 
 }
 

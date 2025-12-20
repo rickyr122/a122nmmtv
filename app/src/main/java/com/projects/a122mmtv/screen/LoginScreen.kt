@@ -1,5 +1,6 @@
 package com.projects.a122mmtv.screen
 
+import android.graphics.Bitmap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -39,6 +40,10 @@ import androidx.navigation.NavHostController
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.platform.LocalContext
 import android.widget.Toast
+import androidx.compose.ui.graphics.asImageBitmap
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.MultiFormatWriter
+import com.google.zxing.common.BitMatrix
 import com.projects.a122mmtv.auth.AuthRepository
 import com.projects.a122mmtv.auth.LoginViewModel
 import com.projects.a122mmtv.auth.LoginUiState
@@ -46,6 +51,7 @@ import com.projects.a122mmtv.auth.TokenStore
 import com.projects.a122mmtv.dataclass.AuthNetwork
 import com.projects.a122mmtv.R
 import com.projects.a122mmtv.auth.AuthApiService
+import com.projects.a122mmtv.getDeviceId
 import com.projects.a122mmtv.helper.TvScaledBox // from your file
 
 @Composable
@@ -144,7 +150,7 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavHostController)
                 Spacer(Modifier.height((72f * scale).dp))
 
                 if (selectedTab == 0) {
-                    PhonePage(scale)
+                    PhonePage(scale, repo, navController)
                 } else {
                     RemotePage(
                         scale = scale,
@@ -161,11 +167,91 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavHostController)
 
 /* ---------- Page 1 : Use Phone ---------- */
 @Composable
-private fun PhonePage(scale: Float) {
+private fun PhonePage(
+    scale: Float,
+    repo: AuthRepository,
+    navController: NavHostController
+) {
+    val context = LocalContext.current
+    val tokenStore = remember { TokenStore(context) }
+
+    // Pairing state
+    var isLoading by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    var pairCode by remember { mutableStateOf("") }
+    var pollToken by remember { mutableStateOf("") }
+    var verifyUrl by remember { mutableStateOf("") }
+    var qrBitmap by remember { mutableStateOf<Bitmap?>(null) }
+
+    // Call tv_pair_start when this page is shown
+    LaunchedEffect(Unit) {
+        isLoading = true
+        error = null
+        try {
+            val deviceId = getDeviceId(context)
+
+            repo.tvPairStart(deviceId)
+                .onSuccess { body ->
+                    pairCode = body.pair_code
+                    pollToken = body.poll_token
+                    verifyUrl = body.verify_url
+
+                    qrBitmap = generateQrBitmap(
+                        text = verifyUrl,
+                        sizePx = (900 * scale).toInt().coerceAtLeast(400)
+                    )
+                }
+                .onFailure {
+                    error = it.message ?: "Failed to generate QR"
+                }
+        } finally {
+            isLoading = false
+        }
+    }
+
+    // 2) Poll status while we have a pollToken
+    LaunchedEffect(pollToken) {
+        if (pollToken.isBlank()) return@LaunchedEffect
+
+        val deviceId = com.projects.a122mmtv.getDeviceId(context)
+        val deviceName = android.os.Build.MODEL ?: "Android TV"
+
+        while (true) {
+            // poll every 2 seconds
+            kotlinx.coroutines.delay(2000)
+
+            val res = repo.tvPairStatus(deviceId, pollToken, deviceName)
+            res.onSuccess { st ->
+                when (st.status.uppercase()) {
+                    "PENDING" -> Unit
+                    "EXPIRED" -> {
+                        error = "Code expired. Please try again."
+                        pollToken = "" // stop polling
+                        return@LaunchedEffect
+                    }
+                    "APPROVED" -> {
+                        navController.navigate("home") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                        pollToken = ""
+                        return@LaunchedEffect
+                    }
+
+
+                    else -> Unit
+                }
+            }.onFailure {
+                // Don’t kill the flow for temporary network issues
+                // Just keep polling.
+            }
+        }
+    }
+
     Row(
         Modifier
             .fillMaxSize()
-            .padding(start = (40f * scale).dp), // ✅ shift both sections slightly right
+            .padding(start = (40f * scale).dp),
         verticalAlignment = Alignment.Top
     ) {
         // Left section
@@ -195,6 +281,7 @@ private fun PhonePage(scale: Float) {
 
             Spacer(Modifier.height((24f * scale).dp))
 
+            // QR BOX
             Box(
                 Modifier
                     .padding(start = (48f * scale).dp)
@@ -203,7 +290,25 @@ private fun PhonePage(scale: Float) {
                     .border(2.dp, Color.White, RoundedCornerShape(8.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Text("QR", color = Color.White, fontSize = (48f * scale).sp)
+                when {
+                    isLoading -> {
+                        Text("Loading...", color = Color.White, fontSize = (18f * scale).sp)
+                    }
+                    error != null -> {
+                        Text(error!!, color = Color.White, fontSize = (16f * scale).sp)
+                    }
+                    qrBitmap != null -> {
+                        Image(
+                            bitmap = qrBitmap!!.asImageBitmap(),
+                            contentDescription = "QR Code",
+                            modifier = Modifier.fillMaxSize().padding((10f * scale).dp),
+                            contentScale = ContentScale.Fit
+                        )
+                    }
+                    else -> {
+                        Text("QR", color = Color.White, fontSize = (48f * scale).sp)
+                    }
+                }
             }
         }
 
@@ -236,8 +341,9 @@ private fun PhonePage(scale: Float) {
 
             Spacer(Modifier.height((16f * scale).dp))
 
+            // REAL pairing code (replaces mock 1234-5678)
             Text(
-                "1 2 3 4 - 5 6 7 8",
+                text = if (isLoading) "---- ----" else if (pairCode.isBlank()) "-- -- - -- --" else pairCode,
                 color = Color.White,
                 fontSize = (56f * scale).sp,
                 fontWeight = FontWeight.Bold,
@@ -245,6 +351,17 @@ private fun PhonePage(scale: Float) {
                     .padding(start = (48f * scale).dp)
                     .align(Alignment.Start)
             )
+
+            // Optional: small helper text (you can remove)
+            if (!isLoading && error == null && pairCode.isNotBlank()) {
+                Spacer(Modifier.height((10f * scale).dp))
+                Text(
+                    text = "Open the link on your phone and approve this TV.",
+                    color = Color.White.copy(alpha = 0.75f),
+                    fontSize = (16f * scale).sp,
+                    modifier = Modifier.padding(start = (48f * scale).dp)
+                )
+            }
         }
     }
 }
@@ -406,6 +523,27 @@ fun TabButton(
         )
     }
 }
+
+private fun generateQrBitmap(text: String, sizePx: Int): Bitmap {
+    val matrix: BitMatrix = MultiFormatWriter().encode(
+        text,
+        BarcodeFormat.QR_CODE,
+        sizePx,
+        sizePx
+    )
+
+    val w = matrix.width
+    val h = matrix.height
+    val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+
+    for (y in 0 until h) {
+        for (x in 0 until w) {
+            bmp.setPixel(x, y, if (matrix[x, y]) android.graphics.Color.BLACK else android.graphics.Color.WHITE)
+        }
+    }
+    return bmp
+}
+
 
 @Composable
 private fun TvTextField(

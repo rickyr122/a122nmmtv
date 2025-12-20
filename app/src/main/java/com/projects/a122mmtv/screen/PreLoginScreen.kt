@@ -1,5 +1,6 @@
 package com.projects.a122mmtv.screen
 
+import android.util.Log
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -104,10 +105,12 @@ fun PreLoginScreen(
 
             LaunchedEffect(Unit) {
                 val deviceId = getDeviceId(context)
-                repo.getTvUsersOnDevice(context, deviceId)
+
+                repo.getTvUsersByDeviceId(deviceId)
                     .onSuccess { tvUsers = it }
                     .onFailure { tvUsers = emptyList() }
             }
+
 
             Column(
                 modifier = Modifier
