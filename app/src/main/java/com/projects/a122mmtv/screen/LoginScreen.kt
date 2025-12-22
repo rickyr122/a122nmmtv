@@ -40,7 +40,16 @@ import androidx.navigation.NavHostController
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.platform.LocalContext
 import android.widget.Toast
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material3.Icon
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
+import android.view.KeyEvent
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
 import com.google.zxing.common.BitMatrix
@@ -53,6 +62,7 @@ import com.projects.a122mmtv.R
 import com.projects.a122mmtv.auth.AuthApiService
 import com.projects.a122mmtv.getDeviceId
 import com.projects.a122mmtv.helper.TvScaledBox // from your file
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(modifier: Modifier = Modifier, navController: NavHostController) {
@@ -174,6 +184,7 @@ private fun PhonePage(
 ) {
     val context = LocalContext.current
     val tokenStore = remember { TokenStore(context) }
+    var reloadKey by remember { mutableStateOf(0) }
 
     // Pairing state
     var isLoading by remember { mutableStateOf(true) }
@@ -185,7 +196,7 @@ private fun PhonePage(
     var qrBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
     // Call tv_pair_start when this page is shown
-    LaunchedEffect(Unit) {
+    LaunchedEffect(reloadKey) {
         isLoading = true
         error = null
         try {
@@ -227,7 +238,9 @@ private fun PhonePage(
                     "PENDING" -> Unit
                     "EXPIRED" -> {
                         error = "Code expired. Please try again."
+                        pairCode = "" // clear the number
                         pollToken = "" // stop polling
+                        qrBitmap = null // clearQR
                         return@LaunchedEffect
                     }
                     "APPROVED" -> {
@@ -271,7 +284,7 @@ private fun PhonePage(
                 }
                 Spacer(Modifier.width((12f * scale).dp))
                 Text(
-                    "Use your phone or tablet’s camera\nand point to the code:",
+                    "Open My Room menu in the app, tap the scan icon and point to the code.",
                     color = Color.White,
                     fontSize = (22f * scale).sp,
                     lineHeight = (28f * scale).sp,
@@ -295,8 +308,54 @@ private fun PhonePage(
                         Text("Loading...", color = Color.White, fontSize = (18f * scale).sp)
                     }
                     error != null -> {
-                        Text(error!!, color = Color.White, fontSize = (16f * scale).sp)
+                        var refreshFocused by remember { mutableStateOf(false) }
+
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = error!!,
+                                color = Color.White,
+                                fontSize = (16f * scale).sp
+                            )
+
+                            Spacer(Modifier.height((16f * scale).dp))
+
+                            Box(
+                                modifier = Modifier
+                                    .size((48f * scale).dp)
+                                    .onFocusChanged { refreshFocused = it.isFocused }
+                                    .focusable() // ✅ TV remote focus
+                                    .onKeyEvent {
+                                        if (it.type == KeyEventType.KeyUp &&
+                                            (it.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_ENTER ||
+                                                    it.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_DPAD_CENTER)
+                                        ) {
+                                            reloadKey++
+                                            error = null
+                                            true
+                                        } else {
+                                            false
+                                        }
+                                    }
+
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (refreshFocused) Color.White else Color(0x66FFFFFF)
+                                    )
+                                    .scale(if (refreshFocused) 1.1f else 1f),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Refresh,
+                                    contentDescription = "Reload",
+                                    tint = if (refreshFocused) Color.Black else Color.White,
+                                    modifier = Modifier.size((26f * scale).dp)
+                                )
+                            }
+                        }
                     }
+
                     qrBitmap != null -> {
                         Image(
                             bitmap = qrBitmap!!.asImageBitmap(),
@@ -331,7 +390,7 @@ private fun PhonePage(
                 }
                 Spacer(Modifier.width((12f * scale).dp))
                 Text(
-                    "Confirm the code on your phone or tablet",
+                    "Confirm the code on the app",
                     color = Color.White,
                     fontSize = (22f * scale).sp,
                     lineHeight = (28f * scale).sp,
@@ -356,7 +415,7 @@ private fun PhonePage(
             if (!isLoading && error == null && pairCode.isNotBlank()) {
                 Spacer(Modifier.height((10f * scale).dp))
                 Text(
-                    text = "Open the link on your phone and approve this TV.",
+                    text = "Tap Sign in to TV from the app to pair this device.",
                     color = Color.White.copy(alpha = 0.75f),
                     fontSize = (16f * scale).sp,
                     modifier = Modifier.padding(start = (48f * scale).dp)
