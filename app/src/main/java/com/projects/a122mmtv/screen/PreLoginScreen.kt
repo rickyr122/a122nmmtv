@@ -158,9 +158,7 @@ fun PreLoginScreen(
                             onFocused = { lastFocused = index },
                             onClick = {
                                 lastFocused = index
-                                // TODO: You probably want to select this user and go Home.
-                                // For now, keep your current behavior:
-                                navController.navigate("login")
+                                navController.navigate("home")
                             }
                         )
 

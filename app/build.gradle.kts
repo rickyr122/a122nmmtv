@@ -89,6 +89,8 @@ dependencies {
     // QR
     implementation ("com.google.zxing:core:3.5.3")
 
+    implementation("androidx.core:core-splashscreen:1.0.1")
+    implementation("androidx.compose.material3:material3")
 
 
 }

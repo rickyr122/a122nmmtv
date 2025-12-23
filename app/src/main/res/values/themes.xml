@@ -1,5 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.A122mmtv" parent="android:Theme.Material.Light.NoActionBar" />
+<!--    <style name="Theme.A122mmtv" parent="android:Theme.Material.Light.NoActionBar" />-->
+
+<!--    &lt;!&ndash; App theme (runs after splash) &ndash;&gt;-->
+    <style name="Theme.A122mmtv" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@android:color/black</item>
+        <item name="android:navigationBarColor">@android:color/black</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowBackground">@android:color/black</item>
+    </style>
+
+    <!-- Splash/launch theme (first frame before Compose) -->
+    <style name="Theme.A122mmtv.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@android:color/black</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/a122mm_logo</item>
+        <item name="postSplashScreenTheme">@style/Theme.A122mmtv</item>
+
+        <item name="android:statusBarColor">@android:color/black</item>
+        <item name="android:navigationBarColor">@android:color/black</item>
+    </style>
+
 </resources>
