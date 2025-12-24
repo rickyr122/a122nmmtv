@@ -200,6 +200,31 @@ fun ViewBanner(
                     )
                 }
 
+                Spacer(Modifier.height(14.dp))
+
+                // Buttons
+                AnimatedVisibility(
+                    visible = isFocused,
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+
+                        BannerButton(
+                            text = "Play",
+                            icon = "▶"
+                        )
+
+                        Spacer(Modifier.width(12.dp))
+
+                        BannerButton(
+                            text = "More Info"
+                        )
+
+
+                    }
+                }
+
             }
         }
     }
@@ -225,6 +250,41 @@ private fun Bullet() {
             .clip(CircleShape)
             .background(Color.White.copy(alpha = 0.7f))
     )
+}
+
+@Composable
+private fun BannerButton(
+    text: String,
+    icon: String? = null,
+
+) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .padding(horizontal = 20.dp, vertical = 8.dp)
+    )
+    {
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (icon != null) {
+                //Spacer(Modifier.width(6.dp))
+                Text(
+                    icon,
+                    // color = fg,
+                    fontSize = 14.sp
+                )
+                Spacer(Modifier.width(12.dp))
+            }
+            Text(
+                text,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+
+        }
+    }
 }
 
 
