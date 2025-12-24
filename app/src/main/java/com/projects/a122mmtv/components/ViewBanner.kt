@@ -130,11 +130,11 @@ fun ViewBanner(
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(21f / 10f)
+                .aspectRatio(21f / 9f)
         ) {
-            val contentWidth = maxWidth * 0.3f
+            val contentWidth = maxWidth * 0.35f
             AsyncImage(
-                model = "https://image.tmdb.org/t/p/w1280/Bwh7Lol5k3hSqYOtqXWxbbJVMx.jpg",
+                model = "https://image.tmdb.org/t/p/w1280/9tOkjBEiiGcaClgJFtwocStZvIT.jpg",
                 contentDescription = "banner",
                 contentScale = ContentScale.Crop,
                 alignment = Alignment.TopCenter,
@@ -169,16 +169,16 @@ fun ViewBanner(
 
                 // Title logo (proportional)
                 AsyncImage(
-                    model = "https://image.tmdb.org/t/p/w500/dEFxlY8tBr3MfcofIJKzqQKVe6B.png",
+                    model = "https://image.tmdb.org/t/p/w500/gNkaNY2Cg2BvYunWVgMVcbmQgc5.png",
                     contentDescription = "title logo",
                     contentScale = ContentScale.Fit,
                     modifier = Modifier
                         .height(72.dp)
-                        .aspectRatio(3.5f)
+                        .wrapContentWidth(Alignment.Start) // 👈 KEY
                 )
 
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(4.dp))
 
                 // Meta info row
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -201,11 +201,11 @@ fun ViewBanner(
                     exit = fadeOut()
                 ) {
                     Text(
-                        text = "Peter Parker is unmasked and no longer able to separate his normal life from the high-stakes of being a super-hero.",
+                        text = "Determined to prove herself, Officer Judy Hopps, the first bunny on Zootopia's police force, jumps at the chance to crack her first case - even if it means partnering with scam-artist fox Nick Wilde to solve the mystery.",
                         color = Color.White.copy(alpha = 0.9f),
                         fontSize = 12.sp,
                         lineHeight = 16.sp,
-                        maxLines = 3,
+                        //maxLines = 3,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
@@ -255,7 +255,7 @@ private fun MetaText(text: String) {
     Text(
         text = text,
         color = Color.White,
-        fontSize = 10.sp,
+        fontSize = 8.sp,
         fontWeight = FontWeight.Medium,
         modifier = Modifier.alpha(0.9f)
     )
