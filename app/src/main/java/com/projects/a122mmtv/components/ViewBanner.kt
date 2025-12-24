@@ -1,6 +1,7 @@
 package com.projects.a122mmtv.components
 
 import android.view.KeyEvent
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -8,6 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -24,8 +26,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,11 +48,13 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.Bullet
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -65,7 +73,8 @@ fun ViewBanner(
     upMenuFocusRequester: FocusRequester,
     onBannerFocused: () -> Unit
 ) {
-    var isFocused by remember { mutableStateOf(false) }
+   // var isFocused by remember { mutableStateOf(false) }
+    var isBannerActive by remember { mutableStateOf(false) }
 
     val shape = RoundedCornerShape(0.dp)
 
@@ -74,9 +83,10 @@ fun ViewBanner(
             .fillMaxWidth()
             .focusRequester(focusRequester)
             .onFocusChanged {
-                isFocused = it.isFocused
+                isBannerActive = it.hasFocus   // 👈 key change
                 if (it.isFocused) onBannerFocused()
             }
+
             .focusable()
             .onPreviewKeyEvent { event ->
                 if (
@@ -101,7 +111,7 @@ fun ViewBanner(
                 }
             }
             .then(
-                if (isFocused) {
+                if (isBannerActive) {
                     Modifier.border(
                         width = 0.5.dp,
                         brush = Brush.horizontalGradient(
@@ -186,7 +196,7 @@ fun ViewBanner(
                 Spacer(Modifier.height(8.dp))
 
                 AnimatedVisibility(
-                    visible = isFocused,
+                    visible = isBannerActive,
                     enter = fadeIn(),
                     exit = fadeOut()
                 ) {
@@ -204,15 +214,25 @@ fun ViewBanner(
 
                 // Buttons
                 AnimatedVisibility(
-                    visible = isFocused,
+                    visible = isBannerActive,
                     enter = fadeIn(),
                     exit = fadeOut()
                 ) {
+                    val playFocusRequester = remember { FocusRequester() }
+
+                    LaunchedEffect(isBannerActive) {
+                        if (isBannerActive) {
+                            playFocusRequester.requestFocus()
+                        }
+                    }
+
+
                     Row(verticalAlignment = Alignment.CenterVertically) {
 
                         BannerButton(
+                            modifier = Modifier.focusRequester(playFocusRequester),
                             text = "Play",
-                            icon = "▶"
+                            icon = Icons.Filled.PlayArrow
                         )
 
                         Spacer(Modifier.width(12.dp))
@@ -254,37 +274,59 @@ private fun Bullet() {
 
 @Composable
 private fun BannerButton(
+    modifier: Modifier = Modifier,
     text: String,
-    icon: String? = null,
-
+    icon: ImageVector? = null
 ) {
+    val context = LocalContext.current
+    var isFocused by remember { mutableStateOf(false) }
+
+    val bgColor = if (isFocused) Color.White else Color.DarkGray
+    val contentColor = if (isFocused) Color.Black else Color.White
+
     Box(
         contentAlignment = Alignment.Center,
-        modifier = Modifier
+        modifier = modifier
             .clip(RoundedCornerShape(999.dp))
+            .background(bgColor)
+            .onFocusChanged { isFocused = it.isFocused }
+            .focusable()
+            .onPreviewKeyEvent { event ->
+                if (
+                    event.type == KeyEventType.KeyDown &&
+                    (event.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_DPAD_CENTER ||
+                            event.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_ENTER)
+                ) {
+                    Toast.makeText(
+                        context,
+                        "You click $text button",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    true
+                } else false
+            }
             .padding(horizontal = 20.dp, vertical = 8.dp)
-    )
-    {
+    ) {
         Row(
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
         ) {
             if (icon != null) {
-                //Spacer(Modifier.width(6.dp))
-                Text(
-                    icon,
-                    // color = fg,
-                    fontSize = 14.sp
+                Icon(
+                    imageVector = icon,
+                    contentDescription = text,
+                    tint = contentColor,
+                    modifier = Modifier.size(18.dp)
                 )
-                Spacer(Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(8.dp))
             }
-            Text(
-                text,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold
-            )
 
+            Text(
+                text = text,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = contentColor
+            )
         }
     }
 }
-
-
