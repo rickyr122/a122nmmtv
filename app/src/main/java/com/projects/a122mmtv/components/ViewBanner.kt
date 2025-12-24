@@ -1,21 +1,34 @@
 package com.projects.a122mmtv.components
 
 import android.view.KeyEvent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
@@ -29,7 +42,10 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.Bullet
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 
@@ -53,11 +69,8 @@ fun ViewBanner(
             .focusRequester(focusRequester)
             .onFocusChanged {
                 isFocused = it.isFocused
-                if (it.isFocused) {
-                    onBannerFocused()
-                }
+                if (it.isFocused) onBannerFocused()
             }
-
             .focusable()
             .onPreviewKeyEvent { event ->
                 if (
@@ -65,12 +78,11 @@ fun ViewBanner(
                     event.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_DPAD_UP
                 ) {
                     upMenuFocusRequester.requestFocus()
-                    true // consume event, stop spatial focus
+                    true
                 } else {
                     false
                 }
             }
-
             .focusProperties {
                 exit = {
                     when (it) {
@@ -82,34 +94,109 @@ fun ViewBanner(
                     }
                 }
             }
-
-            //.padding(horizontal = 24.dp)
             .then(
                 if (isFocused) {
                     Modifier.border(
                         width = 1.dp,
                         brush = Brush.horizontalGradient(
-                            colors = listOf(
-                                Color.White,
-                                Color.LightGray
-                            )
+                            colors = listOf(Color.White, Color.LightGray)
                         ),
                         shape = shape
                     )
-                } else {
-                    Modifier
-                }
+                } else Modifier
             )
             .clip(shape)
     ) {
-        AsyncImage(
-            model = "https://image.tmdb.org/t/p/w1280/Bwh7Lol5k3hSqYOtqXWxbbJVMx.jpg",
-            contentDescription = "banner",
-            contentScale = ContentScale.Crop,
+
+        // ────────────────────
+        // Banner background
+        // ────────────────────
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(16f / 9f)
-        )
+        ) {
+            AsyncImage(
+                model = "https://image.tmdb.org/t/p/w1280/Bwh7Lol5k3hSqYOtqXWxbbJVMx.jpg",
+                contentDescription = "banner",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.45f) // 👈 covers bottom ~45%
+                    .align(Alignment.BottomStart)
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.85f)
+                            )
+                        )
+                    )
+            )
+
+            // ────────────────────
+            // Bottom-left overlay
+            // ────────────────────
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(start = 32.dp, bottom = 28.dp)
+            ) {
+
+                // Title logo (proportional)
+                AsyncImage(
+                    model = "https://image.tmdb.org/t/p/w500/dEFxlY8tBr3MfcofIJKzqQKVe6B.png",
+                    contentDescription = "title logo",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .height(72.dp)
+                        .aspectRatio(3.5f)
+                )
+
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Meta info row
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    MetaText("Movie")
+                    Bullet()
+                    MetaText("Superhero")
+                    Bullet()
+                    MetaText("2021")
+                    Bullet()
+                    MetaText("2h 3m")
+                    Bullet()
+                    MetaText("PG-13")
+                }
+            }
+        }
     }
 }
+
+@Composable
+private fun MetaText(text: String) {
+    Text(
+        text = text,
+        color = Color.White,
+        fontSize = 12.sp,
+        fontWeight = FontWeight.Medium,
+        modifier = Modifier.alpha(0.9f)
+    )
+}
+
+@Composable
+private fun Bullet() {
+    Box(
+        modifier = Modifier
+            .padding(horizontal = 4.dp)
+            .size(4.dp)
+            .clip(CircleShape)
+            .background(Color.White.copy(alpha = 0.7f))
+    )
+}
+
 

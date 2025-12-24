@@ -153,11 +153,6 @@ fun HomeScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         menuItems.forEachIndexed { index, title ->
                             val isFocused = isMenuFocused && focusedIndex == index
-                            val itemScale by animateFloatAsState(
-                                if (isFocused) 1.1f else 1f
-                            )
-
-                            //val isFocused = isMenuFocused && focusedIndex == index
                             val isSelected = !isFocused && selectedIndex == index
 
                             val backgroundColor = when {
@@ -171,9 +166,13 @@ fun HomeScreen(
                                 else -> Color.White
                             }
 
+                            val isSearch = index == 0
+                            val shape = if (index == 0) CircleShape else capsuleShape
+
                             Box(
+                                contentAlignment = Alignment.Center, // 👈 THIS is the fix
                                 modifier = Modifier
-                                    .padding(end = (32 * scale).dp)
+                                    .padding(end = (20 * scale).dp)
                                     .focusRequester(focusRequesters[index])
                                     .onFocusChanged {
                                         if (it.isFocused) {
@@ -186,25 +185,29 @@ fun HomeScreen(
                                         if (
                                             event.type == KeyEventType.KeyDown &&
                                             event.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_DPAD_DOWN &&
-                                            selectedIndex == index // only active tab
+                                            selectedIndex == index
                                         ) {
                                             isMenuFocused = false
                                             bannerFocusRequester.requestFocus()
                                             true
-                                        } else {
-                                            false
-                                        }
+                                        } else false
                                     }
                                     .focusable()
-                                    //.scale(itemScale)
-                                    .clip(capsuleShape)
+                                    .clip(shape)
                                     .background(backgroundColor)
-                                    .padding(
-                                        horizontal = (14 * scale).dp,
-                                        vertical = (6 * scale).dp
+                                    .then(
+                                        if (isSearch) {
+                                            Modifier.size((44 * scale).dp)
+                                        } else {
+                                            Modifier.padding(
+                                                horizontal = (24 * scale).dp,
+                                                vertical = (6 * scale).dp
+                                            )
+                                        }
                                     )
-                            ) {
-                                if (index == 0) {
+                            )
+                            {
+                                if (isSearch) {
                                     Icon(
                                         imageVector = Icons.Default.Search,
                                         contentDescription = "Search",
@@ -220,6 +223,7 @@ fun HomeScreen(
                                     )
                                 }
                             }
+
 
                         }
                     }
