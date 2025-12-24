@@ -1,5 +1,6 @@
 package com.projects.a122mmtv.screen
 
+import android.view.KeyEvent
 import com.projects.a122mmtv.R
 import com.projects.a122mmtv.helper.TvScaledBox
 import com.projects.a122mmtv.pages.HomePage
@@ -14,12 +15,14 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,6 +31,9 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -51,16 +57,39 @@ fun HomeScreen(
         List(menuItems.size) { FocusRequester() }
     }
 
+    var hasHomeAutoFocused by rememberSaveable { mutableStateOf(false) }
+    val capsuleShape = RoundedCornerShape(999.dp)
+    var isMenuFocused by remember { mutableStateOf(true) }
+
     TvScaledBox { scale ->
 
         LaunchedEffect(Unit) {
             focusRequesters[1].requestFocus()
         }
 
-        LaunchedEffect(focusedIndex) {
-            delay(500)
-            selectedIndex = focusedIndex
+        var activePageIndex by remember { mutableStateOf(selectedIndex) }
+
+        LaunchedEffect(selectedIndex) {
+            delay(500) // debounce duration
+            activePageIndex = selectedIndex
         }
+
+        val bannerFocusRequester = remember { FocusRequester() }
+
+
+
+        LaunchedEffect(selectedIndex) {
+            if (selectedIndex == 1 && !hasHomeAutoFocused) {
+                delay(150)
+                isMenuFocused = false      // 👈 HERE
+                bannerFocusRequester.requestFocus()
+                hasHomeAutoFocused = true
+            }
+        }
+
+
+        val topBarHeight = (80 * scale).dp
+        val horizontalInset = (24 * scale).dp
 
         Column(
             modifier = Modifier
@@ -72,8 +101,8 @@ fun HomeScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height((80 * scale).dp)
-                    .padding(horizontal = (24 * scale).dp),
+                    .height(topBarHeight)
+                    .padding(horizontal = horizontalInset),
                 verticalAlignment = Alignment.CenterVertically
             ) {
 
@@ -123,38 +152,75 @@ fun HomeScreen(
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         menuItems.forEachIndexed { index, title ->
-                            val isFocused = focusedIndex == index
+                            val isFocused = isMenuFocused && focusedIndex == index
                             val itemScale by animateFloatAsState(
                                 if (isFocused) 1.1f else 1f
                             )
+
+                            //val isFocused = isMenuFocused && focusedIndex == index
+                            val isSelected = !isFocused && selectedIndex == index
+
+                            val backgroundColor = when {
+                                isFocused -> Color.White
+                                isSelected -> Color.DarkGray
+                                else -> Color.Transparent
+                            }
+
+                            val textColor = when {
+                                isFocused -> Color.Black
+                                else -> Color.White
+                            }
 
                             Box(
                                 modifier = Modifier
                                     .padding(end = (32 * scale).dp)
                                     .focusRequester(focusRequesters[index])
                                     .onFocusChanged {
-                                        if (it.isFocused) focusedIndex = index
+                                        if (it.isFocused) {
+                                            focusedIndex = index
+                                            selectedIndex = index
+                                            isMenuFocused = true
+                                        }
+                                    }
+                                    .onPreviewKeyEvent { event ->
+                                        if (
+                                            event.type == KeyEventType.KeyDown &&
+                                            event.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_DPAD_DOWN &&
+                                            selectedIndex == index // only active tab
+                                        ) {
+                                            isMenuFocused = false
+                                            bannerFocusRequester.requestFocus()
+                                            true
+                                        } else {
+                                            false
+                                        }
                                     }
                                     .focusable()
-                                    .scale(itemScale)
-                                    .padding(vertical = (8 * scale).dp)
+                                    //.scale(itemScale)
+                                    .clip(capsuleShape)
+                                    .background(backgroundColor)
+                                    .padding(
+                                        horizontal = (14 * scale).dp,
+                                        vertical = (6 * scale).dp
+                                    )
                             ) {
                                 if (index == 0) {
                                     Icon(
                                         imageVector = Icons.Default.Search,
                                         contentDescription = "Search",
-                                        tint = if (isFocused) Color.White else Color.LightGray,
-                                        modifier = Modifier.size((22 * scale).dp)
+                                        tint = textColor,
+                                        modifier = Modifier.size((20 * scale).dp)
                                     )
                                 } else {
                                     Text(
                                         text = title,
-                                        color = if (isFocused) Color.White else Color.LightGray,
+                                        color = textColor,
                                         fontSize = (18 * scale).sp,
-                                        fontWeight = if (isFocused) FontWeight.Bold else FontWeight.Normal
+                                        fontWeight = FontWeight.Medium
                                     )
                                 }
                             }
+
                         }
                     }
                 }
@@ -176,18 +242,27 @@ fun HomeScreen(
             Box(
                 modifier = Modifier
                     .weight(1f)   // 👈 THIS is the key
-                    .padding(top = (2 * scale).dp)
+                    .padding(
+                        top = (0 * scale).dp,
+                        start = horizontalInset,
+                        end = horizontalInset
+                    )
             ) {
-                when (selectedIndex) {
+                when (activePageIndex) {
                     0 -> SearchPage(
                         modifier = modifier,
                         navController = navController
                     )
 
                     1 -> HomePage(
-                        modifier,
-                        navController
+                        navController = navController,
+                        bannerFocusRequester = bannerFocusRequester,
+                        upMenuFocusRequester = focusRequesters[selectedIndex],
+                        onBannerFocused = {
+                            isMenuFocused = false
+                        }
                     )
+
 
                     2 -> SeriesPage(
                         modifier,
