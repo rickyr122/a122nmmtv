@@ -89,7 +89,7 @@ fun HomeScreen(
 
 
         val topBarHeight = (80 * scale).dp
-        val horizontalInset = (24 * scale).dp
+        val horizontalInset = (48 * scale).dp
 
         Column(
             modifier = Modifier

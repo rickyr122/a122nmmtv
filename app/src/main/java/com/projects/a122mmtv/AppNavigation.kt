@@ -14,7 +14,7 @@ fun AppNavigation (
     navController: NavHostController,
     modifier: Modifier = Modifier
 ) {
-    NavHost(navController = navController  , startDestination = "home") {
+    NavHost(navController = navController  , startDestination = "prelogin") {
         composable("prelogin") {
             PreLoginScreen(modifier, navController)
         }

@@ -1,11 +1,15 @@
 package com.projects.a122mmtv.components
 
 import android.view.KeyEvent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -44,6 +49,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.Bullet
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -97,7 +103,7 @@ fun ViewBanner(
             .then(
                 if (isFocused) {
                     Modifier.border(
-                        width = 1.dp,
+                        width = 0.5.dp,
                         brush = Brush.horizontalGradient(
                             colors = listOf(Color.White, Color.LightGray)
                         ),
@@ -111,22 +117,24 @@ fun ViewBanner(
         // ────────────────────
         // Banner background
         // ────────────────────
-        Box(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(16f / 9f)
+                .aspectRatio(21f / 10f)
         ) {
+            val contentWidth = maxWidth * 0.3f
             AsyncImage(
                 model = "https://image.tmdb.org/t/p/w1280/Bwh7Lol5k3hSqYOtqXWxbbJVMx.jpg",
                 contentDescription = "banner",
                 contentScale = ContentScale.Crop,
+                alignment = Alignment.TopCenter,
                 modifier = Modifier.fillMaxSize()
             )
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(0.45f) // 👈 covers bottom ~45%
+                    .fillMaxHeight(0.65f)
                     .align(Alignment.BottomStart)
                     .background(
                         brush = Brush.verticalGradient(
@@ -145,6 +153,8 @@ fun ViewBanner(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .padding(start = 32.dp, bottom = 28.dp)
+                    .width(contentWidth),
+                horizontalAlignment = Alignment.Start
             ) {
 
                 // Title logo (proportional)
@@ -158,7 +168,7 @@ fun ViewBanner(
                 )
 
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 // Meta info row
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -172,6 +182,24 @@ fun ViewBanner(
                     Bullet()
                     MetaText("PG-13")
                 }
+
+                Spacer(Modifier.height(8.dp))
+
+                AnimatedVisibility(
+                    visible = isFocused,
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    Text(
+                        text = "Peter Parker is unmasked and no longer able to separate his normal life from the high-stakes of being a super-hero.",
+                        color = Color.White.copy(alpha = 0.9f),
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
             }
         }
     }
@@ -182,7 +210,7 @@ private fun MetaText(text: String) {
     Text(
         text = text,
         color = Color.White,
-        fontSize = 12.sp,
+        fontSize = 10.sp,
         fontWeight = FontWeight.Medium,
         modifier = Modifier.alpha(0.9f)
     )
@@ -193,7 +221,7 @@ private fun Bullet() {
     Box(
         modifier = Modifier
             .padding(horizontal = 4.dp)
-            .size(4.dp)
+            .size(2.dp)
             .clip(CircleShape)
             .background(Color.White.copy(alpha = 0.7f))
     )
