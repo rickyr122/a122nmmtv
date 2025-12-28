@@ -312,6 +312,18 @@ class AuthRepository(
             Result.failure(t)
         }
 
+    suspend fun getBanner(type: String): Result<AuthApiService.BannerDto> {
+        return try {
+            val resp = authedApi.getBanner(type)
+            if (resp.isSuccessful && resp.body() != null) {
+                Result.success(resp.body()!!)
+            } else {
+                Result.failure(Exception("HTTP ${resp.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }
 
 /** Pulls "error" from server JSON; falls back to friendly per-code message. */

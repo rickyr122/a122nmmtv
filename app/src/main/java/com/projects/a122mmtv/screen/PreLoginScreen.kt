@@ -32,6 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.projects.a122mmtv.R
 import com.projects.a122mmtv.auth.AuthApiService
 import com.projects.a122mmtv.auth.AuthRepository
+import com.projects.a122mmtv.auth.HomeSessionViewModel
 import com.projects.a122mmtv.auth.TokenStore
 import com.projects.a122mmtv.dataclass.AuthNetwork
 import com.projects.a122mmtv.getDeviceId
@@ -43,7 +44,8 @@ private const val TEMP_PROFILE_URL =
 @Composable
 fun PreLoginScreen(
     modifier: Modifier = Modifier,
-    navController: NavHostController
+    navController: NavHostController,
+    homeSession: HomeSessionViewModel
 ) {
     Box(
         modifier = modifier.fillMaxSize()
@@ -158,6 +160,10 @@ fun PreLoginScreen(
                             onFocused = { lastFocused = index },
                             onClick = {
                                 lastFocused = index
+                                homeSession.setUser(
+                                    id = u.user_id,
+                                    name = u.username
+                                )
                                 navController.navigate("home")
                             }
                         )

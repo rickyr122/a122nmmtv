@@ -32,6 +32,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,7 +62,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.runtime.collectAsState
 import coil.compose.AsyncImage
+import com.projects.a122mmtv.auth.AuthApiService
+import com.projects.a122mmtv.auth.BannerUiState
+import com.projects.a122mmtv.auth.BannerViewModel
+import com.projects.a122mmtv.auth.HomeSessionViewModel
+import com.projects.a122mmtv.helper.convertContentRating
+import com.projects.a122mmtv.helper.fixEncoding
+import com.projects.a122mmtv.utility.BannerStorage
+import com.projects.a122mmtv.utility.formatDurationFromMinutes
+import org.json.JSONObject
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -71,22 +82,61 @@ fun ViewBanner(
     currentTabIndex: Int,
     focusRequester: FocusRequester,
     upMenuFocusRequester: FocusRequester,
-    onBannerFocused: () -> Unit
+    onBannerFocused: () -> Unit,
+    viewModel: BannerViewModel,
+    homeSession: HomeSessionViewModel
 ) {
-   // var isFocused by remember { mutableStateOf(false) }
     var isBannerActive by remember { mutableStateOf(false) }
-
     val shape = RoundedCornerShape(0.dp)
+
+    val uiState = viewModel.bannerState.collectAsState().value
+    val userId = homeSession.userId ?: 0
+
+    // 🔥 API call – runs only when `type` changes
+    val context = LocalContext.current
+
+    LaunchedEffect(type, userId) {
+
+        // 1️⃣ Try cache FIRST
+        val (cachedJson, expired) =
+            BannerStorage.loadBanner(context, type, userId)
+
+        if (cachedJson != null && !expired) {
+            // 2️⃣ If cache valid → inject into ViewModel
+            viewModel.setBannerFromCache(
+                AuthApiService.BannerDto(
+                    mId = cachedJson.getString("mId"),
+                    bdropUrl = cachedJson.getString("bdropUrl"),
+                    logoUrl = cachedJson.getString("logoUrl"),
+                    mGenre = cachedJson.getString("mGenre"),
+                    m_year = cachedJson.getString("m_year"),
+                    m_duration = cachedJson.getString("m_duration"),
+                    m_content = cachedJson.getString("m_content"),
+                    mDescription = cachedJson.getString("mDescription"),
+                    playId = cachedJson.getString("playId"),
+                    cProgress = cachedJson.getInt("cProgress"),
+                    cFlareVid = cachedJson.getString("cFlareVid"),
+                    cFlareSrt = cachedJson.getString("cFlareSrt"),
+                    gDriveVid = cachedJson.getString("gDriveVid"),
+                    gDriveSrt = cachedJson.getString("gDriveSrt")
+                )
+            )
+            return@LaunchedEffect
+        }
+
+        // 3️⃣ Cache missing / expired → call API
+        viewModel.loadBanner(type)
+    }
+
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .focusRequester(focusRequester)
             .onFocusChanged {
-                isBannerActive = it.hasFocus   // 👈 key change
+                isBannerActive = it.hasFocus
                 if (it.isFocused) onBannerFocused()
             }
-
             .focusable()
             .onPreviewKeyEvent { event ->
                 if (
@@ -95,167 +145,216 @@ fun ViewBanner(
                 ) {
                     upMenuFocusRequester.requestFocus()
                     true
-                } else {
-                    false
-                }
+                } else false
             }
             .focusProperties {
                 exit = {
-                    when (it) {
-                        FocusDirection.Up -> {
-                            upMenuFocusRequester.requestFocus()
-                            FocusRequester.Cancel
-                        }
-                        else -> FocusRequester.Default
-                    }
+                    if (it == FocusDirection.Up) {
+                        upMenuFocusRequester.requestFocus()
+                        FocusRequester.Cancel
+                    } else FocusRequester.Default
                 }
             }
             .then(
                 if (isBannerActive) {
                     Modifier.border(
-                        width = 0.5.dp,
-                        brush = Brush.horizontalGradient(
-                            colors = listOf(Color.White, Color.LightGray)
+                        0.5.dp,
+                        Brush.horizontalGradient(
+                            listOf(Color.White, Color.LightGray)
                         ),
-                        shape = shape
+                        shape
                     )
                 } else Modifier
             )
             .clip(shape)
     ) {
 
-        // ────────────────────
-        // Banner background
-        // ────────────────────
-        BoxWithConstraints(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(21f / 9f)
-        ) {
-            val contentWidth = maxWidth * 0.35f
-            AsyncImage(
-                model = "https://image.tmdb.org/t/p/w1280/9tOkjBEiiGcaClgJFtwocStZvIT.jpg",
-                contentDescription = "banner",
-                contentScale = ContentScale.Crop,
-                alignment = Alignment.TopCenter,
-                modifier = Modifier.fillMaxSize()
-            )
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(0.65f)
-                    .align(Alignment.BottomStart)
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                Color.Black.copy(alpha = 0.85f)
-                            )
-                        )
-                    )
-            )
+        when (uiState) {
 
             // ────────────────────
-            // Bottom-left overlay
+            // Loading
             // ────────────────────
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(start = 32.dp, bottom = 28.dp)
-                    .width(contentWidth),
-                horizontalAlignment = Alignment.Start
-            ) {
-
-                // Title logo (proportional)
-                AsyncImage(
-                    model = "https://image.tmdb.org/t/p/w500/gNkaNY2Cg2BvYunWVgMVcbmQgc5.png",
-                    contentDescription = "title logo",
-                    contentScale = ContentScale.Fit,
+            BannerUiState.Loading,
+            BannerUiState.Idle -> {
+                Box(
                     modifier = Modifier
-                        .height(72.dp)
-                        .wrapContentWidth(Alignment.Start) // 👈 KEY
+                        .fillMaxWidth()
+                        .aspectRatio(21f / 9f)
+                        .background(Color.Black)
                 )
+            }
 
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                // Meta info row
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    MetaText("Movie")
-                    Bullet()
-                    MetaText("Superhero")
-                    Bullet()
-                    MetaText("2021")
-                    Bullet()
-                    MetaText("2h 3m")
-                    Bullet()
-                    MetaText("PG-13")
-                }
-
-                Spacer(Modifier.height(8.dp))
-
-                AnimatedVisibility(
-                    visible = isBannerActive,
-                    enter = fadeIn(),
-                    exit = fadeOut()
+            // ────────────────────
+            // Error
+            // ────────────────────
+            is BannerUiState.Error -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(21f / 9f),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "Determined to prove herself, Officer Judy Hopps, the first bunny on Zootopia's police force, jumps at the chance to crack her first case - even if it means partnering with scam-artist fox Nick Wilde to solve the mystery.",
-                        color = Color.White.copy(alpha = 0.9f),
-                        fontSize = 12.sp,
-                        lineHeight = 16.sp,
-                        //maxLines = 3,
-                        overflow = TextOverflow.Ellipsis
+                    Text(uiState.msg, color = Color.White)
+                }
+            }
+
+            // ────────────────────
+            // Success
+            // ────────────────────
+            is BannerUiState.Success -> {
+                val banner = uiState.data
+
+                // 🔐 SAVE CACHE (TV only, no color)
+                LaunchedEffect(banner.mId, userId) {
+
+                    val json = JSONObject().apply {
+                        put("mId", banner.mId)
+                        put("bdropUrl", banner.bdropUrl)
+                        put("logoUrl", banner.logoUrl)
+                        put("mGenre", banner.mGenre)
+                        put("m_year", banner.m_year)
+                        put("m_duration", banner.m_duration)
+                        put("m_content", banner.m_content)
+                        put("mDescription", banner.mDescription)
+                        put("playId", banner.playId)
+                        put("cProgress", banner.cProgress)
+                        put("cFlareVid", banner.cFlareVid)
+                        put("cFlareSrt", banner.cFlareSrt)
+                        put("gDriveVid", banner.gDriveVid)
+                        put("gDriveSrt", banner.gDriveSrt)
+                    }
+
+                    BannerStorage.saveBanner(
+                        context = context,
+                        type = type,
+                        userId = userId,
+                        bannerJson = json.toString()
                     )
                 }
 
-                Spacer(Modifier.height(14.dp))
-
-                // Buttons
-                AnimatedVisibility(
-                    visible = isBannerActive,
-                    enter = fadeIn(),
-                    exit = fadeOut()
+                BoxWithConstraints(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(21f / 10f)
                 ) {
-                    val playFocusRequester = remember { FocusRequester() }
+                    val contentWidth = maxWidth * 0.35f
 
-                    LaunchedEffect(isBannerActive) {
-                        if (isBannerActive) {
-                            playFocusRequester.requestFocus()
+                    // 🎬 Background
+                    AsyncImage(
+                        model = banner.bdropUrl,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        alignment = Alignment.TopCenter,
+                        modifier = Modifier.fillMaxSize()
+                    )
+
+                    // Gradient overlay
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(0.65f)
+                            .align(Alignment.BottomStart)
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(
+                                        Color.Transparent,
+                                        Color.Black.copy(alpha = 0.85f)
+                                    )
+                                )
+                            )
+                    )
+
+                    // ───────── Content ─────────
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(start = 32.dp, bottom = 28.dp)
+                            .width(contentWidth)
+                    ) {
+
+                        // 🖼 Logo
+                        AsyncImage(
+                            model = banner.logoUrl,
+                            contentDescription = null,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.height(72.dp)
+                        )
+
+                        Spacer(Modifier.height(10.dp))
+
+                        // 🧾 Meta row
+                        val sType = if (banner.mId.startsWith("MOV")) "Movie" else "Shows"
+                        val sDuration = if (banner.mId.startsWith("MOV")) formatDurationFromMinutes(banner.m_duration.toIntOrNull() ?: 0) else banner.m_duration
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            MetaText(sType)
+                            Bullet()
+                            MetaText(banner.mGenre)
+                            Bullet()
+                            MetaText(banner.m_year)
+                            Bullet()
+                            MetaText(sDuration)
+                            Bullet()
+                            MetaText(banner.m_content.convertContentRating())
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+
+                        // 📖 Description
+                        AnimatedVisibility(
+                            visible = isBannerActive,
+                            enter = fadeIn(),
+                            exit = fadeOut()
+                        ) {
+                            Text(
+                                text = banner.mDescription.fixEncoding(),
+                                color = Color.White.copy(alpha = 0.9f),
+                                fontSize = 12.sp,
+                                lineHeight = 16.sp,
+                                maxLines = 4,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+
+                        Spacer(Modifier.height(12.dp))
+
+                        // ▶ Buttons
+                        AnimatedVisibility(
+                            visible = isBannerActive,
+                            enter = fadeIn(),
+                            exit = fadeOut()
+                        ) {
+                            val playFocusRequester = remember { FocusRequester() }
+
+                            LaunchedEffect(isBannerActive) {
+                                if (isBannerActive) playFocusRequester.requestFocus()
+                            }
+
+                            Row {
+                                BannerButton(
+                                    modifier = Modifier.focusRequester(playFocusRequester),
+                                    text = "Play",
+                                    icon = Icons.Filled.PlayArrow
+                                )
+
+                                Spacer(Modifier.width(8.dp))
+
+                                BannerButton(text = "More Info")
+                            }
                         }
                     }
-
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-
-                        BannerButton(
-                            modifier = Modifier.focusRequester(playFocusRequester),
-                            text = "Play",
-                            icon = Icons.Filled.PlayArrow
-                        )
-
-                        Spacer(Modifier.width(12.dp))
-
-                        BannerButton(
-                            text = "More Info"
-                        )
-
-
-                    }
                 }
-
             }
         }
     }
 }
+
 
 @Composable
 private fun MetaText(text: String) {
     Text(
         text = text,
         color = Color.White,
-        fontSize = 8.sp,
+        fontSize = 10.sp,
         fontWeight = FontWeight.Medium,
         modifier = Modifier.alpha(0.9f)
     )
@@ -265,10 +364,10 @@ private fun MetaText(text: String) {
 private fun Bullet() {
     Box(
         modifier = Modifier
-            .padding(horizontal = 4.dp)
-            .size(2.dp)
+            .padding(horizontal = 4.dp, vertical = 2.dp)
+            .size(4.dp)
             .clip(CircleShape)
-            .background(Color.White.copy(alpha = 0.7f))
+            .background(Color.Red.copy(alpha = 0.7f))
     )
 }
 

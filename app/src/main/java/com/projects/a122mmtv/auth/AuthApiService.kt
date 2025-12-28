@@ -200,4 +200,27 @@ interface AuthApiService {
         @Query("device_name") deviceName: String
     ): Response<TvPairStatusDto>
 
+    data class BannerDto(
+        val mId: String,
+        val bdropUrl: String,
+        val logoUrl: String,
+        val mGenre: String,
+        val m_year: String,
+        val m_duration: String,
+        val m_content: String,
+        val mDescription: String,
+        val playId: String,
+        val cProgress: Int,
+        val cFlareVid: String,
+        val cFlareSrt: String,
+        val gDriveVid: String,
+        val gDriveSrt: String
+    )
+
+    @GET("getbanner")
+    suspend fun getBanner(
+        @Query("type") type: String
+    ): Response<BannerDto>
+
+
 }
