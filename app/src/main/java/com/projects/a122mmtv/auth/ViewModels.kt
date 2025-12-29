@@ -103,9 +103,13 @@ class HomeSessionViewModel : ViewModel() {
     var userName by mutableStateOf<String?>(null)
         private set
 
-    fun setUser(id: Int, name: String) {
+    var pplink by mutableStateOf<String?>(null)
+        private set
+
+    fun setUser(id: Int, name: String, pplink: String) {
         userId = id
         userName = name
+        this.pplink = pplink
     }
 }
 

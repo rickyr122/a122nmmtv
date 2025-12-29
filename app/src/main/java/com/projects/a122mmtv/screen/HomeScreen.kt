@@ -122,7 +122,7 @@ fun HomeScreen(
                         .scale(if (isProfileFocused) 1.1f else 1f)
                 ) {
                     AsyncImage(
-                        model = "https://res.cloudinary.com/dkfrsrxwp/image/upload/v1761109607/ironman_vp8szl.jpg",
+                        model = homeSession.pplink, //"https://res.cloudinary.com/dkfrsrxwp/image/upload/v1761109607/ironman_vp8szl.jpg",
                         contentDescription = "Profile",
                         modifier = Modifier
                             .size((iconSz * scale).dp)

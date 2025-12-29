@@ -148,7 +148,7 @@ interface AuthApiService {
         val user_id: Int,
         val email: String,
         val username: String,
-        val pp_link: String?
+        val pp_link: String
     )
 
     @GET("gettvdevices")

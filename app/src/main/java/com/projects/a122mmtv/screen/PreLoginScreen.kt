@@ -162,7 +162,8 @@ fun PreLoginScreen(
                                 lastFocused = index
                                 homeSession.setUser(
                                     id = u.user_id,
-                                    name = u.username
+                                    name = u.username,
+                                    pplink = u.pp_link
                                 )
                                 navController.navigate("home")
                             }
