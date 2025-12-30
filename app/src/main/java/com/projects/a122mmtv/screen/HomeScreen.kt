@@ -18,7 +18,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -32,6 +34,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
@@ -99,6 +102,9 @@ fun HomeScreen(
 
         val topBarHeight = (80 * scale).dp
         val horizontalInset = (48 * scale).dp
+        val profileFocusRequester = remember { FocusRequester() }
+        var isProfileFocused by remember { mutableStateOf(false) }
+        val iconSz = 40
 
         Column(
             modifier = Modifier
@@ -109,7 +115,7 @@ fun HomeScreen(
 //            Log.d("User_name::check", "user_name -> ${homeSession.userName}")
 //            Log.d("pp_link::check", "ppLink -> ${homeSession.pplink}")
 
-            val iconSz = 40
+
             /** TOP BAR **/
             Row(
                 modifier = Modifier
@@ -119,44 +125,7 @@ fun HomeScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
 
-                /** LEFT PROFILE IMAGE **/
-                val profileFocusRequester = remember { FocusRequester() }
-                var isProfileFocused by remember { mutableStateOf(false) }
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .focusRequester(profileFocusRequester)
-                        .onFocusChanged {
-                            isProfileFocused = it.isFocused
-                            freezeSelection = it.isFocused   // 👈 THIS IS THE KEY
-                        }
-                        .focusable()
-                        .scale(if (isProfileFocused) 1.1f else 1f)
-                ) {
-                    AsyncImage(
-                        model = homeSession.pplink, //"https://res.cloudinary.com/dkfrsrxwp/image/upload/v1761109607/ironman_vp8szl.jpg",
-                        contentDescription = "Profile",
-                        modifier = Modifier
-                            .size((iconSz * scale).dp)
-                            .clip(CircleShape)
-                            .border(
-                                width = if (isProfileFocused) 2.dp else 0.dp,
-                                color = Color.White,
-                                shape = CircleShape
-                            ),
-                        contentScale = ContentScale.Crop
-                    )
-
-                    Spacer(modifier = Modifier.width((6 * scale).dp))
-
-                    Icon(
-                        imageVector = Icons.Default.KeyboardArrowDown,
-                        contentDescription = "Profile Menu",
-                        tint = if (isProfileFocused) Color.White else Color.LightGray,
-                        modifier = Modifier.size((18 * scale).dp)
-                    )
-                }
 
                 /** CENTER MENU COLUMN **/
                 Column(
@@ -174,6 +143,7 @@ fun HomeScreen(
                             val isSearch = index == 0
 
                             val backgroundColor = when {
+                                isProfileFocused -> Color.Black
                                 isSearch && isProfileFocused -> Color.DarkGray   // 👈 force gray
                                 isFocused -> Color.White
                                 isSelected -> Color.DarkGray
@@ -317,6 +287,189 @@ fun HomeScreen(
                 }
             }
         }
+
+        /** LEFT PROFILE IMAGE **/
+        Box(
+            modifier = Modifier
+                .width((240 * scale).dp)
+                .wrapContentHeight()
+                .focusRequester(profileFocusRequester)
+                .onFocusChanged {
+                    isProfileFocused = it.isFocused
+                    freezeSelection = it.isFocused
+                }
+                .focusable()
+                .offset(
+                    x = (48 * scale).dp,
+                    y = ((topBarHeight - (40 * scale).dp) / 2)
+                ),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            if (isProfileFocused) {
+
+                // OUTER GREY CONTAINER
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            color = Color.DarkGray, //(0xFF2A2A2A),
+                            shape = RoundedCornerShape(4.dp)
+                        )
+                        .padding(6.dp)
+                ) {
+
+                    /** CARD 1 — PROFILE / SWITCH ACCOUNT **/
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.White, RoundedCornerShape(2.dp))
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+
+                            AsyncImage(
+                                model = homeSession.pplink,
+                                contentDescription = "Profile",
+                                modifier = Modifier
+                                    .size((40 * scale).dp)
+                                    .clip(CircleShape)
+                                    .border(2.dp, Color.Black, CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+
+                            Spacer(Modifier.width(12.dp))
+
+                            Column {
+                                Text(
+                                    text = homeSession.userName ?: "",
+                                    color = Color.Black,
+                                    fontSize = (16 * scale).sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = "Switch Account",
+                                    color = Color.DarkGray,
+                                    fontSize = (13 * scale).sp
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(0.dp))
+
+                    /** CARD 2 — SIGN OUT **/
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.DarkGray, RoundedCornerShape(2.dp))
+                            .padding(horizontal = 16.dp, vertical = 2.dp)
+                    ) {
+                        ProfileInlineAction(
+                            icon = Icons.Filled.Logout,
+                            text = "Sign Out",
+                            scale = scale,
+                            bgColor = Color.DarkGray,
+                            textColor = Color.White
+                        )
+                    }
+
+                    Spacer(Modifier.height(0.dp))
+
+                    /** CARD 3 — EXIT **/
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.DarkGray, RoundedCornerShape(2.dp))
+                            .padding(horizontal = 16.dp, vertical =2.dp)
+                    ) {
+                        ProfileInlineAction(
+                            icon = Icons.Filled.ExitToApp,
+                            text = "Exit",
+                            scale = scale,
+                            bgColor = Color.DarkGray,
+                            textColor = Color.White
+                        )
+                    }
+                }
+
+            }  else {
+
+                // 🔹 COMPACT PROFILE (current behavior)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(start = 8.dp)
+                ) {
+                    AsyncImage(
+                        model = homeSession.pplink,
+                        contentDescription = "Profile",
+                        modifier = Modifier
+                            .size((iconSz * scale).dp)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+
+                    Spacer(modifier = Modifier.width((6 * scale).dp))
+
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowDown,
+                        contentDescription = "Profile Menu",
+                        tint = Color.LightGray,
+                        modifier = Modifier.size((18 * scale).dp)
+                    )
+                }
+            }
+        }
     }
 }
 
+@Composable
+private fun DividerLine() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(1.dp)
+            .background(Color.LightGray.copy(alpha = 0.4f))
+            .padding(vertical = 6.dp)
+    )
+}
+
+@Composable
+private fun ProfileInlineAction(
+    icon: ImageVector,
+    text: String,
+    scale: Float,
+    bgColor: Color,
+    textColor: Color
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(bgColor)
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+
+        // 🔹 Avatar spacer to align with profile image above (40dp)
+        Box(
+            modifier = Modifier
+                    .size((40 * scale).dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = textColor,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+
+        Spacer(Modifier.width((12 * scale).dp)) // ✅ same as header
+
+        Text(
+            text = text,
+            color = textColor,
+            fontSize = (16 * scale).sp,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
