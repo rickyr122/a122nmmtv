@@ -65,6 +65,8 @@ fun HomeScreen(
     val capsuleShape = RoundedCornerShape(999.dp)
     var isMenuFocused by remember { mutableStateOf(true) }
 
+    var freezeSelection by remember { mutableStateOf(false) }
+
     TvScaledBox { scale ->
 
         LaunchedEffect(Unit) {
@@ -73,7 +75,13 @@ fun HomeScreen(
 
         var activePageIndex by remember { mutableStateOf(selectedIndex) }
 
-        LaunchedEffect(selectedIndex) {
+//        LaunchedEffect(selectedIndex) {
+//            delay(500) // debounce duration
+//            activePageIndex = selectedIndex
+//        }
+        LaunchedEffect(selectedIndex, freezeSelection) {
+            if (freezeSelection) return@LaunchedEffect
+
             delay(500) // debounce duration
             activePageIndex = selectedIndex
         }
@@ -89,7 +97,6 @@ fun HomeScreen(
             }
         }
 
-
         val topBarHeight = (80 * scale).dp
         val horizontalInset = (48 * scale).dp
 
@@ -98,9 +105,9 @@ fun HomeScreen(
                 .fillMaxSize()
                 .background(Color.Black)
         ) {
-            Log.d("User_Id::check", "User_id -> ${homeSession.userId}")
-            Log.d("User_name::check", "user_name -> ${homeSession.userName}")
-            Log.d("pp_link::check", "ppLink -> ${homeSession.pplink}")
+//            Log.d("User_Id::check", "User_id -> ${homeSession.userId}")
+//            Log.d("User_name::check", "user_name -> ${homeSession.userName}")
+//            Log.d("pp_link::check", "ppLink -> ${homeSession.pplink}")
 
             val iconSz = 40
             /** TOP BAR **/
@@ -120,7 +127,10 @@ fun HomeScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .focusRequester(profileFocusRequester)
-                        .onFocusChanged { isProfileFocused = it.isFocused }
+                        .onFocusChanged {
+                            isProfileFocused = it.isFocused
+                            freezeSelection = it.isFocused   // 👈 THIS IS THE KEY
+                        }
                         .focusable()
                         .scale(if (isProfileFocused) 1.1f else 1f)
                 ) {
@@ -161,18 +171,23 @@ fun HomeScreen(
                             val isFocused = isMenuFocused && focusedIndex == index
                             val isSelected = !isFocused && selectedIndex == index
 
+                            val isSearch = index == 0
+
                             val backgroundColor = when {
+                                isSearch && isProfileFocused -> Color.DarkGray   // 👈 force gray
                                 isFocused -> Color.White
                                 isSelected -> Color.DarkGray
                                 else -> Color.Transparent
                             }
 
                             val textColor = when {
+                                isSearch && isProfileFocused -> Color.White      // 👈 force white
                                 isFocused -> Color.Black
                                 else -> Color.White
                             }
 
-                            val isSearch = index == 0
+
+                            //val isSearch = index == 0
                             val shape = if (index == 0) CircleShape else capsuleShape
 
                             Box(
@@ -276,13 +291,23 @@ fun HomeScreen(
 
 
                     2 -> SeriesPage(
-                        modifier,
-                        navController
+                        navController = navController,
+                        bannerFocusRequester = bannerFocusRequester,
+                        upMenuFocusRequester = focusRequesters[selectedIndex],
+                        onBannerFocused = {
+                            isMenuFocused = false
+                        },
+                        homeSession = homeSession
                     )
 
                     3 -> MoviePage(
-                        modifier,
-                        navController
+                        navController = navController,
+                        bannerFocusRequester = bannerFocusRequester,
+                        upMenuFocusRequester = focusRequesters[selectedIndex],
+                        onBannerFocused = {
+                            isMenuFocused = false
+                        },
+                        homeSession = homeSession
                     )
 
                     4 -> ProfilePage(
