@@ -98,7 +98,10 @@ fun HomeScreen(
                 .fillMaxSize()
                 .background(Color.Black)
         ) {
-            Log.d("User_Id check", "mId -> ${homeSession.userId}")
+            Log.d("User_Id::check", "User_id -> ${homeSession.userId}")
+            Log.d("User_name::check", "user_name -> ${homeSession.userName}")
+            Log.d("pp_link::check", "ppLink -> ${homeSession.pplink}")
+
             val iconSz = 40
             /** TOP BAR **/
             Row(

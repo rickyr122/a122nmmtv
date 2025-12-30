@@ -17,22 +17,57 @@ class LoginViewModel(private val repo: AuthRepository) : ViewModel() {
 
     fun doLogin(context: Context, email: String, password: String) = viewModelScope.launch {
         ui.value = LoginUiState.Loading
+
         repo.login(context, email, password)
             .onSuccess {
-                ui.value = LoginUiState.Success
+
+                // 🔹 fetch profile after successful login
+                val me = repo.authedApi.me()
+                if (me.isSuccessful && me.body() != null) {
+                    val map = me.body()!!
+
+                    val userId = (map["user_id"] ?: map["id"])
+                        ?.toString()?.toDouble()?.toInt() ?: 0
+
+                    val username = map["username"]?.toString().orEmpty()
+                    val ppLink = map["pp_link"]?.toString().orEmpty()
+
+                    ui.value = LoginUiState.Success(
+                        userId = userId,
+                        username = username,
+                        ppLink = ppLink
+                    )
+                } else {
+                    ui.value = LoginUiState.Error("Failed to load profile")
+                }
             }
             .onFailure { e ->
                 ui.value = LoginUiState.Error(e.message ?: "Login failed")
             }
     }
 
+
 }
+//sealed interface LoginUiState {
+//    data object Idle : LoginUiState
+//    data object Loading : LoginUiState
+//    data object Success : LoginUiState
+//    data class Error(val msg: String) : LoginUiState
+//}
+
 sealed interface LoginUiState {
     data object Idle : LoginUiState
     data object Loading : LoginUiState
-    data object Success : LoginUiState
+
+    data class Success(
+        val userId: Int,
+        val username: String,
+        val ppLink: String
+    ) : LoginUiState
+
     data class Error(val msg: String) : LoginUiState
 }
+
 
 class SignUpViewModel(private val repo: AuthRepository) : ViewModel() {
     val ui = MutableStateFlow<SignUpUiState>(SignUpUiState.Idle)

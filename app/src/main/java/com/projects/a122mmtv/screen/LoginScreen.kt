@@ -176,7 +176,8 @@ fun LoginScreen(
                         scale = scale,
                         vm = vm,
                         ui = ui,
-                        navController = navController
+                        navController = navController,
+                        homeSession = homeSession
                     )
                 }
 
@@ -447,7 +448,8 @@ private fun RemotePage(
     scale: Float,
     vm: LoginViewModel,
     ui: LoginUiState,
-    navController: NavHostController
+    navController: NavHostController,
+    homeSession: HomeSessionViewModel
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -465,19 +467,25 @@ private fun RemotePage(
     LaunchedEffect(ui) {
         when (ui) {
             is LoginUiState.Success -> {
+                homeSession.setUser(
+                    id = ui.userId,
+                    name = ui.username,
+                    pplink = ui.ppLink
+                )
+
                 navController.navigate("home") {
                     popUpTo("login") { inclusive = true }
                 }
             }
+
             is LoginUiState.Error -> {
-                val msg = ui.msg.ifBlank {
-                    "User Name or Password incorrect or not found"
-                }
-                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, ui.msg, Toast.LENGTH_SHORT).show()
             }
+
             else -> Unit
         }
     }
+
 
 
     Column(
