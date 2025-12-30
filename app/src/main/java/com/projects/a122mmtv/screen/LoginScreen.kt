@@ -60,12 +60,17 @@ import com.projects.a122mmtv.auth.TokenStore
 import com.projects.a122mmtv.dataclass.AuthNetwork
 import com.projects.a122mmtv.R
 import com.projects.a122mmtv.auth.AuthApiService
+import com.projects.a122mmtv.auth.HomeSessionViewModel
 import com.projects.a122mmtv.getDeviceId
 import com.projects.a122mmtv.helper.TvScaledBox // from your file
 import kotlinx.coroutines.launch
 
 @Composable
-fun LoginScreen(modifier: Modifier = Modifier, navController: NavHostController) {
+fun LoginScreen(
+    modifier: Modifier = Modifier,
+    navController: NavHostController,
+    homeSession: HomeSessionViewModel
+) {
     var selectedTab by remember { mutableStateOf(0) }
     val phoneReq = remember { FocusRequester() }
     val remoteReq = remember { FocusRequester() }
@@ -160,7 +165,12 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavHostController)
                 Spacer(Modifier.height((72f * scale).dp))
 
                 if (selectedTab == 0) {
-                    PhonePage(scale, repo, navController)
+                    PhonePage(
+                        scale,
+                        repo,
+                        navController,
+                        homeSession = homeSession
+                    )
                 } else {
                     RemotePage(
                         scale = scale,
@@ -180,7 +190,8 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavHostController)
 private fun PhonePage(
     scale: Float,
     repo: AuthRepository,
-    navController: NavHostController
+    navController: NavHostController,
+    homeSession: HomeSessionViewModel
 ) {
     val context = LocalContext.current
     val tokenStore = remember { TokenStore(context) }
@@ -225,7 +236,7 @@ private fun PhonePage(
     LaunchedEffect(pollToken) {
         if (pollToken.isBlank()) return@LaunchedEffect
 
-        val deviceId = com.projects.a122mmtv.getDeviceId(context)
+        val deviceId = getDeviceId(context)
         val deviceName = android.os.Build.MODEL ?: "Android TV"
 
         while (true) {
@@ -244,6 +255,11 @@ private fun PhonePage(
                         return@LaunchedEffect
                     }
                     "APPROVED" -> {
+                        homeSession.setUser(
+                            id = st.user_id ?:0,
+                            name = st.username ?:"",
+                            pplink = st.pp_link ?: ""
+                        )
                         navController.navigate("home") {
                             popUpTo("login") { inclusive = true }
                         }

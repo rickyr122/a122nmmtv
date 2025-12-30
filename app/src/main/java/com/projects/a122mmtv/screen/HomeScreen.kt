@@ -1,5 +1,6 @@
 package com.projects.a122mmtv.screen
 
+import android.util.Log
 import android.view.KeyEvent
 import com.projects.a122mmtv.R
 import com.projects.a122mmtv.helper.TvScaledBox
@@ -79,8 +80,6 @@ fun HomeScreen(
 
         val bannerFocusRequester = remember { FocusRequester() }
 
-
-
         LaunchedEffect(selectedIndex) {
             if (selectedIndex == 1 && !hasHomeAutoFocused) {
                 delay(150)
@@ -99,6 +98,7 @@ fun HomeScreen(
                 .fillMaxSize()
                 .background(Color.Black)
         ) {
+            Log.d("User_Id check", "mId -> ${homeSession.userId}")
             val iconSz = 40
             /** TOP BAR **/
             Row(

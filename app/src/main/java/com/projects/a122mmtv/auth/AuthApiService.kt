@@ -185,13 +185,28 @@ interface AuthApiService {
         @Field("device_id") deviceId: String
     ): Response<TvPairStartDto>
 
+//    data class TvPairStatusDto(
+//        val status: String,
+//        val access_token: String? = null,
+//        val refresh_token: String? = null,
+//        val expires_in: Int? = null,
+//        val error: String? = null
+//    )
+
     data class TvPairStatusDto(
         val status: String,
+
         val access_token: String? = null,
-        val refresh_token: String? = null,
+        val device_token: String? = null,
         val expires_in: Int? = null,
+
+        val user_id: Int? = null,
+        val username: String? = null,
+        val pp_link: String? = null,
+
         val error: String? = null
     )
+
 
     @GET("tv_pair_status.php")
     suspend fun tvPairStatus(
