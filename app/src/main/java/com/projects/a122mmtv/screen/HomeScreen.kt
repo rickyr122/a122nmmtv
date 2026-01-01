@@ -2,6 +2,7 @@ package com.projects.a122mmtv.screen
 
 import android.util.Log
 import android.view.KeyEvent
+import androidx.activity.compose.BackHandler
 import com.projects.a122mmtv.R
 import com.projects.a122mmtv.helper.TvScaledBox
 import com.projects.a122mmtv.pages.HomePage
@@ -55,6 +56,11 @@ fun HomeScreen(
     navController: NavController,
     homeSession: HomeSessionViewModel
 ) {
+    var showBackMenu by remember { mutableStateOf(false) }
+    var backJustClosedMenu by remember { mutableStateOf(false) }
+
+    val backMenuFocusRequester = remember { FocusRequester() }
+
     val menuItems = listOf("SEARCH", "Home", "Shows", "Movies", "My Room")
 
     var selectedIndex by remember { mutableStateOf(1) } // Home default
@@ -71,6 +77,30 @@ fun HomeScreen(
     var freezeSelection by remember { mutableStateOf(false) }
 
     TvScaledBox { scale ->
+
+        // 1️⃣ BACK closes popup (highest priority)
+        BackHandler(enabled = showBackMenu) {
+            showBackMenu = false
+            focusRequesters[selectedIndex].requestFocus()
+        }
+
+        // 2️⃣ BACK opens popup (only when popup is NOT visible)
+        BackHandler(enabled = !showBackMenu && isMenuFocused) {
+            showBackMenu = true
+        }
+
+        // 3️⃣ Optional: consume BACK everywhere else (prevents nav pop)
+        BackHandler(enabled = !showBackMenu && !isMenuFocused) {
+            // do nothing
+        }
+
+
+        LaunchedEffect(showBackMenu) {
+            if (!showBackMenu) {
+                // wait one frame so focus events finish
+                backJustClosedMenu = false
+            }
+        }
 
         LaunchedEffect(Unit) {
             focusRequesters[1].requestFocus()
@@ -122,6 +152,19 @@ fun HomeScreen(
                     .fillMaxWidth()
                     .height(topBarHeight)
                     .padding(horizontal = horizontalInset),
+//                    .onPreviewKeyEvent { event ->
+//                        if (
+//                            event.type == KeyEventType.KeyDown &&
+//                            event.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_BACK &&
+//                            isMenuFocused &&
+//                            !showBackMenu
+//                        ) {
+//                            showBackMenu = true
+//                            true // consume BACK
+//                        } else {
+//                            false
+//                        }
+//                    },
                 verticalAlignment = Alignment.CenterVertically
             ) {
 
@@ -173,16 +216,26 @@ fun HomeScreen(
                                         }
                                     }
                                     .onPreviewKeyEvent { event ->
-                                        if (
-                                            event.type == KeyEventType.KeyDown &&
-                                            event.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_DPAD_DOWN &&
-                                            selectedIndex == index
-                                        ) {
-                                            isMenuFocused = false
-                                            bannerFocusRequester.requestFocus()
-                                            true
-                                        } else false
+                                        if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+
+                                        when (event.nativeKeyEvent.keyCode) {
+
+                                            // 🔒 DISABLE UP when menu is focused
+                                            KeyEvent.KEYCODE_DPAD_UP ->
+                                                isMenuFocused
+
+                                            // ✅ DOWN goes to banner
+                                            KeyEvent.KEYCODE_DPAD_DOWN ->
+                                                if (isMenuFocused && selectedIndex == index) {
+                                                    isMenuFocused = false
+                                                    bannerFocusRequester.requestFocus()
+                                                    true
+                                                } else false
+
+                                            else -> false
+                                        }
                                     }
+
                                     .focusable()
                                     .clip(shape)
                                     .background(backgroundColor)
@@ -305,96 +358,7 @@ fun HomeScreen(
                 ),
             contentAlignment = Alignment.CenterStart
         ) {
-            if (isProfileFocused) {
-
-                // OUTER GREY CONTAINER
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            color = Color.DarkGray, //(0xFF2A2A2A),
-                            shape = RoundedCornerShape(4.dp)
-                        )
-                        .padding(6.dp)
-                ) {
-
-                    /** CARD 1 — PROFILE / SWITCH ACCOUNT **/
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Color.White, RoundedCornerShape(2.dp))
-                            .padding(horizontal = 16.dp, vertical = 12.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-
-                            AsyncImage(
-                                model = homeSession.pplink,
-                                contentDescription = "Profile",
-                                modifier = Modifier
-                                    .size((40 * scale).dp)
-                                    .clip(CircleShape)
-                                    .border(2.dp, Color.Black, CircleShape),
-                                contentScale = ContentScale.Crop
-                            )
-
-                            Spacer(Modifier.width(12.dp))
-
-                            Column {
-                                Text(
-                                    text = homeSession.userName ?: "",
-                                    color = Color.Black,
-                                    fontSize = (16 * scale).sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                Text(
-                                    text = "Switch Account",
-                                    color = Color.DarkGray,
-                                    fontSize = (13 * scale).sp
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(Modifier.height(0.dp))
-
-                    /** CARD 2 — SIGN OUT **/
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Color.DarkGray, RoundedCornerShape(2.dp))
-                            .padding(horizontal = 16.dp, vertical = 2.dp)
-                    ) {
-                        ProfileInlineAction(
-                            icon = Icons.Filled.Logout,
-                            text = "Sign Out",
-                            scale = scale,
-                            bgColor = Color.DarkGray,
-                            textColor = Color.White
-                        )
-                    }
-
-                    Spacer(Modifier.height(0.dp))
-
-                    /** CARD 3 — EXIT **/
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Color.DarkGray, RoundedCornerShape(2.dp))
-                            .padding(horizontal = 16.dp, vertical =2.dp)
-                    ) {
-                        ProfileInlineAction(
-                            icon = Icons.Filled.ExitToApp,
-                            text = "Exit",
-                            scale = scale,
-                            bgColor = Color.DarkGray,
-                            textColor = Color.White
-                        )
-                    }
-                }
-
-            }  else {
-
-                // 🔹 COMPACT PROFILE (current behavior)
+                //  COMPACT PROFILE (current behavior)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(start = 8.dp)
@@ -417,53 +381,223 @@ fun HomeScreen(
                         modifier = Modifier.size((18 * scale).dp)
                     )
                 }
+        }
+
+        if (showBackMenu) {
+            BackActionPopup(
+                scale = scale,
+                homeSession = homeSession,   // ✅ REQUIRED
+                onDismiss = {
+                    showBackMenu = false
+                    focusRequesters[selectedIndex].requestFocus()
+                },
+                onSignOut = {
+                    // TODO sign out
+                },
+                onExit = {
+                    // TODO exit app
+                },
+                focusRequester = backMenuFocusRequester
+            )
+
+        }
+
+    }
+}
+
+@Composable
+private fun BackActionPopup(
+    scale: Float,
+    homeSession: HomeSessionViewModel,
+    onDismiss: () -> Unit,
+    onSignOut: () -> Unit,
+    onExit: () -> Unit,
+    focusRequester: FocusRequester
+) {
+    val headerFocus = remember { FocusRequester() }
+    val total = 3 // header + 2 items
+
+    // ✅ THIS is where it goes
+    LaunchedEffect(Unit) {
+        headerFocus.requestFocus()
+    }
+
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.TopCenter
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(top = (100 * scale).dp)
+                .width((360 * scale).dp)
+                .background(Color(0xFF3A3A3A), RoundedCornerShape(0.dp))
+                .padding(8.dp)
+        ) {
+
+            BackMenuHeaderItem(
+                scale = scale,
+                name = homeSession.userName ?: "",
+                avatarUrl = homeSession.pplink,
+                index = 0,
+                totalCount = total,
+                focusRequester = headerFocus
+            ) {
+                // TODO Switch account
+            }
+
+            TvPopupIconItem(
+                text = "Sign Out",
+                icon = Icons.Filled.Logout,
+                scale = scale,
+                index = 1,
+                totalCount = total
+            ) {
+                onSignOut()
+            }
+
+            TvPopupIconItem(
+                text = "Exit RR Movies",
+                icon = Icons.Filled.ExitToApp,
+                scale = scale,
+                index = 2,
+                totalCount = total
+            ) {
+                onExit()
             }
         }
     }
 }
 
-@Composable
-private fun DividerLine() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(1.dp)
-            .background(Color.LightGray.copy(alpha = 0.4f))
-            .padding(vertical = 6.dp)
-    )
-}
 
 @Composable
-private fun ProfileInlineAction(
-    icon: ImageVector,
-    text: String,
+private fun BackMenuHeaderItem(
     scale: Float,
-    bgColor: Color,
-    textColor: Color
+    name: String,
+    avatarUrl: String?,
+    index: Int,
+    totalCount: Int,
+    focusRequester: FocusRequester? = null,
+    onClick: () -> Unit
 ) {
+    var focused by remember { mutableStateOf(false) }
+
+    val bgColor = if (focused) Color.White else Color(0xFF5A5A5A)
+    val primaryTextColor = if (focused) Color.Black else Color.White
+    val secondaryTextColor = if (focused) Color.DarkGray else Color.LightGray
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(bgColor)
-            .padding(vertical = 6.dp),
+            .then(
+                if (focusRequester != null)
+                    Modifier.focusRequester(focusRequester)
+                else Modifier
+            )
+            .background(bgColor, RoundedCornerShape(0.dp))
+            .onFocusChanged { focused = it.isFocused }
+            .focusable()
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .onPreviewKeyEvent { event ->
+                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+
+                when (event.nativeKeyEvent.keyCode) {
+                    KeyEvent.KEYCODE_DPAD_LEFT,
+                    KeyEvent.KEYCODE_DPAD_RIGHT -> true
+                    KeyEvent.KEYCODE_DPAD_UP -> index == 0
+                    KeyEvent.KEYCODE_DPAD_DOWN -> index == totalCount - 1
+                    KeyEvent.KEYCODE_DPAD_CENTER,
+                    KeyEvent.KEYCODE_ENTER -> {
+                        onClick()
+                        true
+                    }
+                    else -> false
+                }
+            },
         verticalAlignment = Alignment.CenterVertically
     ) {
 
-        // 🔹 Avatar spacer to align with profile image above (40dp)
-        Box(
+        AsyncImage(
+            model = avatarUrl,
+            contentDescription = "Profile",
             modifier = Modifier
-                    .size((40 * scale).dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = textColor,
-                modifier = Modifier.size(20.dp)
+                .size((40 * scale).dp)
+                .clip(CircleShape),
+            contentScale = ContentScale.Crop
+        )
+
+        Spacer(Modifier.width(12.dp))
+
+        Column {
+            Text(
+                text = name,
+                color = primaryTextColor,
+                fontSize = (16 * scale).sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = "Switch Account",
+                color = secondaryTextColor,
+                fontSize = (13 * scale).sp
             )
         }
+    }
+}
 
-        Spacer(Modifier.width((12 * scale).dp)) // ✅ same as header
+@Composable
+private fun TvPopupIconItem(
+    text: String,
+    icon: ImageVector,
+    scale: Float,
+    index: Int,
+    totalCount: Int,
+    focusRequester: FocusRequester? = null,
+    onClick: () -> Unit
+) {
+    var focused by remember { mutableStateOf(false) }
+
+    val bgColor = if (focused) Color.White else Color(0xFF5A5A5A)
+    val textColor = if (focused) Color.Black else Color.White
+    val iconColor = textColor
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                if (focusRequester != null)
+                    Modifier.focusRequester(focusRequester)
+                else Modifier
+            )
+            .background(bgColor, RoundedCornerShape(0.dp))
+            .onFocusChanged { focused = it.isFocused }
+            .focusable()
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .onPreviewKeyEvent { event ->
+                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+
+                when (event.nativeKeyEvent.keyCode) {
+                    KeyEvent.KEYCODE_DPAD_LEFT,
+                    KeyEvent.KEYCODE_DPAD_RIGHT -> true
+                    KeyEvent.KEYCODE_DPAD_UP -> index == 0
+                    KeyEvent.KEYCODE_DPAD_DOWN -> index == totalCount - 1
+                    KeyEvent.KEYCODE_DPAD_CENTER,
+                    KeyEvent.KEYCODE_ENTER -> {
+                        onClick()
+                        true
+                    }
+                    else -> false
+                }
+            },
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = iconColor,
+            modifier = Modifier.size((22 * scale).dp)
+        )
+
+        Spacer(Modifier.width(16.dp))
 
         Text(
             text = text,
