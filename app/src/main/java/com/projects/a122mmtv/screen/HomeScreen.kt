@@ -1,5 +1,6 @@
 package com.projects.a122mmtv.screen
 
+import android.app.Activity
 import android.util.Log
 import android.view.KeyEvent
 import androidx.activity.compose.BackHandler
@@ -40,8 +41,10 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -141,9 +144,9 @@ fun HomeScreen(
                 .fillMaxSize()
                 .background(Color.Black)
         ) {
-//            Log.d("User_Id::check", "User_id -> ${homeSession.userId}")
-//            Log.d("User_name::check", "user_name -> ${homeSession.userName}")
-//            Log.d("pp_link::check", "ppLink -> ${homeSession.pplink}")
+            Log.d("User_Id::check", "User_id -> ${homeSession.userId}")
+            Log.d("User_name::check", "user_name -> ${homeSession.userName}")
+            Log.d("pp_link::check", "ppLink -> ${homeSession.pplink}")
 
 
             /** TOP BAR **/
@@ -347,11 +350,11 @@ fun HomeScreen(
                 .width((240 * scale).dp)
                 .wrapContentHeight()
                 .focusRequester(profileFocusRequester)
-                .onFocusChanged {
-                    isProfileFocused = it.isFocused
-                    freezeSelection = it.isFocused
-                }
-                .focusable()
+//                .onFocusChanged {
+//                    isProfileFocused = it.isFocused
+//                    freezeSelection = it.isFocused
+//                }
+//                .focusable()
                 .offset(
                     x = (48 * scale).dp,
                     y = ((topBarHeight - (40 * scale).dp) / 2)
@@ -372,30 +375,39 @@ fun HomeScreen(
                         contentScale = ContentScale.Crop
                     )
 
-                    Spacer(modifier = Modifier.width((6 * scale).dp))
-
-                    Icon(
-                        imageVector = Icons.Default.KeyboardArrowDown,
-                        contentDescription = "Profile Menu",
-                        tint = Color.LightGray,
-                        modifier = Modifier.size((18 * scale).dp)
-                    )
+//                    Spacer(modifier = Modifier.width((6 * scale).dp))
+//
+//                    Icon(
+//                        imageVector = Icons.Default.KeyboardArrowDown,
+//                        contentDescription = "Profile Menu",
+//                        tint = Color.LightGray,
+//                        modifier = Modifier.size((18 * scale).dp)
+//                    )
                 }
         }
+        val context = LocalContext.current
 
         if (showBackMenu) {
             BackActionPopup(
                 scale = scale,
+                topBarHeight = topBarHeight,
                 homeSession = homeSession,   // ✅ REQUIRED
                 onDismiss = {
                     showBackMenu = false
                     focusRequesters[selectedIndex].requestFocus()
                 },
+                onSwitchAccount = {
+                    showBackMenu = false
+                    navController.navigate("prelogin") {
+                        popUpTo(0) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
                 onSignOut = {
                     // TODO sign out
                 },
                 onExit = {
-                    // TODO exit app
+                    (context as? Activity)?.finishAffinity()
                 },
                 focusRequester = backMenuFocusRequester
             )
@@ -408,8 +420,10 @@ fun HomeScreen(
 @Composable
 private fun BackActionPopup(
     scale: Float,
+    topBarHeight: Dp,
     homeSession: HomeSessionViewModel,
     onDismiss: () -> Unit,
+    onSwitchAccount: () -> Unit,
     onSignOut: () -> Unit,
     onExit: () -> Unit,
     focusRequester: FocusRequester
@@ -422,16 +436,24 @@ private fun BackActionPopup(
         headerFocus.requestFocus()
     }
 
+    val profileIconSize = (40 * scale).dp
+    val profileTopY = (topBarHeight - profileIconSize) / 2
+
     Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.TopCenter
+        modifier = Modifier
+            .fillMaxSize()
+            .offset(
+                x = (26 * scale).dp,
+                y = (-72).dp   // ⬆ popup ABOVE icon
+        ),
+        contentAlignment = Alignment.TopStart
     ) {
         Column(
             modifier = Modifier
                 .padding(top = (100 * scale).dp)
-                .width((360 * scale).dp)
+                .width((256 * scale).dp)
                 .background(Color(0xFF3A3A3A), RoundedCornerShape(0.dp))
-                .padding(8.dp)
+                .padding(4.dp)
         ) {
 
             BackMenuHeaderItem(
@@ -440,30 +462,27 @@ private fun BackActionPopup(
                 avatarUrl = homeSession.pplink,
                 index = 0,
                 totalCount = total,
-                focusRequester = headerFocus
-            ) {
-                // TODO Switch account
-            }
+                focusRequester = headerFocus,
+                onClick = onSwitchAccount
+            )
 
             TvPopupIconItem(
                 text = "Sign Out",
                 icon = Icons.Filled.Logout,
                 scale = scale,
                 index = 1,
-                totalCount = total
-            ) {
-                onSignOut()
-            }
+                totalCount = total,
+                onClick = onSignOut
+            )
 
             TvPopupIconItem(
                 text = "Exit RR Movies",
                 icon = Icons.Filled.ExitToApp,
                 scale = scale,
                 index = 2,
-                totalCount = total
-            ) {
-                onExit()
-            }
+                totalCount = total,
+                onClick = onExit
+            )
         }
     }
 }
@@ -481,13 +500,14 @@ private fun BackMenuHeaderItem(
 ) {
     var focused by remember { mutableStateOf(false) }
 
-    val bgColor = if (focused) Color.White else Color(0xFF5A5A5A)
+    val bgColor = if (focused) Color.White else Color(0xFF3A3A3A)
     val primaryTextColor = if (focused) Color.Black else Color.White
     val secondaryTextColor = if (focused) Color.DarkGray else Color.LightGray
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .height(52.dp)
             .then(
                 if (focusRequester != null)
                     Modifier.focusRequester(focusRequester)
@@ -555,13 +575,14 @@ private fun TvPopupIconItem(
 ) {
     var focused by remember { mutableStateOf(false) }
 
-    val bgColor = if (focused) Color.White else Color(0xFF5A5A5A)
+    val bgColor = if (focused) Color.White else Color(0xFF3A3A3A)
     val textColor = if (focused) Color.Black else Color.White
     val iconColor = textColor
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .height(48.dp)
             .then(
                 if (focusRequester != null)
                     Modifier.focusRequester(focusRequester)
@@ -570,40 +591,45 @@ private fun TvPopupIconItem(
             .background(bgColor, RoundedCornerShape(0.dp))
             .onFocusChanged { focused = it.isFocused }
             .focusable()
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-            .onPreviewKeyEvent { event ->
-                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-
-                when (event.nativeKeyEvent.keyCode) {
-                    KeyEvent.KEYCODE_DPAD_LEFT,
-                    KeyEvent.KEYCODE_DPAD_RIGHT -> true
-                    KeyEvent.KEYCODE_DPAD_UP -> index == 0
-                    KeyEvent.KEYCODE_DPAD_DOWN -> index == totalCount - 1
-                    KeyEvent.KEYCODE_DPAD_CENTER,
-                    KeyEvent.KEYCODE_ENTER -> {
-                        onClick()
-                        true
-                    }
-                    else -> false
+            .padding(horizontal = 12.dp)  // ⬅ outer padding only
+            .onPreviewKeyEvent {
+            if (it.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+            when (it.nativeKeyEvent.keyCode) {
+                KeyEvent.KEYCODE_DPAD_CENTER,
+                KeyEvent.KEYCODE_ENTER -> {
+                    onClick()
+                    true
                 }
-            },
+                KeyEvent.KEYCODE_DPAD_UP -> index == 0
+                KeyEvent.KEYCODE_DPAD_DOWN -> index == totalCount - 1
+                else -> false
+            }
+        },
         verticalAlignment = Alignment.CenterVertically
     ) {
 
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = iconColor,
-            modifier = Modifier.size((22 * scale).dp)
-        )
+        // 🔹 ICON SLOT (fixed + centered)
+        Box(
+            modifier = Modifier
+                .size(40.dp),               // ⬅ fixed icon column
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = iconColor,
+                modifier = Modifier.size(22.dp)
+            )
+        }
 
-        Spacer(Modifier.width(16.dp))
-
+        // 🔹 TEXT SLOT (left aligned)
         Text(
             text = text,
             color = textColor,
             fontSize = (16 * scale).sp,
-            fontWeight = FontWeight.Medium
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(start = 8.dp)
         )
     }
+
 }
