@@ -139,14 +139,26 @@ fun ViewBanner(
             }
             .focusable()
             .onPreviewKeyEvent { event ->
-                if (
-                    event.type == KeyEventType.KeyDown &&
-                    event.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_DPAD_UP
-                ) {
-                    upMenuFocusRequester.requestFocus()
-                    true
-                } else false
+                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+
+                when (event.nativeKeyEvent.keyCode) {
+
+                    // ⬅ DPAD BACK → return focus to menu
+                    KeyEvent.KEYCODE_BACK -> {
+                        upMenuFocusRequester.requestFocus()
+                        true
+                    }
+
+                    // ⬆ DPAD UP → return focus to menu (optional, already yours)
+                    KeyEvent.KEYCODE_DPAD_UP -> {
+                        upMenuFocusRequester.requestFocus()
+                        true
+                    }
+
+                    else -> false
+                }
             }
+
             .focusProperties {
                 exit = {
                     if (it == FocusDirection.Up) {
@@ -338,7 +350,10 @@ fun ViewBanner(
 
                                 Spacer(Modifier.width(8.dp))
 
-                                BannerButton(text = "More Info")
+                                BannerButton(
+                                    text = "More Info",
+                                    disableRight = true
+                                )
                             }
                         }
                     }
@@ -375,7 +390,8 @@ private fun Bullet() {
 private fun BannerButton(
     modifier: Modifier = Modifier,
     text: String,
-    icon: ImageVector? = null
+    icon: ImageVector? = null,
+    disableRight: Boolean = false
 ) {
     val context = LocalContext.current
     var isFocused by remember { mutableStateOf(false) }
@@ -391,18 +407,25 @@ private fun BannerButton(
             .onFocusChanged { isFocused = it.isFocused }
             .focusable()
             .onPreviewKeyEvent { event ->
-                if (
-                    event.type == KeyEventType.KeyDown &&
-                    (event.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_DPAD_CENTER ||
-                            event.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_ENTER)
-                ) {
-                    Toast.makeText(
-                        context,
-                        "You click $text button",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    true
-                } else false
+                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+
+                when (event.nativeKeyEvent.keyCode) {
+
+                    KeyEvent.KEYCODE_DPAD_RIGHT ->
+                        if (disableRight) true else false   // 🔒
+
+                    KeyEvent.KEYCODE_DPAD_CENTER,
+                    KeyEvent.KEYCODE_ENTER -> {
+                        Toast.makeText(
+                            context,
+                            "You click $text button",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        true
+                    }
+
+                    else -> false
+                }
             }
             .padding(horizontal = 20.dp, vertical = 8.dp)
     ) {

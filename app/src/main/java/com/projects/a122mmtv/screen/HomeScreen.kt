@@ -602,6 +602,7 @@ private fun TvPopupIconItem(
                 }
                 KeyEvent.KEYCODE_DPAD_UP -> index == 0
                 KeyEvent.KEYCODE_DPAD_DOWN -> index == totalCount - 1
+                KeyEvent.KEYCODE_DPAD_RIGHT -> true
                 else -> false
             }
         },
