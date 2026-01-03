@@ -326,7 +326,7 @@ private fun AddAccountCircleTile(
             Text(
                 text = "+",
                 color = if (focused) Color.Black else Color.White, // ✅ contrast preserved
-                fontSize = 56.sp, // slightly larger "+"
+                fontSize = 56.sp * (size.value / 160f),
                 fontWeight = FontWeight.Light
             )
         }

@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.projects.a122mmtv.R
+import com.projects.a122mmtv.helper.TvScaledBox
 import kotlinx.coroutines.delay
 
 @Composable
@@ -29,18 +30,21 @@ fun TvSplashOverlay(
         enter = fadeIn() + scaleIn(initialScale = 0.92f),
         exit = fadeOut() + scaleOut(targetScale = 1.05f)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                painter = painterResource(R.drawable.a122mm_logo),
-                contentDescription = null,
-                modifier = Modifier.size(160.dp)
-            )
+        TvScaledBox { scale ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.a122mm_logo),
+                    contentDescription = null,
+                    modifier = Modifier.size((150 * scale).dp)
+                )
+            }
         }
     }
 }
+
 
