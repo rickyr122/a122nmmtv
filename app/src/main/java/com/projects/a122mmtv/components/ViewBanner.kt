@@ -203,7 +203,7 @@ fun ViewBanner(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .aspectRatio(21f / 9f),
+                        .aspectRatio(21f / 8f),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(uiState.msg, color = Color.White)
@@ -247,7 +247,7 @@ fun ViewBanner(
                 BoxWithConstraints(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .aspectRatio(21f / 10f)
+                        .aspectRatio(21f / 9.5f)
                 ) {
                     val contentWidth = maxWidth * 0.35f
 

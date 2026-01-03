@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -23,6 +24,7 @@ import androidx.navigation.NavController
 import com.projects.a122mmtv.auth.BannerViewModel
 import com.projects.a122mmtv.auth.HomeSessionViewModel
 import com.projects.a122mmtv.components.ViewBanner
+import com.projects.a122mmtv.components.ViewContent
 
 @Composable
 fun HomePage(
@@ -43,17 +45,25 @@ fun HomePage(
         }
     )
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        ViewBanner(
-            navController = navController,
-            type = "HOM",
-            currentTabIndex = 0,
-            focusRequester = bannerFocusRequester,
-            upMenuFocusRequester = upMenuFocusRequester,
-            onBannerFocused = onBannerFocused,
-            viewModel = bannerViewModel,
-            homeSession = homeSession
-        )
+    LazyColumn(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        item {
+            ViewBanner(
+                navController = navController,
+                type = "HOM",
+                currentTabIndex = 0,
+                focusRequester = bannerFocusRequester,
+                upMenuFocusRequester = upMenuFocusRequester,
+                onBannerFocused = onBannerFocused,
+                viewModel = bannerViewModel,
+                homeSession = homeSession
+            )
+        }
+
+        item {
+            ViewContent()
+        }
     }
 }
 

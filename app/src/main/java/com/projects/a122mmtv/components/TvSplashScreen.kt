@@ -40,7 +40,7 @@ fun TvSplashOverlay(
     TvScaledBox { s ->
 
         // Size & position
-        val startSize = 170.dp * s
+        val startSize = 150.dp * s
         val startOffsetY = 0.dp
         val endSize = (96.dp * s).coerceAtLeast(72.dp)
         val endOffsetY = ((-260).dp * s)
