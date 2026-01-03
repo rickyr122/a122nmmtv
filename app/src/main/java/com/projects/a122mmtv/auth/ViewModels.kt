@@ -181,8 +181,12 @@ class PreLoginViewModel : ViewModel() {
             isLoaded = true
 
             // ⬅ after FIRST successful load, never show splash again
-            showSplash = false
+            //showSplash = false
         }
+    }
+
+    fun markSplashShown() {
+        showSplash = false
     }
 
     // call this ONLY on full sign-out

@@ -23,41 +23,42 @@ fun PreLoginWithSplash(
     viewModel: PreLoginViewModel
 ) {
     val context = LocalContext.current
-    var splashVisible by remember { mutableStateOf(true) }
+
+    // UI-only state
+    var splashVisible by remember { mutableStateOf(viewModel.showSplash) }
     var allowExit by remember { mutableStateOf(false) }
 
-
-    // Load data once
+    // Load data only on cold start
     LaunchedEffect(Unit) {
-        viewModel.refresh(context)
+        if (viewModel.showSplash) {
+            viewModel.refresh(context)
+        }
     }
 
+    // Minimum logo hold time
     LaunchedEffect(Unit) {
-        delay(500)          // 👈 THIS is the “logo stays still” duration
-        allowExit = true
+        if (viewModel.showSplash) {
+            delay(500)
+            allowExit = true
+        }
     }
-
 
     Box(Modifier.fillMaxSize()) {
 
-        // PreLogin always underneath
         PreLoginScreen(
             navController = navController,
             homeSession = homeSession,
             viewModel = viewModel
         )
 
-        if (splashVisible) {
+        if (splashVisible && viewModel.showSplash) {
             TvSplashOverlay(
                 startExit = allowExit && viewModel.isLoaded,
                 onExitFinished = {
                     splashVisible = false
+                    viewModel.markSplashShown()  // 🔑 THIS is the missing guard
                 }
             )
         }
     }
 }
-
-
-
-
