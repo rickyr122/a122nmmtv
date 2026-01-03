@@ -9,6 +9,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.projects.a122mmtv.dataclass.AuthNetwork
+import com.projects.a122mmtv.getDeviceId
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
@@ -147,4 +148,48 @@ class HomeSessionViewModel : ViewModel() {
         this.pplink = pplink
     }
 }
+
+
+class PreLoginViewModel : ViewModel() {
+
+    var tvUsers by mutableStateOf<List<AuthApiService.TvUserDto>>(emptyList())
+        private set
+
+    var isLoaded by mutableStateOf(false)
+        private set
+
+    // 🔑 controls splash visibility
+    var showSplash by mutableStateOf(true)
+        private set
+
+    fun refresh(context: Context) {
+        viewModelScope.launch {
+            isLoaded = false
+
+            val repo = AuthRepository(
+                publicApi = AuthNetwork.publicAuthApi,
+                authedApi = AuthNetwork.authedAuthApi(context),
+                store = TokenStore(context)
+            )
+
+            val deviceId = getDeviceId(context)
+
+            repo.getTvUsersByDeviceId(deviceId)
+                .onSuccess { tvUsers = it }
+                .onFailure { tvUsers = emptyList() }
+
+            isLoaded = true
+
+            // ⬅ after FIRST successful load, never show splash again
+            showSplash = false
+        }
+    }
+
+    // call this ONLY on full sign-out
+    fun resetSplash() {
+        showSplash = true
+    }
+}
+
+
 

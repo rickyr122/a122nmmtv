@@ -33,6 +33,7 @@ import com.projects.a122mmtv.R
 import com.projects.a122mmtv.auth.AuthApiService
 import com.projects.a122mmtv.auth.AuthRepository
 import com.projects.a122mmtv.auth.HomeSessionViewModel
+import com.projects.a122mmtv.auth.PreLoginViewModel
 import com.projects.a122mmtv.auth.TokenStore
 import com.projects.a122mmtv.dataclass.AuthNetwork
 import com.projects.a122mmtv.getDeviceId
@@ -45,7 +46,8 @@ private const val TEMP_PROFILE_URL =
 fun PreLoginScreen(
     modifier: Modifier = Modifier,
     navController: NavHostController,
-    homeSession: HomeSessionViewModel
+    homeSession: HomeSessionViewModel,
+    viewModel: PreLoginViewModel
 ) {
     Box(
         modifier = modifier.fillMaxSize()
@@ -103,15 +105,21 @@ fun PreLoginScreen(
                 )
             }
 
-            var tvUsers by remember { mutableStateOf<List<AuthApiService.TvUserDto>>(emptyList()) }
+            //var tvUsers by remember { mutableStateOf<List<AuthApiService.TvUserDto>>(emptyList()) }
+            val tvUsers = viewModel.tvUsers
+
+            //val context = LocalContext.current
 
             LaunchedEffect(Unit) {
-                val deviceId = getDeviceId(context)
-
-                repo.getTvUsersByDeviceId(deviceId)
-                    .onSuccess { tvUsers = it }
-                    .onFailure { tvUsers = emptyList() }
+                viewModel.refresh(context)
             }
+//            LaunchedEffect(Unit) {
+//                val deviceId = getDeviceId(context)
+//
+//                repo.getTvUsersByDeviceId(deviceId)
+//                    .onSuccess { tvUsers = it }
+//                    .onFailure { tvUsers = emptyList() }
+//            }
 
 
             Column(
@@ -331,6 +339,9 @@ private fun AddAccountCircleTile(
             fontSize = titleSize,
             fontWeight = FontWeight.Normal
         )
+
+        Spacer(modifier = Modifier.height(2.dp))
+        Box(modifier = Modifier.height(18.dp))
     }
 }
 
