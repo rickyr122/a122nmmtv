@@ -344,9 +344,14 @@ fun ViewBanner(
                         ) {
                             val playFocusRequester = remember { FocusRequester() }
 
-                            LaunchedEffect(isBannerActive) {
-                                if (isBannerActive) playFocusRequester.requestFocus()
+//                            LaunchedEffect(isBannerActive) {
+//                                if (isBannerActive) playFocusRequester.requestFocus()
+//                            }
+
+                            LaunchedEffect(Unit) {
+                                playFocusRequester.requestFocus()
                             }
+
 
                             Row {
                                 BannerButton(

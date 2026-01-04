@@ -18,6 +18,13 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import android.view.KeyEvent
+import androidx.compose.foundation.border
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
@@ -42,8 +49,8 @@ fun ViewContent(
     val mockItems = listOf(
         PosterItem(
             1,
-            "https://image.tmdb.org/t/p/w1280/ufpeVEM64uZHPpzzeiDNIAdaeOD.jpg",
-            "https://image.tmdb.org/t/p/w500/xJMMxfKD9WJQLxq03p7T0c2AWb4.png"
+            "https://image.tmdb.org/t/p/w1280/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg",
+            "https://image.tmdb.org/t/p/w500/b07VisHvZb0WzUpA8VB77wfMXwg.png"
         ),
         PosterItem(
             2,
@@ -52,8 +59,8 @@ fun ViewContent(
         ),
         PosterItem(
             3,
-            "https://image.tmdb.org/t/p/w1280/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg",
-            "https://image.tmdb.org/t/p/w500/b07VisHvZb0WzUpA8VB77wfMXwg.png"
+            "https://image.tmdb.org/t/p/w1280/ufpeVEM64uZHPpzzeiDNIAdaeOD.jpg",
+            "https://image.tmdb.org/t/p/w500/xJMMxfKD9WJQLxq03p7T0c2AWb4.png"
         ),
         PosterItem(
             4,
@@ -72,12 +79,13 @@ fun ViewContent(
         )
     )
 
+    var isFirstFocused by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 10.dp, bottom = 8.dp)
-            .alpha(0.45f)
+            .alpha(if (isFirstFocused) 1f else 0.45f) ///(0.45f)
     ) {
 
         Text(
@@ -88,29 +96,50 @@ fun ViewContent(
         )
 
         LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+            modifier = Modifier
+                .fillMaxWidth()
+                .clipToBounds(),               // 👈 important
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(
+                start = 0.dp,
+                end = 0.dp                    // 👈 NO end padding
+            )
+        ){
             itemsIndexed(mockItems) { index, item ->
+
+                val isFirst = index == 0
+
                 PosterCard(
                     item = item,
+                    isFirst = isFirst,
+                    isFirstFocused = isFirstFocused,
                     modifier = Modifier
                         .then(
-                            if (index == 0) Modifier
-                                .focusRequester(firstItemFocusRequester)
-                                .onPreviewKeyEvent { event ->
-                                    if (
-                                        event.type == KeyEventType.KeyDown &&
-                                        event.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_DPAD_UP
-                                    ) {
-                                        onRequestShowBanner()
-                                        true
-                                    } else false
-                                }
-                            else Modifier
+                            if (isFirst) {
+                                Modifier
+                                    .focusRequester(firstItemFocusRequester)
+                                    .onFocusChanged {
+                                        isFirstFocused = it.isFocused
+                                    }
+                                    .onPreviewKeyEvent { event ->
+                                        if (
+                                            event.type == KeyEventType.KeyDown &&
+                                            event.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_DPAD_UP
+                                        ) {
+                                            onRequestShowBanner()
+                                            true
+                                        } else false
+                                    }
+                            } else {
+                                // ⬅ shift items to the right when first is focused
+                                if (isFirstFocused) Modifier.padding(start = 2.dp)
+                                else Modifier
+                            }
                         )
                 )
             }
         }
+
 
     }
 }
@@ -118,24 +147,34 @@ fun ViewContent(
 @Composable
 private fun PosterCard(
     item: PosterItem,
-    modifier: Modifier = Modifier) {
+    modifier: Modifier = Modifier,
+    isFirst: Boolean,
+    isFirstFocused: Boolean
+) {
+    val showHero = isFirst && isFirstFocused
+
     Box(
         modifier = modifier
-            .width(150.dp)
-            .aspectRatio(2f / 3f)
+            //.height(if (showHero) 160.dp else 225.dp)   // 👈 HEIGHT FIRST
+            .height(250.dp)
+            .aspectRatio(if (showHero) 16f / 9f else 2f / 3f)
+            //.clip(RoundedCornerShape(6.dp))
+            .then(
+                if (showHero) Modifier.border(0.5.dp, Color.White)
+                else Modifier
+            )
             .focusable()
-    ) {
+    )
+    {
 
-        // 🔹 Poster image
         AsyncImage(
             model = item.posterUrl,
             contentDescription = null,
             contentScale = ContentScale.Crop,
-            alignment = Alignment.Center,
             modifier = Modifier.fillMaxSize()
         )
 
-        // 🔹 Bottom gradient (optional but recommended)
+        // bottom gradient
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -143,7 +182,7 @@ private fun PosterCard(
                 .align(Alignment.BottomCenter)
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(
+                        listOf(
                             Color.Transparent,
                             Color.Black.copy(alpha = 0.8f)
                         )
@@ -151,17 +190,23 @@ private fun PosterCard(
                 )
         )
 
-        // 🔹 Title logo
         AsyncImage(
             model = item.logoUrl,
             contentDescription = null,
             contentScale = ContentScale.Fit,
             modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 8.dp)
-                .height(36.dp)        // 👈 controls logo size
-                .fillMaxWidth(0.8f)  // 👈 keep margins left/right
+                .align(if (showHero) Alignment.BottomStart else Alignment.BottomCenter)
+                .padding(
+                    start = if (showHero) 16.dp else 0.dp,
+                    bottom = 12.dp
+                )
+                .height(48.dp)
+                .then(
+                    if (showHero) Modifier.wrapContentWidth()
+                    else Modifier.fillMaxWidth(0.8f)
+                )
         )
     }
 }
+
 
