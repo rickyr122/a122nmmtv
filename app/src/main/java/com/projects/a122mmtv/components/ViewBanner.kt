@@ -3,6 +3,8 @@ package com.projects.a122mmtv.components
 import android.view.KeyEvent
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -20,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -311,13 +314,19 @@ fun ViewBanner(
                             .padding(start = 32.dp, bottom = 28.dp)
                             .width(contentWidth)
                     ) {
+                        val logoOffset by animateDpAsState(
+                            targetValue = if (isBannerActive) 0.dp else 42.dp,
+                            label = "bannerLogoOffset"
+                        )
 
                         // 🖼 Logo
                         AsyncImage(
                             model = banner.logoUrl,
                             contentDescription = null,
                             contentScale = ContentScale.Fit,
-                            modifier = Modifier.height(72.dp)
+                            modifier = Modifier
+                                .height(72.dp)
+                                .offset(y = logoOffset)
                         )
 
                         Spacer(Modifier.height(10.dp))
@@ -325,7 +334,11 @@ fun ViewBanner(
                         // 🧾 Meta row
                         val sType = if (banner.mId.startsWith("MOV")) "Movie" else "Shows"
                         val sDuration = if (banner.mId.startsWith("MOV")) formatDurationFromMinutes(banner.m_duration.toIntOrNull() ?: 0) else banner.m_duration
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            modifier = Modifier
+                                .offset(y = logoOffset),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             MetaText(sType)
                             Bullet()
                             MetaText(banner.mGenre)
@@ -355,7 +368,7 @@ fun ViewBanner(
                             )
                         }
 
-                        Spacer(Modifier.height(12.dp))
+                        //Spacer(Modifier.height(if (isBannerActive) 12.dp else 0.dp))
 
                         // ▶ Buttons
 //                        AnimatedVisibility(
@@ -368,21 +381,41 @@ fun ViewBanner(
 //                            LaunchedEffect(isBannerActive) {
 //                                if (isBannerActive) playFocusRequester.requestFocus()
 //                            }
+                        val buttonsOffset by animateDpAsState(
+                            targetValue = if (isBannerActive) 0.dp else 20.dp,
+                            label = "bannerButtonsOffset"
+                        )
 
-                            Row {
-                                BannerButton(
-                                    modifier = Modifier.focusRequester(playFocusRequester),
-                                    text = "Play",
-                                    icon = Icons.Filled.PlayArrow
-                                )
+                        val buttonsAlpha by animateFloatAsState(
+                            targetValue = if (isBannerActive) 1f else 0f,
+                            label = "bannerButtonsAlpha"
+                        )
 
-                                Spacer(Modifier.width(8.dp))
+                        Row(
+                            modifier = Modifier
+                                .offset(y = buttonsOffset)
+                                .alpha(buttonsAlpha)
+                                .padding(top = if (isBannerActive) 12.dp else 0.dp)
+                        ) {
+                            BannerButton(
+                                modifier = Modifier
+                                    .focusRequester(playFocusRequester)
+                                    .focusable(isBannerActive),
+                                text = "Play",
+                                icon = Icons.Filled.PlayArrow
+                            )
 
-                                BannerButton(
-                                    text = "More Info",
-                                    disableRight = true
-                                )
-                            }
+                            Spacer(Modifier.width(8.dp))
+
+                            BannerButton(
+                                modifier = Modifier.focusable(isBannerActive),
+                                text = "More Info",
+                                disableRight = true
+                            )
+                        }
+
+
+
                         //}
                     }
                 }
