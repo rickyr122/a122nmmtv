@@ -24,27 +24,27 @@ fun MoviePage(
           onBannerFocused: () -> Unit,
           homeSession: HomeSessionViewModel
 ) {
-    val context = LocalContext.current
-
-    val bannerViewModel: BannerViewModel = viewModel(
-        factory = object : ViewModelProvider.Factory {
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                @Suppress("UNCHECKED_CAST")
-                return BannerViewModel(context) as T
-            }
-        }
-    )
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        ViewBanner(
-            navController = navController,
-            type = "MOV",
-            currentTabIndex = 0,
-            focusRequester = bannerFocusRequester,
-            upMenuFocusRequester = upMenuFocusRequester,
-            onBannerFocused = onBannerFocused,
-            viewModel = bannerViewModel,
-            homeSession = homeSession
-        )
-    }
+//    val context = LocalContext.current
+//
+//    val bannerViewModel: BannerViewModel = viewModel(
+//        factory = object : ViewModelProvider.Factory {
+//            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+//                @Suppress("UNCHECKED_CAST")
+//                return BannerViewModel(context) as T
+//            }
+//        }
+//    )
+//
+//    Column(modifier = Modifier.fillMaxSize()) {
+//        ViewBanner(
+//            navController = navController,
+//            type = "MOV",
+//            currentTabIndex = 0,
+//            focusRequester = bannerFocusRequester,
+//            upMenuFocusRequester = upMenuFocusRequester,
+//            onBannerFocused = onBannerFocused,
+//            viewModel = bannerViewModel,
+//            homeSession = homeSession
+//        )
+//    }
 }

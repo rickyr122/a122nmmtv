@@ -84,7 +84,8 @@ fun ViewBanner(
     upMenuFocusRequester: FocusRequester,
     onBannerFocused: () -> Unit,
     viewModel: BannerViewModel,
-    homeSession: HomeSessionViewModel
+    homeSession: HomeSessionViewModel,
+    onCollapseRequest: () -> Unit
 ) {
     var isBannerActive by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(0.dp)
@@ -152,6 +153,12 @@ fun ViewBanner(
                     // ⬆ DPAD UP → return focus to menu (optional, already yours)
                     KeyEvent.KEYCODE_DPAD_UP -> {
                         upMenuFocusRequester.requestFocus()
+                        true
+                    }
+
+
+                    KeyEvent.KEYCODE_DPAD_DOWN -> {
+                        onCollapseRequest()
                         true
                     }
 

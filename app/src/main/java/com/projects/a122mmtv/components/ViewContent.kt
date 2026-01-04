@@ -5,6 +5,7 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -12,8 +13,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import android.view.KeyEvent
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -27,7 +34,9 @@ private data class PosterItem(
 
 @Composable
 fun ViewContent(
-    title: String = "Fresh from Theater"
+    title: String = "Fresh from Theater",
+    firstItemFocusRequester: FocusRequester,
+    onRequestShowBanner: () -> Unit
 ) {
     // 🔥 MOCK DATA LIVES HERE
     val mockItems = listOf(
@@ -81,17 +90,37 @@ fun ViewContent(
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(mockItems) { item ->
-                PosterCard(item)
+            itemsIndexed(mockItems) { index, item ->
+                PosterCard(
+                    item = item,
+                    modifier = Modifier
+                        .then(
+                            if (index == 0) Modifier
+                                .focusRequester(firstItemFocusRequester)
+                                .onPreviewKeyEvent { event ->
+                                    if (
+                                        event.type == KeyEventType.KeyDown &&
+                                        event.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_DPAD_UP
+                                    ) {
+                                        onRequestShowBanner()
+                                        true
+                                    } else false
+                                }
+                            else Modifier
+                        )
+                )
             }
         }
+
     }
 }
 
 @Composable
-private fun PosterCard(item: PosterItem) {
+private fun PosterCard(
+    item: PosterItem,
+    modifier: Modifier = Modifier) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .width(150.dp)
             .aspectRatio(2f / 3f)
             .focusable()
