@@ -49,8 +49,8 @@ fun ViewContent(
     val mockItems = listOf(
         PosterItem(
             1,
-            "https://image.tmdb.org/t/p/w1280/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg",
-            "https://image.tmdb.org/t/p/w500/b07VisHvZb0WzUpA8VB77wfMXwg.png"
+            "https://image.tmdb.org/t/p/w1280/9tOkjBEiiGcaClgJFtwocStZvIT.jpg",
+            "https://image.tmdb.org/t/p/w500/gNkaNY2Cg2BvYunWVgMVcbmQgc5.png"
         ),
         PosterItem(
             2,
@@ -59,23 +59,23 @@ fun ViewContent(
         ),
         PosterItem(
             3,
-            "https://image.tmdb.org/t/p/w1280/ufpeVEM64uZHPpzzeiDNIAdaeOD.jpg",
-            "https://image.tmdb.org/t/p/w500/xJMMxfKD9WJQLxq03p7T0c2AWb4.png"
-        ),
-        PosterItem(
-            4,
-            "https://image.tmdb.org/t/p/w1280/34jW8LvjRplM8Pv06cBFDpLlenR.jpg",
-            "https://image.tmdb.org/t/p/w500/lAEaCmWwqkZSp8lAw6F7CfPkA9N.png"
-        ),
-        PosterItem(
-            5,
             "https://image.tmdb.org/t/p/w1280/cKvDv2LpwVEqbdXWoQl4XgGN6le.jpg",
             "https://image.tmdb.org/t/p/w500/f1EpI3C6wd1iv7dCxNi3vU5DAX7.png"
         ),
         PosterItem(
+            4,
+            "https://image.tmdb.org/t/p/w1280/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg",
+            "https://image.tmdb.org/t/p/w500/b07VisHvZb0WzUpA8VB77wfMXwg.png"
+        ),
+        PosterItem(
+            5,
+            "https://image.tmdb.org/t/p/w1280/ufpeVEM64uZHPpzzeiDNIAdaeOD.jpg",
+            "https://image.tmdb.org/t/p/w500/xJMMxfKD9WJQLxq03p7T0c2AWb4.png"
+        ),
+        PosterItem(
             6,
-            "https://image.tmdb.org/t/p/w1280/9tOkjBEiiGcaClgJFtwocStZvIT.jpg",
-            "https://image.tmdb.org/t/p/w500/gNkaNY2Cg2BvYunWVgMVcbmQgc5.png"
+            "https://image.tmdb.org/t/p/w1280/34jW8LvjRplM8Pv06cBFDpLlenR.jpg",
+            "https://image.tmdb.org/t/p/w500/lAEaCmWwqkZSp8lAw6F7CfPkA9N.png"
         )
     )
 
@@ -99,7 +99,7 @@ fun ViewContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .clipToBounds(),               // 👈 important
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
             contentPadding = PaddingValues(
                 start = 0.dp,
                 end = 0.dp                    // 👈 NO end padding
@@ -156,7 +156,7 @@ private fun PosterCard(
     Box(
         modifier = modifier
             //.height(if (showHero) 160.dp else 225.dp)   // 👈 HEIGHT FIRST
-            .height(250.dp)
+            .height(230.dp)
             .aspectRatio(if (showHero) 16f / 9f else 2f / 3f)
             //.clip(RoundedCornerShape(6.dp))
             .then(
@@ -190,22 +190,28 @@ private fun PosterCard(
                 )
         )
 
-        AsyncImage(
-            model = item.logoUrl,
-            contentDescription = null,
-            contentScale = ContentScale.Fit,
+        BoxWithConstraints(
             modifier = Modifier
                 .align(if (showHero) Alignment.BottomStart else Alignment.BottomCenter)
                 .padding(
                     start = if (showHero) 16.dp else 0.dp,
                     bottom = 12.dp
                 )
-                .height(48.dp)
-                .then(
-                    if (showHero) Modifier.wrapContentWidth()
-                    else Modifier.fillMaxWidth(0.8f)
-                )
-        )
+        ) {
+            val maxLogoWidth =
+                if (showHero) maxWidth * 0.5f
+                else maxWidth * 0.8f   // or whatever your normal size is
+
+            AsyncImage(
+                model = item.logoUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .widthIn(max = maxLogoWidth)
+                    .heightIn(max = if (showHero) 48.dp else 36.dp)
+            )
+        }
+
     }
 }
 
