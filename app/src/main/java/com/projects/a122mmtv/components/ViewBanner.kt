@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -63,6 +64,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import coil.compose.AsyncImage
 import com.projects.a122mmtv.auth.AuthApiService
 import com.projects.a122mmtv.auth.BannerUiState
@@ -344,13 +348,30 @@ fun ViewBanner(
                         ) {
                             val playFocusRequester = remember { FocusRequester() }
 
-//                            LaunchedEffect(isBannerActive) {
-//                                if (isBannerActive) playFocusRequester.requestFocus()
-//                            }
-
-                            LaunchedEffect(Unit) {
-                                playFocusRequester.requestFocus()
+                            LaunchedEffect(isBannerActive) {
+                                if (isBannerActive) playFocusRequester.requestFocus()
                             }
+
+                            val lifecycleOwner = LocalLifecycleOwner.current
+
+                            DisposableEffect(lifecycleOwner) {
+                                val observer = LifecycleEventObserver { _, event ->
+                                    if (event == Lifecycle.Event.ON_RESUME && isBannerActive) {
+                                        playFocusRequester.requestFocus()
+                                    }
+                                }
+
+                                lifecycleOwner.lifecycle.addObserver(observer)
+
+                                onDispose {
+                                    lifecycleOwner.lifecycle.removeObserver(observer)
+                                }
+                            }
+
+
+//                            LaunchedEffect(Unit) {
+//                                playFocusRequester.requestFocus()
+//                            }
 
 
                             Row {
