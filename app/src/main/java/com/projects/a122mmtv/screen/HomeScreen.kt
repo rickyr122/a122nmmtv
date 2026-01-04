@@ -293,11 +293,11 @@ fun HomeScreen(
             Box(
                 modifier = Modifier
                     .weight(1f)   // 👈 THIS is the key
-                    .padding(
-                        top = (0 * scale).dp,
-                        start = horizontalInset,
-                        end = horizontalInset
-                    )
+//                    .padding(
+//                        top = (0 * scale).dp,
+//                        start = horizontalInset,
+//                        end = horizontalInset
+//                    )
             ) {
                 when (activePageIndex) {
                     0 -> SearchPage(
@@ -312,7 +312,8 @@ fun HomeScreen(
                         onBannerFocused = {
                             isMenuFocused = false
                         },
-                        homeSession = homeSession
+                        homeSession = homeSession,
+                        horizontalInset = horizontalInset
                     )
 
 

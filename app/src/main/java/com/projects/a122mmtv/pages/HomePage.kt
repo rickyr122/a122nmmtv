@@ -12,9 +12,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,7 +51,8 @@ fun HomePage(
     bannerFocusRequester: FocusRequester,
     upMenuFocusRequester: FocusRequester,
     onBannerFocused: () -> Unit,
-    homeSession: HomeSessionViewModel
+    homeSession: HomeSessionViewModel,
+    horizontalInset: Dp
 ) {
     val context = LocalContext.current
 
@@ -76,33 +79,45 @@ fun HomePage(
             exit = slideOutVertically { -it } +
                     shrinkVertically(shrinkTowards = Alignment.Top)
         ) {
-            ViewBanner(
-                navController = navController,
-                type = "HOM",
-                currentTabIndex = 0,
-                focusRequester = bannerFocusRequester,
-                upMenuFocusRequester = upMenuFocusRequester,
-                onBannerFocused = onBannerFocused,
-                viewModel = bannerViewModel,
-                homeSession = homeSession,
-                onCollapseRequest = {
-                    bannerVisible = false
-                }
-            )
-        }
-
-        /* ========== CONTENT ========== */
-
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
-            item {
-                ViewContent(
-                    firstItemFocusRequester = contentFirstItemFR,
-                    onRequestShowBanner = {
-                        bannerVisible = true
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = horizontalInset)
+            ) {
+                ViewBanner(
+                    navController = navController,
+                    type = "HOM",
+                    currentTabIndex = 0,
+                    focusRequester = bannerFocusRequester,
+                    upMenuFocusRequester = upMenuFocusRequester,
+                    onBannerFocused = onBannerFocused,
+                    viewModel = bannerViewModel,
+                    homeSession = homeSession,
+                    onCollapseRequest = {
+                        bannerVisible = false
                     }
                 )
             }
         }
+
+        /* ========== CONTENT ========== */
+        LazyColumn {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = horizontalInset)   // 👈 START ONLY
+                ) {
+                    ViewContent(
+                        firstItemFocusRequester = contentFirstItemFR,
+                        onRequestShowBanner = {
+                            bannerVisible = true
+                        }
+                    )
+                }
+            }
+        }
+
     }
 
     /* ========== FOCUS HANDOFF ========== */
