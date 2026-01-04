@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import coil.compose.AsyncImage
 import com.projects.a122mmtv.auth.HomeSessionViewModel
 import kotlinx.coroutines.delay
@@ -73,7 +74,7 @@ fun HomeScreen(
         List(menuItems.size) { FocusRequester() }
     }
 
-    var hasHomeAutoFocused by rememberSaveable { mutableStateOf(false) }
+    var hasHomeAutoFocused by remember { mutableStateOf(false) }
     val capsuleShape = RoundedCornerShape(999.dp)
     var isMenuFocused by remember { mutableStateOf(true) }
 
@@ -124,13 +125,21 @@ fun HomeScreen(
 
         val bannerFocusRequester = remember { FocusRequester() }
 
-        LaunchedEffect(selectedIndex) {
-            if (selectedIndex == 1 && !hasHomeAutoFocused) {
-                delay(150)
-                isMenuFocused = false      // 👈 HERE
-                bannerFocusRequester.requestFocus()
-                hasHomeAutoFocused = true
-            }
+//        LaunchedEffect(selectedIndex) {
+//            if (selectedIndex == 1 && !hasHomeAutoFocused) {
+//                delay(150)
+//                isMenuFocused = false      // 👈 HERE
+//                bannerFocusRequester.requestFocus()
+//                hasHomeAutoFocused = true
+//            }
+//        }
+
+        LaunchedEffect(Unit) {
+            // Cold app start only
+            delay(200)
+            isMenuFocused = false
+            bannerFocusRequester.requestFocus()
+            hasHomeAutoFocused = true
         }
 
         val topBarHeight = (80 * scale).dp
@@ -144,9 +153,9 @@ fun HomeScreen(
                 .fillMaxSize()
                 .background(Color.Black)
         ) {
-            Log.d("User_Id::check", "User_id -> ${homeSession.userId}")
-            Log.d("User_name::check", "user_name -> ${homeSession.userName}")
-            Log.d("pp_link::check", "ppLink -> ${homeSession.pplink}")
+//            Log.d("User_Id::check", "User_id -> ${homeSession.userId}")
+//            Log.d("User_name::check", "user_name -> ${homeSession.userName}")
+//            Log.d("pp_link::check", "ppLink -> ${homeSession.pplink}")
 
 
             /** TOP BAR **/
@@ -400,7 +409,9 @@ fun HomeScreen(
                 onSwitchAccount = {
                     showBackMenu = false
                     navController.navigate("prelogin") {
-                        popUpTo(0) { inclusive = true }
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            inclusive = true
+                        }
                         launchSingleTop = true
                     }
                 },

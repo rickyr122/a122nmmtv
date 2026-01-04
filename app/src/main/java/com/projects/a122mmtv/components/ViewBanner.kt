@@ -64,6 +64,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -100,6 +101,8 @@ fun ViewBanner(
     // 🔥 API call – runs only when `type` changes
     val context = LocalContext.current
 
+    val playFocusRequester = remember { FocusRequester() }
+
     LaunchedEffect(type, userId) {
 
         // 1️⃣ Try cache FIRST
@@ -133,6 +136,13 @@ fun ViewBanner(
         viewModel.loadBanner(type)
     }
 
+//    LaunchedEffect(Unit) {
+//        // wait for first layout frame
+//        kotlinx.coroutines.android.awaitFrame()
+//        playFocusRequester.requestFocus()
+//    }
+
+    var hasBannerGivenInitialFocus by rememberSaveable { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -140,9 +150,16 @@ fun ViewBanner(
             .focusRequester(focusRequester)
             .onFocusChanged {
                 isBannerActive = it.hasFocus
-                if (it.isFocused) onBannerFocused()
+                if (it.isFocused) {
+                    onBannerFocused()
+
+                    if (!hasBannerGivenInitialFocus) {
+                        playFocusRequester.requestFocus()
+                        hasBannerGivenInitialFocus = true
+                    }
+                }
             }
-            .focusable()
+            //.focusable()
             .onPreviewKeyEvent { event ->
                 if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
 
@@ -341,38 +358,16 @@ fun ViewBanner(
                         Spacer(Modifier.height(12.dp))
 
                         // ▶ Buttons
-                        AnimatedVisibility(
-                            visible = isBannerActive,
-                            enter = fadeIn(),
-                            exit = fadeOut()
-                        ) {
-                            val playFocusRequester = remember { FocusRequester() }
-
-                            LaunchedEffect(isBannerActive) {
-                                if (isBannerActive) playFocusRequester.requestFocus()
-                            }
-
-                            val lifecycleOwner = LocalLifecycleOwner.current
-
-                            DisposableEffect(lifecycleOwner) {
-                                val observer = LifecycleEventObserver { _, event ->
-                                    if (event == Lifecycle.Event.ON_RESUME && isBannerActive) {
-                                        playFocusRequester.requestFocus()
-                                    }
-                                }
-
-                                lifecycleOwner.lifecycle.addObserver(observer)
-
-                                onDispose {
-                                    lifecycleOwner.lifecycle.removeObserver(observer)
-                                }
-                            }
+//                        AnimatedVisibility(
+//                            visible = isBannerActive,
+//                            enter = fadeIn(),
+//                            exit = fadeOut()
+//                        ) {
 
 
-//                            LaunchedEffect(Unit) {
-//                                playFocusRequester.requestFocus()
+//                            LaunchedEffect(isBannerActive) {
+//                                if (isBannerActive) playFocusRequester.requestFocus()
 //                            }
-
 
                             Row {
                                 BannerButton(
@@ -388,7 +383,7 @@ fun ViewBanner(
                                     disableRight = true
                                 )
                             }
-                        }
+                        //}
                     }
                 }
             }

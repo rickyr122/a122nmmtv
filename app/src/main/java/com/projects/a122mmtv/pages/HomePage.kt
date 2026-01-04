@@ -68,6 +68,7 @@ fun HomePage(
     )
 
     var bannerVisible by remember { mutableStateOf(true) }
+    var bannerToggledByUser by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize()) {
 
@@ -94,8 +95,10 @@ fun HomePage(
                     viewModel = bannerViewModel,
                     homeSession = homeSession,
                     onCollapseRequest = {
+                        bannerToggledByUser = true
                         bannerVisible = false
                     }
+
                 )
             }
         }
@@ -111,8 +114,10 @@ fun HomePage(
                     ViewContent(
                         firstItemFocusRequester = contentFirstItemFR,
                         onRequestShowBanner = {
+                            bannerToggledByUser = true
                             bannerVisible = true
                         }
+
                     )
                 }
             }
@@ -121,18 +126,32 @@ fun HomePage(
     }
 
     /* ========== FOCUS HANDOFF ========== */
-
     LaunchedEffect(bannerVisible) {
+        if (!bannerToggledByUser) return@LaunchedEffect
+
         if (!bannerVisible) {
-            // Banner collapsed → go to content
             delay(300)
             contentFirstItemFR.requestFocus()
         } else {
-            // Banner restored → go back to banner
             delay(300)
             bannerFocusRequester.requestFocus()
         }
+
+        bannerToggledByUser = false
     }
+
+
+//    LaunchedEffect(bannerVisible) {
+//        if (!bannerVisible) {
+//            // Banner collapsed → go to content
+//            delay(300)
+//            contentFirstItemFR.requestFocus()
+//        } else {
+//            // Banner restored → go back to banner
+//            delay(300)
+//            bannerFocusRequester.requestFocus()
+//        }
+//    }
 }
 
 
