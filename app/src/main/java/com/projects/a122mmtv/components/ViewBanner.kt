@@ -378,9 +378,9 @@ fun ViewBanner(
 //                        ) {
 
 
-//                            LaunchedEffect(isBannerActive) {
-//                                if (isBannerActive) playFocusRequester.requestFocus()
-//                            }
+                            LaunchedEffect(isBannerActive) {
+                                if (isBannerActive) playFocusRequester.requestFocus()
+                            }
                         val buttonsOffset by animateDpAsState(
                             targetValue = if (isBannerActive) 0.dp else 20.dp,
                             label = "bannerButtonsOffset"
@@ -399,8 +399,8 @@ fun ViewBanner(
                         ) {
                             BannerButton(
                                 modifier = Modifier
-                                    .focusRequester(playFocusRequester)
-                                    .focusable(isBannerActive),
+                                    .focusRequester(playFocusRequester),
+                                    //.focusable(isBannerActive),
                                 text = "Play",
                                 icon = Icons.Filled.PlayArrow
                             )
@@ -408,7 +408,7 @@ fun ViewBanner(
                             Spacer(Modifier.width(8.dp))
 
                             BannerButton(
-                                modifier = Modifier.focusable(isBannerActive),
+                                //modifier = Modifier.focusable(isBannerActive),
                                 text = "More Info",
                                 disableRight = true
                             )
