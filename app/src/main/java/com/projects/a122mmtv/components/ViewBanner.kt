@@ -68,6 +68,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -93,7 +94,8 @@ fun ViewBanner(
     onBannerFocused: () -> Unit,
     viewModel: BannerViewModel,
     homeSession: HomeSessionViewModel,
-    onCollapseRequest: () -> Unit
+    onCollapseRequest: () -> Unit,
+    horizontalInset: Dp
 ) {
     var isBannerActive by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(0.dp)
@@ -150,6 +152,7 @@ fun ViewBanner(
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(horizontal = horizontalInset)
             .focusRequester(focusRequester)
             .onFocusChanged {
                 isBannerActive = it.hasFocus

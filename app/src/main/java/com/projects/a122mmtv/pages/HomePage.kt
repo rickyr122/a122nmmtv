@@ -44,6 +44,8 @@ import com.projects.a122mmtv.auth.BannerViewModelFactory
 import com.projects.a122mmtv.auth.HomeSessionViewModel
 import com.projects.a122mmtv.components.ViewBanner
 import com.projects.a122mmtv.components.ViewContent
+import com.projects.a122mmtv.dataclass.Section
+import com.projects.a122mmtv.viewmodels.HomeViewModel
 import kotlinx.coroutines.delay
 
 @Composable
@@ -53,9 +55,12 @@ fun HomePage(
     upMenuFocusRequester: FocusRequester,
     onBannerFocused: () -> Unit,
     homeSession: HomeSessionViewModel,
-    horizontalInset: Dp
+    horizontalInset: Dp,
+    homeViewModel: HomeViewModel = viewModel()
 ) {
     val context = LocalContext.current
+    val isLoading = homeViewModel.isLoading
+    val allSections = homeViewModel.allSections
 
     // ✅ CORRECT ViewModel creation
     val bannerViewModel: BannerViewModel = viewModel(
@@ -70,26 +75,39 @@ fun HomePage(
     ) {
 
         // ========== BANNER ==========
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = horizontalInset)
-        ) {
-            ViewBanner(
-                navController = navController,
-                type = "HOM",
-                currentTabIndex = 0,
-                focusRequester = bannerFocusRequester,
-                upMenuFocusRequester = upMenuFocusRequester,
-                onBannerFocused = onBannerFocused,
-                viewModel = bannerViewModel,   // ✅ pass explicitly
-                homeSession = homeSession,
-                onCollapseRequest = {
-                    // NO-OP
-                }
-            )
-        }
+        ViewBanner(
+            navController = navController,
+            type = "HOM",
+            currentTabIndex = 0,
+            focusRequester = bannerFocusRequester,
+            upMenuFocusRequester = upMenuFocusRequester,
+            onBannerFocused = onBannerFocused,
+            viewModel = bannerViewModel,   // ✅ pass explicitly
+            homeSession = homeSession,
+            onCollapseRequest = {
+                // NO-OP
+            },
+            horizontalInset = horizontalInset
+        )
 
+        ViewContent(
+            firstItemFocusRequester = contentFirstItemFR,
+            onRequestShowBanner = {
+                // NO-OP
+            },
+            horizontalInset = horizontalInset
+        )
+//        allSections.forEach { section ->
+//            when (section) {
+//                is Section.Category -> ViewContent(
+//                    firstItemFocusRequester = contentFirstItemFR,
+//                    onRequestShowBanner = {
+//                        // NO-OP
+//                    }
+//                )
+//                else -> Unit
+//            }
+//        }
 
 
         //Spacer(modifier = Modifier.height(16.dp))

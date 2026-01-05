@@ -31,6 +31,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -51,7 +52,8 @@ private fun rotateLeft(list: List<PosterItem>): List<PosterItem> {
 fun ViewContent(
     title: String = "Fresh from Theater",
     firstItemFocusRequester: FocusRequester,
-    onRequestShowBanner: () -> Unit
+    onRequestShowBanner: () -> Unit,
+    horizontalInset: Dp
 ) {
     // 🔥 MOCK DATA LIVES HERE
     var items by remember {
@@ -105,7 +107,7 @@ fun ViewContent(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 10.dp, bottom = 8.dp)
+            .padding(start = horizontalInset, top = 10.dp, bottom = 8.dp)
             .alpha(if (isFirstFocused) 1f else 0.45f)
     ) {
 
