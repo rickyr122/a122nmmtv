@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.projects.a122mmtv.dataclass.AuthNetwork
 import com.projects.a122mmtv.getDeviceId
@@ -122,6 +123,15 @@ class BannerViewModel(
         }
     }
 }
+
+class BannerViewModelFactory(
+    private val context: Context
+) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        return BannerViewModel(context.applicationContext) as T
+    }
+}
+
 
 
 

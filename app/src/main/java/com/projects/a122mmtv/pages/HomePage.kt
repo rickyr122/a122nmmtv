@@ -40,6 +40,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.projects.a122mmtv.auth.BannerViewModel
+import com.projects.a122mmtv.auth.BannerViewModelFactory
 import com.projects.a122mmtv.auth.HomeSessionViewModel
 import com.projects.a122mmtv.components.ViewBanner
 import com.projects.a122mmtv.components.ViewContent
@@ -56,102 +57,59 @@ fun HomePage(
 ) {
     val context = LocalContext.current
 
-    val contentFirstItemFR = remember { FocusRequester() }
-
+    // ✅ CORRECT ViewModel creation
     val bannerViewModel: BannerViewModel = viewModel(
-        factory = object : ViewModelProvider.Factory {
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                @Suppress("UNCHECKED_CAST")
-                return BannerViewModel(context) as T
-            }
-        }
+        factory = BannerViewModelFactory(context)
     )
 
-    var bannerVisible by remember { mutableStateOf(true) }
-    var bannerToggledByUser by remember { mutableStateOf(false) }
+    val contentFirstItemFR = remember { FocusRequester() }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+    ) {
 
-        /* ========== BANNER ========== */
-
-        AnimatedVisibility(
-            visible = bannerVisible,
-            enter = fadeIn(),
-            exit = slideOutVertically { -it } +
-                    shrinkVertically(shrinkTowards = Alignment.Top)
+        // ========== BANNER ==========
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = horizontalInset)
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = horizontalInset)
-            ) {
-                ViewBanner(
-                    navController = navController,
-                    type = "HOM",
-                    currentTabIndex = 0,
-                    focusRequester = bannerFocusRequester,
-                    upMenuFocusRequester = upMenuFocusRequester,
-                    onBannerFocused = onBannerFocused,
-                    viewModel = bannerViewModel,
-                    homeSession = homeSession,
-                    onCollapseRequest = {
-                        bannerToggledByUser = true
-                        bannerVisible = false
-                    }
-
-                )
-            }
-        }
-
-        /* ========== CONTENT ========== */
-        LazyColumn {
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = horizontalInset)   // 👈 START ONLY
-                ) {
-                    ViewContent(
-                        firstItemFocusRequester = contentFirstItemFR,
-                        onRequestShowBanner = {
-                            bannerToggledByUser = true
-                            bannerVisible = true
-                        }
-
-                    )
+            ViewBanner(
+                navController = navController,
+                type = "HOM",
+                currentTabIndex = 0,
+                focusRequester = bannerFocusRequester,
+                upMenuFocusRequester = upMenuFocusRequester,
+                onBannerFocused = onBannerFocused,
+                viewModel = bannerViewModel,   // ✅ pass explicitly
+                homeSession = homeSession,
+                onCollapseRequest = {
+                    // NO-OP
                 }
-            }
+            )
         }
 
-    }
-
-    /* ========== FOCUS HANDOFF ========== */
-    LaunchedEffect(bannerVisible) {
-        if (!bannerToggledByUser) return@LaunchedEffect
-
-        if (!bannerVisible) {
-            delay(300)
-            contentFirstItemFR.requestFocus()
-        } else {
-            delay(300)
-            bannerFocusRequester.requestFocus()
-        }
-
-        bannerToggledByUser = false
-    }
 
 
-//    LaunchedEffect(bannerVisible) {
-//        if (!bannerVisible) {
-//            // Banner collapsed → go to content
-//            delay(300)
-//            contentFirstItemFR.requestFocus()
-//        } else {
-//            // Banner restored → go back to banner
-//            delay(300)
-//            bannerFocusRequester.requestFocus()
+        //Spacer(modifier = Modifier.height(16.dp))
+
+        // ========== CONTENT ==========
+//        Box(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .padding(start = horizontalInset)
+//        ) {
+//            ViewContent(
+//                firstItemFocusRequester = contentFirstItemFR,
+//                onRequestShowBanner = {
+//                    // NO-OP
+//                }
+//            )
 //        }
-//    }
+    }
 }
+
+
 
 

@@ -19,6 +19,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import android.view.KeyEvent
 import androidx.compose.foundation.border
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,6 +41,12 @@ private data class PosterItem(
     val logoUrl: String
 )
 
+private fun rotateLeft(list: List<PosterItem>): List<PosterItem> {
+    if (list.isEmpty()) return list
+    return list.drop(1) + list.first()
+}
+
+
 @Composable
 fun ViewContent(
     title: String = "Fresh from Theater",
@@ -46,46 +54,59 @@ fun ViewContent(
     onRequestShowBanner: () -> Unit
 ) {
     // 🔥 MOCK DATA LIVES HERE
-    val mockItems = listOf(
-        PosterItem(
-            1,
-            "https://image.tmdb.org/t/p/w1280/9tOkjBEiiGcaClgJFtwocStZvIT.jpg",
-            "https://image.tmdb.org/t/p/w500/gNkaNY2Cg2BvYunWVgMVcbmQgc5.png"
-        ),
-        PosterItem(
-            2,
-            "https://image.tmdb.org/t/p/w1280/xPNDRM50a58uvv1il2GVZrtWjkZ.jpg",
-            "https://image.tmdb.org/t/p/w500/7yXEfWFDGpqIfq9wdpMOHcHbi8g.png"
-        ),
-        PosterItem(
-            3,
-            "https://image.tmdb.org/t/p/w1280/cKvDv2LpwVEqbdXWoQl4XgGN6le.jpg",
-            "https://image.tmdb.org/t/p/w500/f1EpI3C6wd1iv7dCxNi3vU5DAX7.png"
-        ),
-        PosterItem(
-            4,
-            "https://image.tmdb.org/t/p/w1280/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg",
-            "https://image.tmdb.org/t/p/w500/b07VisHvZb0WzUpA8VB77wfMXwg.png"
-        ),
-        PosterItem(
-            5,
-            "https://image.tmdb.org/t/p/w1280/ufpeVEM64uZHPpzzeiDNIAdaeOD.jpg",
-            "https://image.tmdb.org/t/p/w500/xJMMxfKD9WJQLxq03p7T0c2AWb4.png"
-        ),
-        PosterItem(
-            6,
-            "https://image.tmdb.org/t/p/w1280/34jW8LvjRplM8Pv06cBFDpLlenR.jpg",
-            "https://image.tmdb.org/t/p/w500/lAEaCmWwqkZSp8lAw6F7CfPkA9N.png"
+    var items by remember {
+        mutableStateOf(
+            listOf(
+                PosterItem(
+                    1,
+                    "https://image.tmdb.org/t/p/w1280/9tOkjBEiiGcaClgJFtwocStZvIT.jpg",
+                    "https://image.tmdb.org/t/p/w500/gNkaNY2Cg2BvYunWVgMVcbmQgc5.png"
+                ),
+                PosterItem(
+                    2,
+                    "https://image.tmdb.org/t/p/w1280/xPNDRM50a58uvv1il2GVZrtWjkZ.jpg",
+                    "https://image.tmdb.org/t/p/w500/7yXEfWFDGpqIfq9wdpMOHcHbi8g.png"
+                ),
+                PosterItem(
+                    3,
+                    "https://image.tmdb.org/t/p/w1280/cKvDv2LpwVEqbdXWoQl4XgGN6le.jpg",
+                    "https://image.tmdb.org/t/p/w500/f1EpI3C6wd1iv7dCxNi3vU5DAX7.png"
+                ),
+                PosterItem(
+                    4,
+                    "https://image.tmdb.org/t/p/w1280/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg",
+                    "https://image.tmdb.org/t/p/w500/b07VisHvZb0WzUpA8VB77wfMXwg.png"
+                ),
+                PosterItem(
+                    5,
+                    "https://image.tmdb.org/t/p/w1280/ufpeVEM64uZHPpzzeiDNIAdaeOD.jpg",
+                    "https://image.tmdb.org/t/p/w500/xJMMxfKD9WJQLxq03p7T0c2AWb4.png"
+                ),
+                PosterItem(
+                    6,
+                    "https://image.tmdb.org/t/p/w1280/34jW8LvjRplM8Pv06cBFDpLlenR.jpg",
+                    "https://image.tmdb.org/t/p/w500/lAEaCmWwqkZSp8lAw6F7CfPkA9N.png"
+                )
+            )
         )
-    )
+    }
 
     var isFirstFocused by remember { mutableStateOf(false) }
+    var rotationTick by remember { mutableStateOf(0) }
+    val listState = rememberLazyListState()
+
+
+    // ✅ MUST live here (top-level of the composable)
+    LaunchedEffect(rotationTick) {
+        listState.scrollToItem(0)
+        firstItemFocusRequester.requestFocus()
+    }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 10.dp, bottom = 8.dp)
-            .alpha(if (isFirstFocused) 1f else 0.45f) ///(0.45f)
+            .alpha(if (isFirstFocused) 1f else 0.45f)
     ) {
 
         Text(
@@ -96,51 +117,59 @@ fun ViewContent(
         )
 
         LazyRow(
+            state = listState,
             modifier = Modifier
                 .fillMaxWidth()
-                .clipToBounds(),               // 👈 important
+                .clipToBounds()
+                .onPreviewKeyEvent { event ->
+                    if (
+                        event.type == KeyEventType.KeyDown &&
+                        event.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_DPAD_RIGHT &&
+                        isFirstFocused
+                    ) {
+                        items = rotateLeft(items)
+                        rotationTick++
+                        true
+                    } else false
+                },
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(
-                start = 0.dp,
-                end = 0.dp                    // 👈 NO end padding
-            )
-        ){
-            itemsIndexed(mockItems) { index, item ->
+            contentPadding = PaddingValues(0.dp)
+        ) {
+            items(
+                items = items,
+                key = { it.id }
+            ) { item ->
 
-                val isFirst = index == 0
+                val isFirst = item.id == items.first().id
 
                 PosterCard(
                     item = item,
                     isFirst = isFirst,
                     isFirstFocused = isFirstFocused,
-                    modifier = Modifier
-                        .then(
-                            if (isFirst) {
-                                Modifier
-                                    .focusRequester(firstItemFocusRequester)
-                                    .onFocusChanged {
-                                        isFirstFocused = it.isFocused
-                                    }
-                                    .onPreviewKeyEvent { event ->
-                                        if (
-                                            event.type == KeyEventType.KeyDown &&
-                                            event.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_DPAD_UP
-                                        ) {
-                                            onRequestShowBanner()
-                                            true
-                                        } else false
-                                    }
-                            } else {
-                                // ⬅ shift items to the right when first is focused
-                                if (isFirstFocused) Modifier.padding(start = 2.dp)
-                                else Modifier
-                            }
-                        )
+                    modifier = Modifier.then(
+                        if (isFirst) {
+                            Modifier
+                                .focusRequester(firstItemFocusRequester)
+                                .onFocusChanged {
+                                    isFirstFocused = it.isFocused
+                                }
+                                .onPreviewKeyEvent { event ->
+                                    if (
+                                        event.type == KeyEventType.KeyDown &&
+                                        event.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_DPAD_UP
+                                    ) {
+                                        onRequestShowBanner()
+                                        true
+                                    } else false
+                                }
+                        } else {
+                            if (isFirstFocused) Modifier.padding(start = 2.dp)
+                            else Modifier
+                        }
+                    )
                 )
             }
         }
-
-
     }
 }
 

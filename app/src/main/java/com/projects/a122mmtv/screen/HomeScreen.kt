@@ -13,12 +13,15 @@ import com.projects.a122mmtv.pages.SearchPage
 import com.projects.a122mmtv.pages.SeriesPage
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -139,7 +142,7 @@ fun HomeScreen(
             delay(200)
             isMenuFocused = false
             bannerFocusRequester.requestFocus()
-            hasHomeAutoFocused = true
+            //hasHomeAutoFocused = true
         }
 
         val topBarHeight = (80 * scale).dp
@@ -298,60 +301,26 @@ fun HomeScreen(
                 }
             }
 
-            /** PAGE CONTENT **/
+            val scrollState = rememberScrollState()
+
             Box(
-                modifier = Modifier
-                    .weight(1f)   // 👈 THIS is the key
-//                    .padding(
-//                        top = (0 * scale).dp,
-//                        start = horizontalInset,
-//                        end = horizontalInset
-//                    )
+                modifier = Modifier.weight(1f)
             ) {
-                when (activePageIndex) {
-                    0 -> SearchPage(
-                        modifier = modifier,
-                        navController = navController
-                    )
-
-                    1 -> HomePage(
-                        navController = navController,
-                        bannerFocusRequester = bannerFocusRequester,
-                        upMenuFocusRequester = focusRequesters[selectedIndex],
-                        onBannerFocused = {
-                            isMenuFocused = false
-                        },
-                        homeSession = homeSession,
-                        horizontalInset = horizontalInset
-                    )
-
-
-                    2 -> SeriesPage(
-                        navController = navController,
-                        bannerFocusRequester = bannerFocusRequester,
-                        upMenuFocusRequester = focusRequesters[selectedIndex],
-                        onBannerFocused = {
-                            isMenuFocused = false
-                        },
-                        homeSession = homeSession
-                    )
-
-                    3 -> MoviePage(
-                        navController = navController,
-                        bannerFocusRequester = bannerFocusRequester,
-                        upMenuFocusRequester = focusRequesters[selectedIndex],
-                        onBannerFocused = {
-                            isMenuFocused = false
-                        },
-                        homeSession = homeSession
-                    )
-
-                    4 -> ProfilePage(
-                        modifier,
-                        navController
-                    )
-                }
+                ContentScreen(
+                    modifier = Modifier.fillMaxSize(),
+                    navController = navController,
+                    selectedIndex = activePageIndex,
+                    bannerFocusRequester = bannerFocusRequester,
+                    upMenuFocusRequester = focusRequesters[selectedIndex],
+                    homeSession = homeSession,
+                    horizontalInset = horizontalInset,
+                    scrollState = scrollState,
+                    onBannerFocused = {
+                        isMenuFocused = false
+                    }
+                )
             }
+
         }
 
         /** LEFT PROFILE IMAGE **/
@@ -428,6 +397,71 @@ fun HomeScreen(
 
     }
 }
+
+@Composable
+fun ContentScreen(
+    modifier: Modifier = Modifier,
+    navController: NavController,
+    selectedIndex: Int,
+    bannerFocusRequester: FocusRequester,
+    upMenuFocusRequester: FocusRequester,
+    homeSession: HomeSessionViewModel,
+    horizontalInset: Dp,
+    scrollState: ScrollState,
+    onBannerFocused: () -> Unit
+) {
+    Column(
+        modifier = modifier
+            .verticalScroll(scrollState)
+            .fillMaxSize()
+    ) {
+        when (selectedIndex) {
+
+            // HOME
+            1 -> HomePage(
+                navController = navController,
+                bannerFocusRequester = bannerFocusRequester,
+                upMenuFocusRequester = upMenuFocusRequester,
+                onBannerFocused = onBannerFocused,
+                homeSession = homeSession,
+                horizontalInset = horizontalInset
+            )
+
+            // SEARCH
+            0 -> SearchPage(
+                modifier = Modifier.fillMaxSize(),
+                navController = navController
+            )
+
+            // SHOWS
+            2 -> SeriesPage(
+                navController = navController,
+                bannerFocusRequester = bannerFocusRequester,
+                upMenuFocusRequester = upMenuFocusRequester,
+                onBannerFocused = onBannerFocused,
+                homeSession = homeSession
+            )
+
+            // MOVIES
+            3 -> MoviePage(
+                navController = navController,
+                bannerFocusRequester = bannerFocusRequester,
+                upMenuFocusRequester = upMenuFocusRequester,
+                onBannerFocused = onBannerFocused,
+                homeSession = homeSession
+            )
+
+            // PROFILE
+            4 -> ProfilePage(
+                modifier = Modifier.fillMaxSize(),
+                navController = navController
+            )
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+    }
+}
+
 
 @Composable
 private fun BackActionPopup(
