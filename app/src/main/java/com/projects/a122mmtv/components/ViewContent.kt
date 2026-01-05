@@ -99,7 +99,7 @@ fun ViewContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .clipToBounds(),               // 👈 important
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(
                 start = 0.dp,
                 end = 0.dp                    // 👈 NO end padding
@@ -156,7 +156,7 @@ private fun PosterCard(
     Box(
         modifier = modifier
             //.height(if (showHero) 160.dp else 225.dp)   // 👈 HEIGHT FIRST
-            .height(230.dp)
+            .height(240.dp)
             .aspectRatio(if (showHero) 16f / 9f else 2f / 3f)
             //.clip(RoundedCornerShape(6.dp))
             .then(
