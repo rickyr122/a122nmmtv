@@ -31,15 +31,23 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.Bullet
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.projects.a122mmtv.helper.Bullets
+import com.projects.a122mmtv.helper.MetaText
 
 private data class PosterItem(
     val id: Int,
     val posterUrl: String,
-    val logoUrl: String
+    val logoUrl: String,
+    val mType: String,
+    val mGenre: String,
+    val mYear: String,
+    val mDuration: String,
+    val mContent: String
 )
 
 private fun rotateLeft(list: List<PosterItem>): List<PosterItem> {
@@ -53,6 +61,7 @@ fun ViewContent(
     title: String = "Fresh from Theater",
     firstItemFocusRequester: FocusRequester,
     onRequestShowBanner: () -> Unit,
+    onRequestFocusSelf: () -> Unit,
     horizontalInset: Dp
 ) {
     // 🔥 MOCK DATA LIVES HERE
@@ -62,32 +71,62 @@ fun ViewContent(
                 PosterItem(
                     1,
                     "https://image.tmdb.org/t/p/w1280/9tOkjBEiiGcaClgJFtwocStZvIT.jpg",
-                    "https://image.tmdb.org/t/p/w500/gNkaNY2Cg2BvYunWVgMVcbmQgc5.png"
+                    "https://image.tmdb.org/t/p/w500/gNkaNY2Cg2BvYunWVgMVcbmQgc5.png",
+                    "Movie",
+                    "Action",
+                    "2020",
+                    "2h 10m",
+                    "18+"
                 ),
                 PosterItem(
                     2,
                     "https://image.tmdb.org/t/p/w1280/xPNDRM50a58uvv1il2GVZrtWjkZ.jpg",
-                    "https://image.tmdb.org/t/p/w500/7yXEfWFDGpqIfq9wdpMOHcHbi8g.png"
+                    "https://image.tmdb.org/t/p/w500/7yXEfWFDGpqIfq9wdpMOHcHbi8g.png",
+                    "Movie",
+                    "Action",
+                    "2020",
+                    "2h 10m",
+                    "18+"
                 ),
                 PosterItem(
                     3,
                     "https://image.tmdb.org/t/p/w1280/cKvDv2LpwVEqbdXWoQl4XgGN6le.jpg",
-                    "https://image.tmdb.org/t/p/w500/f1EpI3C6wd1iv7dCxNi3vU5DAX7.png"
+                    "https://image.tmdb.org/t/p/w500/f1EpI3C6wd1iv7dCxNi3vU5DAX7.png",
+                    "Movie",
+                    "Action",
+                    "2020",
+                    "2h 10m",
+                    "18+"
                 ),
                 PosterItem(
                     4,
                     "https://image.tmdb.org/t/p/w1280/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg",
-                    "https://image.tmdb.org/t/p/w500/b07VisHvZb0WzUpA8VB77wfMXwg.png"
+                    "https://image.tmdb.org/t/p/w500/b07VisHvZb0WzUpA8VB77wfMXwg.png",
+                    "Movie",
+                    "Action",
+                    "2020",
+                    "2h 10m",
+                    "18+"
                 ),
                 PosterItem(
                     5,
                     "https://image.tmdb.org/t/p/w1280/ufpeVEM64uZHPpzzeiDNIAdaeOD.jpg",
-                    "https://image.tmdb.org/t/p/w500/xJMMxfKD9WJQLxq03p7T0c2AWb4.png"
+                    "https://image.tmdb.org/t/p/w500/xJMMxfKD9WJQLxq03p7T0c2AWb4.png",
+                    "Movie",
+                    "Action",
+                    "2020",
+                    "2h 10m",
+                    "18+"
                 ),
                 PosterItem(
                     6,
                     "https://image.tmdb.org/t/p/w1280/34jW8LvjRplM8Pv06cBFDpLlenR.jpg",
-                    "https://image.tmdb.org/t/p/w500/lAEaCmWwqkZSp8lAw6F7CfPkA9N.png"
+                    "https://image.tmdb.org/t/p/w500/lAEaCmWwqkZSp8lAw6F7CfPkA9N.png",
+                    "Movie",
+                    "Action",
+                    "2020",
+                    "2h 10m",
+                    "18+"
                 )
             )
         )
@@ -134,7 +173,7 @@ fun ViewContent(
                         true
                     } else false
                 },
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
             contentPadding = PaddingValues(0.dp)
         ) {
             items(
@@ -187,8 +226,8 @@ private fun PosterCard(
     Box(
         modifier = modifier
             //.height(if (showHero) 160.dp else 225.dp)   // 👈 HEIGHT FIRST
-            .height(240.dp)
-            .aspectRatio(if (showHero) 16f / 9f else 2f / 3f)
+            .height(260.dp)
+            .aspectRatio(if (showHero) 16f / 9.5f else 9.5f / 16f)
             //.clip(RoundedCornerShape(6.dp))
             .then(
                 if (showHero) Modifier.border(0.5.dp, Color.White)
@@ -204,6 +243,7 @@ private fun PosterCard(
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
         )
+        val showMeta = isFirst && isFirstFocused
 
         // bottom gradient
         Box(
@@ -243,6 +283,29 @@ private fun PosterCard(
             )
         }
 
+//        if (showMeta) {
+//            Box(
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .height(300.dp)
+//                    .background(Color.Black)
+//                    .padding(horizontal = 12.dp, vertical = 10.dp)
+//            ) {
+//                Row(
+//                    verticalAlignment = Alignment.CenterVertically
+//                ) {
+//                    MetaText(item.mType)
+//                    Bullets()
+//                    MetaText(item.mGenre)
+//                    Bullets()
+//                    MetaText(item.mYear)
+//                    Bullets()
+//                    MetaText(item.mDuration)
+//                    Bullets()
+//                    MetaText(item.mContent)
+//                }
+//            }
+//        }
     }
 }
 

@@ -77,6 +77,8 @@ import com.projects.a122mmtv.auth.AuthApiService
 import com.projects.a122mmtv.auth.BannerUiState
 import com.projects.a122mmtv.auth.BannerViewModel
 import com.projects.a122mmtv.auth.HomeSessionViewModel
+import com.projects.a122mmtv.helper.Bullets
+import com.projects.a122mmtv.helper.MetaText
 import com.projects.a122mmtv.helper.convertContentRating
 import com.projects.a122mmtv.helper.fixEncoding
 import com.projects.a122mmtv.utility.BannerStorage
@@ -359,13 +361,13 @@ fun ViewBanner(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             MetaText(sType)
-                            Bullet()
+                            Bullets()
                             MetaText(banner.mGenre)
-                            Bullet()
+                            Bullets()
                             MetaText(banner.m_year)
-                            Bullet()
+                            Bullets()
                             MetaText(sDuration)
-                            Bullet()
+                            Bullets()
                             MetaText(banner.m_content.convertContentRating())
                         }
 
@@ -442,27 +444,27 @@ fun ViewBanner(
 }
 
 
-@Composable
-private fun MetaText(text: String) {
-    Text(
-        text = text,
-        color = Color.White,
-        fontSize = 10.sp,
-        fontWeight = FontWeight.Medium,
-        modifier = Modifier.alpha(0.9f)
-    )
-}
-
-@Composable
-private fun Bullet() {
-    Box(
-        modifier = Modifier
-            .padding(horizontal = 4.dp, vertical = 2.dp)
-            .size(4.dp)
-            .clip(CircleShape)
-            .background(Color.Red.copy(alpha = 0.7f))
-    )
-}
+//@Composable
+//private fun MetaText(text: String) {
+//    Text(
+//        text = text,
+//        color = Color.White,
+//        fontSize = 10.sp,
+//        fontWeight = FontWeight.Medium,
+//        modifier = Modifier.alpha(0.9f)
+//    )
+//}
+//
+//@Composable
+//private fun Bullet() {
+//    Box(
+//        modifier = Modifier
+//            .padding(horizontal = 4.dp, vertical = 2.dp)
+//            .size(4.dp)
+//            .clip(CircleShape)
+//            .background(Color.Red.copy(alpha = 0.7f))
+//    )
+//}
 
 @Composable
 fun BannerActionButtons(

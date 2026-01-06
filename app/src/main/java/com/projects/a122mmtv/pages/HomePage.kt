@@ -7,6 +7,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +25,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +50,7 @@ import com.projects.a122mmtv.components.ViewContent
 import com.projects.a122mmtv.dataclass.Section
 import com.projects.a122mmtv.viewmodels.HomeViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun HomePage(
@@ -57,11 +60,14 @@ fun HomePage(
     onBannerFocused: () -> Unit,
     homeSession: HomeSessionViewModel,
     horizontalInset: Dp,
-    homeViewModel: HomeViewModel = viewModel()
+    homeViewModel: HomeViewModel = viewModel(),
+    scrollState: ScrollState
 ) {
     val context = LocalContext.current
     val isLoading = homeViewModel.isLoading
     val allSections = homeViewModel.allSections
+    val coroutineScope = rememberCoroutineScope()
+
 
     // ✅ CORRECT ViewModel creation
     val bannerViewModel: BannerViewModel = viewModel(
@@ -86,7 +92,15 @@ fun HomePage(
             viewModel = bannerViewModel,   // ✅ pass explicitly
             homeSession = homeSession,
             onCollapseRequest = {
-                // NO-OP
+                // 1️⃣ Scroll banner out of view
+                coroutineScope.launch {
+                    scrollState.animateScrollTo(
+                        scrollState.value + 300 // tweak if needed
+                    )
+                }
+
+                // 2️⃣ Move focus to content
+                contentFirstItemFR.requestFocus()
             },
             horizontalInset = horizontalInset
         )
@@ -96,25 +110,38 @@ fun HomePage(
 //            horizontalInset = horizontalInset
 //        )
 
-//        ViewContent(
-//            firstItemFocusRequester = contentFirstItemFR,
-//            onRequestShowBanner = {
-//                // NO-OP
-//            },
-//            horizontalInset = horizontalInset
-//        )
-        allSections.forEach { section ->
-            when (section) {
-                is Section.Category -> ViewContent(
-                    firstItemFocusRequester = contentFirstItemFR,
-                    onRequestShowBanner = {
-                        // NO-OP
-                    },
-                    horizontalInset = horizontalInset
-                )
-                else -> Unit
-            }
-        }
+        ViewContent(
+            firstItemFocusRequester = contentFirstItemFR,
+            onRequestShowBanner = {
+                coroutineScope.launch {
+                    scrollState.animateScrollTo(0)
+                }
+                bannerFocusRequester.requestFocus()
+            },
+            onRequestFocusSelf = {
+                contentFirstItemFR.requestFocus()
+            },
+            horizontalInset = horizontalInset
+        )
+
+//        allSections.forEach { section ->
+//            when (section) {
+//                is Section.Category -> ViewContent(
+//                    firstItemFocusRequester = contentFirstItemFR,
+//                    onRequestShowBanner = {
+//                        coroutineScope.launch {
+//                            scrollState.animateScrollTo(0)
+//                        }
+//                        bannerFocusRequester.requestFocus()
+//                    },
+//                    onRequestFocusSelf = {
+//                        contentFirstItemFR.requestFocus()
+//                    },
+//                    horizontalInset = horizontalInset
+//                )
+//                else -> Unit
+//            }
+//        }
 
 
         //Spacer(modifier = Modifier.height(16.dp))

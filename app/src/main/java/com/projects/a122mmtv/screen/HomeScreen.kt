@@ -182,9 +182,6 @@ fun HomeScreen(
 //                    },
                 verticalAlignment = Alignment.CenterVertically
             ) {
-
-
-
                 /** CENTER MENU COLUMN **/
                 Column(
                     modifier = Modifier
@@ -424,7 +421,8 @@ fun ContentScreen(
                 upMenuFocusRequester = upMenuFocusRequester,
                 onBannerFocused = onBannerFocused,
                 homeSession = homeSession,
-                horizontalInset = horizontalInset
+                horizontalInset = horizontalInset,
+                scrollState = scrollState
             )
 
             // SEARCH
