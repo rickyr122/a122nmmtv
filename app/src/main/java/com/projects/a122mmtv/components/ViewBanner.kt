@@ -107,6 +107,10 @@ fun ViewBanner(
     val context = LocalContext.current
 
     val playFocusRequester = remember { FocusRequester() }
+    val infoFocusRequester = remember { FocusRequester() }
+
+    var isOnPlay by remember { mutableStateOf(true) }
+    var isOnInfo by remember { mutableStateOf(false) }
 
     LaunchedEffect(type, userId) {
 
@@ -165,24 +169,43 @@ fun ViewBanner(
                     }
                 }
             }
-            //.focusable()
+            .focusable()
             .onPreviewKeyEvent { event ->
                 if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
 
                 when (event.nativeKeyEvent.keyCode) {
-
-                    // ⬅ DPAD BACK → return focus to menu
                     KeyEvent.KEYCODE_BACK -> {
+                        // Banner belongs to HOME → return focus to Home menu
                         upMenuFocusRequester.requestFocus()
+                        true // 🔴 IMPORTANT: consume BACK
+                    }
+
+                    KeyEvent.KEYCODE_DPAD_LEFT -> {
+                        isOnPlay = true
+                        isOnInfo = false
                         true
                     }
 
-                    // ⬆ DPAD UP → return focus to menu (optional, already yours)
+                    KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                        isOnPlay = false
+                        isOnInfo = true
+                        true
+                    }
+
+                    KeyEvent.KEYCODE_DPAD_CENTER,
+                    KeyEvent.KEYCODE_ENTER -> {
+                        if (isOnPlay) {
+                            Toast.makeText(context, "Play pressed", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "More Info pressed", Toast.LENGTH_SHORT).show()
+                        }
+                        true
+                    }
+
                     KeyEvent.KEYCODE_DPAD_UP -> {
                         upMenuFocusRequester.requestFocus()
                         true
                     }
-
 
                     KeyEvent.KEYCODE_DPAD_DOWN -> {
                         onCollapseRequest()
@@ -193,14 +216,7 @@ fun ViewBanner(
                 }
             }
 
-            .focusProperties {
-                exit = {
-                    if (it == FocusDirection.Up) {
-                        upMenuFocusRequester.requestFocus()
-                        FocusRequester.Cancel
-                    } else FocusRequester.Default
-                }
-            }
+
             .then(
                 if (isBannerActive) {
                     Modifier.border(
@@ -381,9 +397,9 @@ fun ViewBanner(
 //                        ) {
 
 
-                            LaunchedEffect(isBannerActive) {
-                                if (isBannerActive) playFocusRequester.requestFocus()
-                            }
+                        LaunchedEffect(isBannerActive) {
+                            if (isBannerActive) playFocusRequester.requestFocus()
+                        }
                         val buttonsOffset by animateDpAsState(
                             targetValue = if (isBannerActive) 0.dp else 20.dp,
                             label = "bannerButtonsOffset"
@@ -400,24 +416,22 @@ fun ViewBanner(
                                 .alpha(buttonsAlpha)
                                 .padding(top = if (isBannerActive) 12.dp else 0.dp)
                         ) {
-                            BannerButton(
+                            BannerActionButtons(
                                 modifier = Modifier
-                                    .focusRequester(playFocusRequester),
-                                    //.focusable(isBannerActive),
-                                text = "Play",
-                                icon = Icons.Filled.PlayArrow
+                                    .offset(y = buttonsOffset)
+                                    .alpha(buttonsAlpha)
+                                    .padding(top = if (isBannerActive) 12.dp else 0.dp),
+                                onPlay = {
+                                    // TODO: real play navigation
+                                },
+                                onMoreInfo = {
+                                    // TODO: real info navigation
+                                },
+                                isOnPlay = isOnPlay,
+                                isOnInfo = isOnInfo
                             )
 
-                            Spacer(Modifier.width(8.dp))
-
-                            BannerButton(
-                                //modifier = Modifier.focusable(isBannerActive),
-                                text = "More Info",
-                                disableRight = true
-                            )
                         }
-
-
 
                         //}
                     }
@@ -451,6 +465,74 @@ private fun Bullet() {
 }
 
 @Composable
+fun BannerActionButtons(
+    modifier: Modifier = Modifier,
+    onPlay: () -> Unit,
+    onMoreInfo: () -> Unit,
+    isOnPlay: Boolean,
+    isOnInfo: Boolean
+) {
+//    var isOnPlay by remember { mutableStateOf(true) }
+//    var isOnInfo by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    val buttonHeight = 36.dp
+
+    Box(
+
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+
+            // ▶ PLAY
+            Row(
+                modifier = Modifier
+                    .height(buttonHeight)
+                    .background(
+                        if (isOnPlay) Color.White else Color(0xFF3A3A3A),
+                        RoundedCornerShape(50)
+                    )
+                    .padding(horizontal = 28.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.PlayArrow,
+                    contentDescription = "Play",
+                    tint = if (isOnPlay) Color.Black else Color.White,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = "Play",
+                    color = if (isOnPlay) Color.Black else Color.White,
+                    fontSize = 14.sp
+                )
+            }
+
+            // ℹ MORE INFO
+            Row(
+                modifier = Modifier
+                    .height(buttonHeight)
+                    .background(
+                        if (isOnInfo) Color.White else Color(0xFF3A3A3A),
+                        RoundedCornerShape(50)
+                    )
+                    .padding(horizontal = 24.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "More Info",
+                    color = if (isOnInfo) Color.Black else Color.White,
+                    fontSize = 14.sp
+                )
+            }
+        }
+    }
+}
+
+
+@Composable
 private fun BannerButton(
     modifier: Modifier = Modifier,
     text: String,
@@ -475,8 +557,14 @@ private fun BannerButton(
 
                 when (event.nativeKeyEvent.keyCode) {
 
-                    KeyEvent.KEYCODE_DPAD_RIGHT ->
-                        if (disableRight) true else false   // 🔒
+//                    KeyEvent.KEYCODE_DPAD_RIGHT ->
+//                        if (disableRight) {
+//                            true
+//                        } else {
+//
+//                            false
+//                        }   // 🔒
+
 
                     KeyEvent.KEYCODE_DPAD_CENTER,
                     KeyEvent.KEYCODE_ENTER -> {

@@ -99,10 +99,10 @@ fun ViewContent(
 
 
     // ✅ MUST live here (top-level of the composable)
-    LaunchedEffect(rotationTick) {
-        listState.scrollToItem(0)
-        firstItemFocusRequester.requestFocus()
-    }
+//    LaunchedEffect(rotationTick) {
+//        listState.scrollToItem(0)
+//        firstItemFocusRequester.requestFocus()
+//    }
 
     Column(
         modifier = Modifier

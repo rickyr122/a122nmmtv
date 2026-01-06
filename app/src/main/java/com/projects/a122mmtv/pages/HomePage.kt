@@ -43,6 +43,7 @@ import com.projects.a122mmtv.auth.BannerViewModel
 import com.projects.a122mmtv.auth.BannerViewModelFactory
 import com.projects.a122mmtv.auth.HomeSessionViewModel
 import com.projects.a122mmtv.components.ViewBanner
+import com.projects.a122mmtv.components.ViewBanner2
 import com.projects.a122mmtv.components.ViewContent
 import com.projects.a122mmtv.dataclass.Section
 import com.projects.a122mmtv.viewmodels.HomeViewModel
@@ -90,24 +91,30 @@ fun HomePage(
             horizontalInset = horizontalInset
         )
 
-        ViewContent(
-            firstItemFocusRequester = contentFirstItemFR,
-            onRequestShowBanner = {
-                // NO-OP
-            },
-            horizontalInset = horizontalInset
-        )
-//        allSections.forEach { section ->
-//            when (section) {
-//                is Section.Category -> ViewContent(
-//                    firstItemFocusRequester = contentFirstItemFR,
-//                    onRequestShowBanner = {
-//                        // NO-OP
-//                    }
-//                )
-//                else -> Unit
-//            }
-//        }
+//        ViewBanner2(
+//            focusRequester = bannerFocusRequester,
+//            horizontalInset = horizontalInset
+//        )
+
+//        ViewContent(
+//            firstItemFocusRequester = contentFirstItemFR,
+//            onRequestShowBanner = {
+//                // NO-OP
+//            },
+//            horizontalInset = horizontalInset
+//        )
+        allSections.forEach { section ->
+            when (section) {
+                is Section.Category -> ViewContent(
+                    firstItemFocusRequester = contentFirstItemFR,
+                    onRequestShowBanner = {
+                        // NO-OP
+                    },
+                    horizontalInset = horizontalInset
+                )
+                else -> Unit
+            }
+        }
 
 
         //Spacer(modifier = Modifier.height(16.dp))
