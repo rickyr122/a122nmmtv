@@ -135,7 +135,7 @@ fun ViewContent(
     var isFirstFocused by remember { mutableStateOf(false) }
     var rotationTick by remember { mutableStateOf(0) }
     val listState = rememberLazyListState()
-
+    var focusedItem by remember { mutableStateOf<PosterItem?>(null) }
 
     // ✅ MUST live here (top-level of the composable)
 //    LaunchedEffect(rotationTick) {
@@ -148,6 +148,7 @@ fun ViewContent(
             .fillMaxWidth()
             .padding(start = horizontalInset, top = 10.dp, bottom = 8.dp)
             .alpha(if (isFirstFocused) 1f else 0.45f)
+            //.border(2.5.dp, Color.Red)
     ) {
 
         Text(
@@ -193,6 +194,11 @@ fun ViewContent(
                                 .focusRequester(firstItemFocusRequester)
                                 .onFocusChanged {
                                     isFirstFocused = it.isFocused
+                                    if (it.isFocused) {
+                                        focusedItem = item   // ✅ THIS is the key line
+                                    } else {
+                                        focusedItem = null
+                                    }
                                 }
                                 .onPreviewKeyEvent { event ->
                                     if (
@@ -211,6 +217,49 @@ fun ViewContent(
                 )
             }
         }
+
+        focusedItem?.let { item ->
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.6f)
+                    .height(400.dp) // 🔒 FIXED HEIGHT
+                    //.padding(start = horizontalInset)
+                    .background(Color.Black)
+                    .padding(horizontal = 0.dp, vertical = 12.dp)
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+
+                    /* ===== META ROW ===== */
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        MetaText(item.mType)
+                        Bullets()
+                        MetaText(item.mGenre)
+                        Bullets()
+                        MetaText(item.mYear)
+                        Bullets()
+                        MetaText(item.mDuration)
+                        Bullets()
+                        MetaText(item.mContent)
+                    }
+
+                    /* ===== DESCRIPTION ===== */
+                    Text(
+                        text = "Determined to prove herself, Officer Judy Hopps, the first bunny on Zootopia's police force, " +
+                                "jumps at the chance to crack her first case - even if it means partnering " +
+                                "with scam-artist fox Nick Wilde to solve the mystery.",
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        maxLines = 4
+                    )
+                }
+            }
+        }
+
     }
 }
 

@@ -26,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,10 +76,18 @@ fun HomePage(
     )
 
     val contentFirstItemFR = remember { FocusRequester() }
+    var isBannerCollapsed by rememberSaveable { mutableStateOf(false) }
+
+    val bannerOffsetY by animateDpAsState(
+        targetValue = if (isBannerCollapsed) (-410).dp else 0.dp,
+        animationSpec = tween(durationMillis = 420),
+        label = "bannerCollapse"
+    )
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .offset(y = bannerOffsetY)
     ) {
 
         // ========== BANNER ==========
@@ -92,15 +101,11 @@ fun HomePage(
             viewModel = bannerViewModel,   // ✅ pass explicitly
             homeSession = homeSession,
             onCollapseRequest = {
-                // 1️⃣ Scroll banner out of view
+                isBannerCollapsed = true
                 coroutineScope.launch {
-                    scrollState.animateScrollTo(
-                        scrollState.value + 300 // tweak if needed
-                    )
+                    delay(420) // wait animation
+                    contentFirstItemFR.requestFocus()
                 }
-
-                // 2️⃣ Move focus to content
-                contentFirstItemFR.requestFocus()
             },
             horizontalInset = horizontalInset
         )
@@ -113,10 +118,11 @@ fun HomePage(
         ViewContent(
             firstItemFocusRequester = contentFirstItemFR,
             onRequestShowBanner = {
+                isBannerCollapsed = false
                 coroutineScope.launch {
-                    scrollState.animateScrollTo(0)
+                    delay(420)
+                    bannerFocusRequester.requestFocus()
                 }
-                bannerFocusRequester.requestFocus()
             },
             onRequestFocusSelf = {
                 contentFirstItemFR.requestFocus()
