@@ -62,6 +62,8 @@ fun ViewContent(
     firstItemFocusRequester: FocusRequester,
     onRequestShowBanner: () -> Unit,
     onRequestFocusSelf: () -> Unit,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
     horizontalInset: Dp,
     sectionIndex: Int
 ) {
@@ -200,14 +202,21 @@ fun ViewContent(
                                     focusedItem = if (it.isFocused) item else null
                                 }
                                 .onPreviewKeyEvent { event ->
-                                    if (
-                                        event.type == KeyEventType.KeyDown &&
-                                        event.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_DPAD_UP
-                                    ) {
-                                        onRequestShowBanner()
-                                        true
+                                    if (event.type == KeyEventType.KeyDown) {
+                                        when (event.nativeKeyEvent.keyCode) {
+                                            KeyEvent.KEYCODE_DPAD_DOWN -> {
+                                                onMoveDown()
+                                                true
+                                            }
+                                            KeyEvent.KEYCODE_DPAD_UP -> {
+                                                onMoveUp()
+                                                true
+                                            }
+                                            else -> false
+                                        }
                                     } else false
                                 }
+
                         } else {
                             if (isFirstFocused) Modifier.padding(start = 2.dp)
                             else Modifier
@@ -226,7 +235,7 @@ fun ViewContent(
                     //.padding(start = horizontalInset)
                     .background(Color.Black)
                     .padding(horizontal = 0.dp, vertical = 12.dp)
-                    .border(2.5.dp, Color.Red)
+                    //.border(2.5.dp, Color.Red)
             ) {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(12.dp)

@@ -162,6 +162,23 @@ fun HomePage(
                                 ?.requestFocus()
                         },
 
+                        onMoveDown = {
+                            sectionFocusRequesters
+                                .getOrNull(currentIndex + 1)
+                                ?.requestFocus()
+                        },
+
+                        onMoveUp = {
+                            if (currentIndex == 0) {
+                                isBannerCollapsed = false
+                                coroutineScope.launch {
+                                    delay(420) // wait banner expand animation
+                                    bannerFocusRequester.requestFocus()
+                                }
+                            } else {
+                                sectionFocusRequesters[currentIndex - 1].requestFocus()
+                            }
+                        },
                         horizontalInset = horizontalInset
                     )
 
@@ -170,9 +187,6 @@ fun HomePage(
                 else -> Unit
             }
         }
-
-
-
 
         //Spacer(modifier = Modifier.height(16.dp))
 
