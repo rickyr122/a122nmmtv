@@ -62,7 +62,8 @@ fun ViewContent(
     firstItemFocusRequester: FocusRequester,
     onRequestShowBanner: () -> Unit,
     onRequestFocusSelf: () -> Unit,
-    horizontalInset: Dp
+    horizontalInset: Dp,
+    sectionIndex: Int
 ) {
     // 🔥 MOCK DATA LIVES HERE
     var items by remember {
@@ -136,6 +137,8 @@ fun ViewContent(
     var rotationTick by remember { mutableStateOf(0) }
     val listState = rememberLazyListState()
     var focusedItem by remember { mutableStateOf<PosterItem?>(null) }
+    val isFocusableSection = sectionIndex == 0
+
 
     // ✅ MUST live here (top-level of the composable)
 //    LaunchedEffect(rotationTick) {
@@ -152,7 +155,7 @@ fun ViewContent(
     ) {
 
         Text(
-            text = title,
+            text = "$title $sectionIndex",
             fontSize = 16.sp,
             color = Color.White,
             modifier = Modifier.padding(bottom = 12.dp)
@@ -189,16 +192,12 @@ fun ViewContent(
                     isFirst = isFirst,
                     isFirstFocused = isFirstFocused,
                     modifier = Modifier.then(
-                        if (isFirst) {
+                        if (isFirst && isFocusableSection) {
                             Modifier
                                 .focusRequester(firstItemFocusRequester)
                                 .onFocusChanged {
                                     isFirstFocused = it.isFocused
-                                    if (it.isFocused) {
-                                        focusedItem = item   // ✅ THIS is the key line
-                                    } else {
-                                        focusedItem = null
-                                    }
+                                    focusedItem = if (it.isFocused) item else null
                                 }
                                 .onPreviewKeyEvent { event ->
                                     if (
@@ -223,10 +222,11 @@ fun ViewContent(
             Box(
                 modifier = Modifier
                     .fillMaxWidth(0.6f)
-                    .height(400.dp) // 🔒 FIXED HEIGHT
+                    //.height(150.dp) // 🔒 FIXED HEIGHT
                     //.padding(start = horizontalInset)
                     .background(Color.Black)
                     .padding(horizontal = 0.dp, vertical = 12.dp)
+                    .border(2.5.dp, Color.Red)
             ) {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(12.dp)

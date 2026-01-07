@@ -231,7 +231,7 @@ fun ViewBanner(
                 } else Modifier
             )
             .clip(shape)
-            .border(2.5.dp, Color.Red)
+//            .border(2.5.dp, Color.Red)
     ) {
 
         when (uiState) {

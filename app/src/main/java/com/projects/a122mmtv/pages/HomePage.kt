@@ -115,39 +115,45 @@ fun HomePage(
 //            horizontalInset = horizontalInset
 //        )
 
-        ViewContent(
-            firstItemFocusRequester = contentFirstItemFR,
-            onRequestShowBanner = {
-                isBannerCollapsed = false
-                coroutineScope.launch {
-                    delay(420)
-                    bannerFocusRequester.requestFocus()
-                }
-            },
-            onRequestFocusSelf = {
-                contentFirstItemFR.requestFocus()
-            },
-            horizontalInset = horizontalInset
-        )
+//        ViewContent(
+//            firstItemFocusRequester = contentFirstItemFR,
+//            onRequestShowBanner = {
+//                isBannerCollapsed = false
+//                coroutineScope.launch {
+//                    delay(420)
+//                    bannerFocusRequester.requestFocus()
+//                }
+//            },
+//            onRequestFocusSelf = {
+//                contentFirstItemFR.requestFocus()
+//            },
+//            horizontalInset = horizontalInset
+//        )
 
-//        allSections.forEach { section ->
-//            when (section) {
-//                is Section.Category -> ViewContent(
-//                    firstItemFocusRequester = contentFirstItemFR,
-//                    onRequestShowBanner = {
-//                        coroutineScope.launch {
-//                            scrollState.animateScrollTo(0)
-//                        }
-//                        bannerFocusRequester.requestFocus()
-//                    },
-//                    onRequestFocusSelf = {
-//                        contentFirstItemFR.requestFocus()
-//                    },
-//                    horizontalInset = horizontalInset
-//                )
-//                else -> Unit
-//            }
-//        }
+        allSections.forEachIndexed { index, section ->
+            when (section) {
+                is Section.Category -> ViewContent(
+                    sectionIndex = index,               // 👈 pass index
+                    firstItemFocusRequester = contentFirstItemFR,
+                    onRequestShowBanner = {
+                        isBannerCollapsed = false
+                        coroutineScope.launch {
+                            delay(420)
+                            bannerFocusRequester.requestFocus()
+                        }
+                    },
+                    onRequestFocusSelf = {
+                        // only allow focus request if THIS section is index 0
+                        if (index == 0) {
+                            contentFirstItemFR.requestFocus()
+                        }
+                    },
+                    horizontalInset = horizontalInset
+                )
+                else -> Unit
+            }
+        }
+
 
 
         //Spacer(modifier = Modifier.height(16.dp))
