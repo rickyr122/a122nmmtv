@@ -75,8 +75,12 @@ fun HomePage(
         factory = BannerViewModelFactory(context)
     )
 
-    val contentFirstItemFR = remember { FocusRequester() }
+    //val contentFirstItemFR = remember { FocusRequester() }
     var isBannerCollapsed by rememberSaveable { mutableStateOf(false) }
+
+    val sectionFocusRequesters = remember(allSections.size) {
+        List(allSections.size) { FocusRequester() }
+    }
 
     val bannerOffsetY by animateDpAsState(
         targetValue = if (isBannerCollapsed) (-410).dp else 0.dp,
@@ -104,7 +108,10 @@ fun HomePage(
                 isBannerCollapsed = true
                 coroutineScope.launch {
                     delay(420) // wait animation
-                    contentFirstItemFR.requestFocus()
+                    sectionFocusRequesters
+                        .firstOrNull()
+                        ?.requestFocus()
+
                 }
             },
             horizontalInset = horizontalInset
@@ -130,29 +137,40 @@ fun HomePage(
 //            horizontalInset = horizontalInset
 //        )
 
-        allSections.forEachIndexed { index, section ->
+        var categoryIndex = 0
+
+        allSections.forEach { section ->
             when (section) {
-                is Section.Category -> ViewContent(
-                    sectionIndex = index,               // 👈 pass index
-                    firstItemFocusRequester = contentFirstItemFR,
-                    onRequestShowBanner = {
-                        isBannerCollapsed = false
-                        coroutineScope.launch {
-                            delay(420)
-                            bannerFocusRequester.requestFocus()
-                        }
-                    },
-                    onRequestFocusSelf = {
-                        // only allow focus request if THIS section is index 0
-                        if (index == 0) {
-                            contentFirstItemFR.requestFocus()
-                        }
-                    },
-                    horizontalInset = horizontalInset
-                )
+                is Section.Category -> {
+                    val currentIndex = categoryIndex
+
+                    ViewContent(
+                        sectionIndex = currentIndex,
+                        firstItemFocusRequester = sectionFocusRequesters[currentIndex],
+
+                        onRequestShowBanner = {
+                            isBannerCollapsed = false
+                            coroutineScope.launch {
+                                delay(420)
+                                bannerFocusRequester.requestFocus()
+                            }
+                        },
+
+                        onRequestFocusSelf = {
+                            sectionFocusRequesters
+                                .getOrNull(currentIndex)
+                                ?.requestFocus()
+                        },
+
+                        horizontalInset = horizontalInset
+                    )
+
+                    categoryIndex++
+                }
                 else -> Unit
             }
         }
+
 
 
 

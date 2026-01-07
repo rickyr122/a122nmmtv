@@ -137,7 +137,7 @@ fun ViewContent(
     var rotationTick by remember { mutableStateOf(0) }
     val listState = rememberLazyListState()
     var focusedItem by remember { mutableStateOf<PosterItem?>(null) }
-    val isFocusableSection = sectionIndex == 0
+    //val isFocusableSection = sectionIndex == 0
 
 
     // ✅ MUST live here (top-level of the composable)
@@ -192,7 +192,7 @@ fun ViewContent(
                     isFirst = isFirst,
                     isFirstFocused = isFirstFocused,
                     modifier = Modifier.then(
-                        if (isFirst && isFocusableSection) {
+                        if (isFirst) {
                             Modifier
                                 .focusRequester(firstItemFocusRequester)
                                 .onFocusChanged {
