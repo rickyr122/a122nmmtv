@@ -65,7 +65,9 @@ fun ViewContent(
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     horizontalInset: Dp,
-    sectionIndex: Int
+    sectionIndex: Int,
+    onRowFocused: () -> Unit
+
 ) {
     // 🔥 MOCK DATA LIVES HERE
     var items by remember {
@@ -153,7 +155,7 @@ fun ViewContent(
             .fillMaxWidth()
             .padding(start = horizontalInset, top = 10.dp, bottom = 8.dp)
             .alpha(if (isFirstFocused) 1f else 0.45f)
-            //.border(2.5.dp, Color.Red)
+            .border(2.5.dp, Color.Blue)
     ) {
 
         Text(

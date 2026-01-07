@@ -409,7 +409,7 @@ fun ContentScreen(
 ) {
     Column(
         modifier = modifier
-            .verticalScroll(scrollState)
+            //.verticalScroll(scrollState)
             .fillMaxSize()
     ) {
         when (selectedIndex) {

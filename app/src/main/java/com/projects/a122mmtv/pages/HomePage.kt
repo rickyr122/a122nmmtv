@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -30,6 +32,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
@@ -69,7 +72,6 @@ fun HomePage(
     val allSections = homeViewModel.allSections
     val coroutineScope = rememberCoroutineScope()
 
-
     // ✅ CORRECT ViewModel creation
     val bannerViewModel: BannerViewModel = viewModel(
         factory = BannerViewModelFactory(context)
@@ -88,121 +90,148 @@ fun HomePage(
         label = "bannerCollapse"
     )
 
-    Column(
+    val bannerHeight by animateDpAsState(
+        targetValue = if (isBannerCollapsed) 0.dp else 410.dp,
+        animationSpec = tween(420),
+        label = "bannerHeight"
+    )
+
+    val listState = rememberLazyListState()
+    val density = LocalDensity.current
+    val snapOffsetPx = with(density) { 0.dp.roundToPx() }
+
+    Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .offset(y = bannerOffsetY)
+            .fillMaxSize()
+            //.offset(y = bannerOffsetY)
     ) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxWidth()
+        ) {
 
-        // ========== BANNER ==========
-        ViewBanner(
-            navController = navController,
-            type = "HOM",
-            currentTabIndex = 0,
-            focusRequester = bannerFocusRequester,
-            upMenuFocusRequester = upMenuFocusRequester,
-            onBannerFocused = onBannerFocused,
-            viewModel = bannerViewModel,   // ✅ pass explicitly
-            homeSession = homeSession,
-            onCollapseRequest = {
-                isBannerCollapsed = true
-                coroutineScope.launch {
-                    delay(420) // wait animation
-                    sectionFocusRequesters
-                        .firstOrNull()
-                        ?.requestFocus()
+                item {
+                    // ========== BANNER ==========
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(bannerHeight)
+                            .clipToBounds()
+                    ) {
+                        if (bannerHeight > 0.dp) {
+                            ViewBanner(
+                                navController = navController,
+                                type = "HOM",
+                                currentTabIndex = 0,
+                                focusRequester = bannerFocusRequester,
+                                upMenuFocusRequester = upMenuFocusRequester,
+                                onBannerFocused = onBannerFocused,
+                                viewModel = bannerViewModel,   // ✅ pass explicitly
+                                homeSession = homeSession,
+                                onCollapseRequest = {
+                                    isBannerCollapsed = true
+                                    coroutineScope.launch {
+                                        delay(420) // wait animation
+                                        sectionFocusRequesters
+                                            .firstOrNull()
+                                            ?.requestFocus()
 
+                                    }
+                                },
+                                horizontalInset = horizontalInset
+                            )
+                        }
+                    }
                 }
-            },
-            horizontalInset = horizontalInset
-        )
 
-//        ViewBanner2(
-//            focusRequester = bannerFocusRequester,
-//            horizontalInset = horizontalInset
-//        )
+    //        ViewBanner2(
+    //            focusRequester = bannerFocusRequester,
+    //            horizontalInset = horizontalInset
+    //        )
 
-//        ViewContent(
-//            firstItemFocusRequester = contentFirstItemFR,
-//            onRequestShowBanner = {
-//                isBannerCollapsed = false
-//                coroutineScope.launch {
-//                    delay(420)
-//                    bannerFocusRequester.requestFocus()
-//                }
-//            },
-//            onRequestFocusSelf = {
-//                contentFirstItemFR.requestFocus()
-//            },
-//            horizontalInset = horizontalInset
-//        )
+    //        ViewContent(
+    //            firstItemFocusRequester = contentFirstItemFR,
+    //            onRequestShowBanner = {
+    //                isBannerCollapsed = false
+    //                coroutineScope.launch {
+    //                    delay(420)
+    //                    bannerFocusRequester.requestFocus()
+    //                }
+    //            },
+    //            onRequestFocusSelf = {
+    //                contentFirstItemFR.requestFocus()
+    //            },
+    //            horizontalInset = horizontalInset
+    //        )
 
-        var categoryIndex = 0
+            var categoryIndex = 0
 
-        allSections.forEach { section ->
-            when (section) {
-                is Section.Category -> {
-                    val currentIndex = categoryIndex
+            itemsIndexed(allSections.filterIsInstance<Section.Category>()) { index, section ->
+                ViewContent(
+                    sectionIndex = index,
+                    firstItemFocusRequester = sectionFocusRequesters[index],
 
-                    ViewContent(
-                        sectionIndex = currentIndex,
-                        firstItemFocusRequester = sectionFocusRequesters[currentIndex],
+                    onRequestShowBanner = {
+                        isBannerCollapsed = false
+                        coroutineScope.launch {
+                            delay(420)
+                            bannerFocusRequester.requestFocus()
+                        }
+                    },
 
-                        onRequestShowBanner = {
+                    onRequestFocusSelf = {
+                        sectionFocusRequesters
+                            .getOrNull(index)
+                            ?.requestFocus()
+                    },
+
+                    onMoveDown = {
+                        sectionFocusRequesters
+                            .getOrNull(index + 1)
+                            ?.requestFocus()
+                    },
+
+                    onMoveUp = {
+                        if (index == 0) {
                             isBannerCollapsed = false
                             coroutineScope.launch {
                                 delay(420)
+                                listState.animateScrollToItem(0)
                                 bannerFocusRequester.requestFocus()
                             }
-                        },
+                        } else {
+                            sectionFocusRequesters[index - 1].requestFocus()
+                        }
+                    },
+                    horizontalInset = horizontalInset,
+                    onRowFocused = {
+                        coroutineScope.launch {
+                            val lazyIndex = index + 1                 // banner is item 0
+                            val anchorIndex = maxOf(0, lazyIndex - 1) // snap above focused row
 
-                        onRequestFocusSelf = {
-                            sectionFocusRequesters
-                                .getOrNull(currentIndex)
-                                ?.requestFocus()
-                        },
-
-                        onMoveDown = {
-                            sectionFocusRequesters
-                                .getOrNull(currentIndex + 1)
-                                ?.requestFocus()
-                        },
-
-                        onMoveUp = {
-                            if (currentIndex == 0) {
-                                isBannerCollapsed = false
-                                coroutineScope.launch {
-                                    delay(420) // wait banner expand animation
-                                    bannerFocusRequester.requestFocus()
-                                }
-                            } else {
-                                sectionFocusRequesters[currentIndex - 1].requestFocus()
-                            }
-                        },
-                        horizontalInset = horizontalInset
-                    )
-
-                    categoryIndex++
-                }
-                else -> Unit
+                            listState.animateScrollToItem(anchorIndex)
+                        }
+                    }
+                )
+                //categoryIndex++
             }
+
+            //Spacer(modifier = Modifier.height(16.dp))
+
+            // ========== CONTENT ==========
+    //        Box(
+    //            modifier = Modifier
+    //                .fillMaxWidth()
+    //                .padding(start = horizontalInset)
+    //        ) {
+    //            ViewContent(
+    //                firstItemFocusRequester = contentFirstItemFR,
+    //                onRequestShowBanner = {
+    //                    // NO-OP
+    //                }
+    //            )
+    //        }
         }
-
-        //Spacer(modifier = Modifier.height(16.dp))
-
-        // ========== CONTENT ==========
-//        Box(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(start = horizontalInset)
-//        ) {
-//            ViewContent(
-//                firstItemFocusRequester = contentFirstItemFR,
-//                onRequestShowBanner = {
-//                    // NO-OP
-//                }
-//            )
-//        }
     }
 }
 
