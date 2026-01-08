@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.projects.a122mmtv.helper.Bullets
 import com.projects.a122mmtv.helper.MetaText
+import com.projects.a122mmtv.helper.fixEncoding
 
 private data class PosterItem(
     val id: Int,
@@ -47,7 +48,8 @@ private data class PosterItem(
     val mGenre: String,
     val mYear: String,
     val mDuration: String,
-    val mContent: String
+    val mContent: String,
+    val mDescription: String
 )
 
 private fun rotateLeft(list: List<PosterItem>): List<PosterItem> {
@@ -78,10 +80,13 @@ fun ViewContent(
                     "https://image.tmdb.org/t/p/w1280/9tOkjBEiiGcaClgJFtwocStZvIT.jpg",
                     "https://image.tmdb.org/t/p/w500/gNkaNY2Cg2BvYunWVgMVcbmQgc5.png",
                     "Movie",
-                    "Action",
-                    "2020",
-                    "2h 10m",
-                    "18+"
+                    "Animation",
+                    "2016",
+                    "1h 49m",
+                    "7+",
+                    "Determined to prove herself, Officer Judy Hopps, the first bunny on Zootopia's police force, " +
+                            "jumps at the chance to crack her first case - even if it means partnering " +
+                            "with scam-artist fox Nick Wilde to solve the mystery."
                 ),
                 PosterItem(
                     2,
@@ -89,9 +94,12 @@ fun ViewContent(
                     "https://image.tmdb.org/t/p/w500/7yXEfWFDGpqIfq9wdpMOHcHbi8g.png",
                     "Movie",
                     "Action",
-                    "2020",
-                    "2h 10m",
-                    "18+"
+                    "2025",
+                    "2h 50m",
+                    "18+",
+                    "Ethan Hunt and team continue their search for the terrifying AI known as the Entity — " +
+                            "which has infiltrated intelligence networks all over the globe — with the world's governments " +
+                            "and a mysterious ghost from Hunt's past on their trail."
                 ),
                 PosterItem(
                     3,
@@ -99,19 +107,22 @@ fun ViewContent(
                     "https://image.tmdb.org/t/p/w500/f1EpI3C6wd1iv7dCxNi3vU5DAX7.png",
                     "Movie",
                     "Action",
-                    "2020",
-                    "2h 10m",
-                    "18+"
+                    "2008",
+                    "2h 6m",
+                    "13+",
+                    "After being held captive in an Afghan cave, billionaire engineer Tony Stark creates a unique " +
+                            "weaponized suit of armor to fight evil."
                 ),
                 PosterItem(
                     4,
                     "https://image.tmdb.org/t/p/w1280/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg",
                     "https://image.tmdb.org/t/p/w500/b07VisHvZb0WzUpA8VB77wfMXwg.png",
                     "Movie",
-                    "Action",
-                    "2020",
-                    "2h 10m",
-                    "18+"
+                    "Drama",
+                    "2023",
+                    "3h 1m",
+                    "18+",
+                    "The story of J. Robert Oppenheimer's role in the development of the atomic bomb during World War II."
                 ),
                 PosterItem(
                     5,
@@ -119,9 +130,12 @@ fun ViewContent(
                     "https://image.tmdb.org/t/p/w500/xJMMxfKD9WJQLxq03p7T0c2AWb4.png",
                     "Movie",
                     "Action",
-                    "2020",
-                    "2h 10m",
-                    "18+"
+                    "2024",
+                    "2h 8m",
+                    "18+",
+                    "A listless Wade Wilson toils away in civilian life with his days as the morally flexible mercenary, Deadpool, behind him. " +
+                            "But when his homeworld faces an existential threat, Wade must reluctantly suit-up again " +
+                            "with an even more reluctant Wolverine."
                 ),
                 PosterItem(
                     6,
@@ -129,9 +143,12 @@ fun ViewContent(
                     "https://image.tmdb.org/t/p/w500/lAEaCmWwqkZSp8lAw6F7CfPkA9N.png",
                     "Movie",
                     "Action",
-                    "2020",
-                    "2h 10m",
-                    "18+"
+                    "2019",
+                    "2h 9m",
+                    "13+",
+                    "Peter Parker and his friends go on a summer trip to Europe. However, they will hardly be able to rest" +
+                            " - Peter will have to agree to help Nick Fury uncover the mystery of creatures that cause " +
+                            "natural disasters and destruction throughout the continent."
                 )
             )
         )
@@ -149,6 +166,11 @@ fun ViewContent(
 //        listState.scrollToItem(0)
 //        firstItemFocusRequester.requestFocus()
 //    }
+
+    var selectedItem by remember {
+        mutableStateOf<PosterItem?>(items.firstOrNull()) // 👈 id = 1 on first load
+    }
+
 
     Column(
         modifier = Modifier
@@ -177,6 +199,7 @@ fun ViewContent(
                         isFirstFocused
                     ) {
                         items = rotateLeft(items)
+                        selectedItem = items.first()
                         rotationTick++
                         true
                     } else false
@@ -201,7 +224,7 @@ fun ViewContent(
                                 .focusRequester(firstItemFocusRequester)
                                 .onFocusChanged {
                                     isFirstFocused = it.isFocused
-                                    focusedItem = if (it.isFocused) item else null
+                                    //focusedItem = if (it.isFocused) item else null
                                 }
                                 .onPreviewKeyEvent { event ->
                                     if (event.type == KeyEventType.KeyDown) {
@@ -228,7 +251,7 @@ fun ViewContent(
             }
         }
 
-        focusedItem?.let { item ->
+        selectedItem?.let { item ->
 
             Box(
                 modifier = Modifier
@@ -260,9 +283,7 @@ fun ViewContent(
 
                     /* ===== DESCRIPTION ===== */
                     Text(
-                        text = "Determined to prove herself, Officer Judy Hopps, the first bunny on Zootopia's police force, " +
-                                "jumps at the chance to crack her first case - even if it means partnering " +
-                                "with scam-artist fox Nick Wilde to solve the mystery.",
+                        text = item.mDescription.fixEncoding(),
                         color = Color.White,
                         fontSize = 14.sp,
                         maxLines = 4
