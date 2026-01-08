@@ -83,6 +83,7 @@ fun HomeScreen(
 
     var freezeSelection by remember { mutableStateOf(false) }
 
+
     TvScaledBox { scale ->
 
         // 1️⃣ BACK closes popup (highest priority)
@@ -160,6 +161,9 @@ fun HomeScreen(
         val profileFocusRequester = remember { FocusRequester() }
         var isProfileFocused by remember { mutableStateOf(false) }
         val iconSz = 40
+
+
+
 
         Box(
             modifier = Modifier
@@ -274,8 +278,13 @@ fun HomeScreen(
                                             // ✅ DOWN goes to banner
                                             KeyEvent.KEYCODE_DPAD_DOWN ->
                                                 if (isMenuFocused && selectedIndex == index) {
-                                                    isMenuFocused = false
+                                                    // 1️⃣ Make sure banner is visible
+                                                    // (HomePage already handles collapse state, so just focus)
+                                                    // 2️⃣ MOVE FOCUS FIRST
                                                     bannerFocusRequester.requestFocus()
+                                                    // 3️⃣ THEN disable menu focus
+                                                    isMenuFocused = false
+
                                                     true
                                                 } else false
 
@@ -427,6 +436,22 @@ fun ContentScreen(
     onDisableMenuFocus: () -> Unit,
     onEnableMenuFocus: () -> Unit
 ) {
+
+    var requestMenuFocus by remember { mutableStateOf(false) }
+
+    LaunchedEffect(requestMenuFocus) {
+        if (requestMenuFocus) {
+            upMenuFocusRequester.requestFocus()
+            requestMenuFocus = false
+        }
+    }
+
+    val onRequestMenuFocus: () -> Unit = {
+        onEnableMenuFocus()           // ✅ ask HomeScreen to enable menu
+        requestMenuFocus = true       // ✅ defer focus request
+    }
+
+
     Column(
         modifier = modifier
             //.verticalScroll(scrollState)
@@ -444,7 +469,8 @@ fun ContentScreen(
                 horizontalInset = horizontalInset,
                 scrollState = scrollState,
                 onDisableMenuFocus = onDisableMenuFocus,
-                onEnableMenuFocus = onEnableMenuFocus
+                onEnableMenuFocus = onEnableMenuFocus,
+                onRequestMenuFocus = onRequestMenuFocus
             )
 
             // SEARCH

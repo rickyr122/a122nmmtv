@@ -67,7 +67,9 @@ fun HomePage(
     homeViewModel: HomeViewModel = viewModel(),
     scrollState: ScrollState,
     onDisableMenuFocus: () -> Unit,   // 👈 ADD
-    onEnableMenuFocus: () -> Unit     // 👈 ADD
+    onEnableMenuFocus: () -> Unit,     // 👈 ADD
+    onRequestMenuFocus: () -> Unit
+
 ) {
     val context = LocalContext.current
     val isLoading = homeViewModel.isLoading
@@ -103,8 +105,6 @@ fun HomePage(
     val snapOffsetPx = with(density) { 0.dp.roundToPx() }
 
     var activeRowIndex by rememberSaveable { mutableStateOf(0) }
-
-
 
     Box(
         modifier = Modifier
@@ -144,7 +144,9 @@ fun HomePage(
 
                                     }
                                 },
-                                horizontalInset = horizontalInset
+                                horizontalInset = horizontalInset,
+                                onEnableMenuFocus = onEnableMenuFocus,
+                                onRequestMenuFocus = onRequestMenuFocus
                             )
                         }
                     }

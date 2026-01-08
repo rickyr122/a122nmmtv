@@ -97,7 +97,9 @@ fun ViewBanner(
     viewModel: BannerViewModel,
     homeSession: HomeSessionViewModel,
     onCollapseRequest: () -> Unit,
-    horizontalInset: Dp
+    horizontalInset: Dp,
+    onEnableMenuFocus: () -> Unit,
+    onRequestMenuFocus: () -> Unit
 ) {
     var isBannerActive by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(0.dp)
@@ -177,9 +179,11 @@ fun ViewBanner(
 
                 when (event.nativeKeyEvent.keyCode) {
                     KeyEvent.KEYCODE_BACK -> {
+                        onEnableMenuFocus()
                         // Banner belongs to HOME → return focus to Home menu
-                        upMenuFocusRequester.requestFocus()
-                        true // 🔴 IMPORTANT: consume BACK
+                        //upMenuFocusRequester.requestFocus()
+                        onRequestMenuFocus()
+                        false // 🔴 IMPORTANT: consume BACK
                     }
 
                     KeyEvent.KEYCODE_DPAD_LEFT -> {
@@ -205,8 +209,10 @@ fun ViewBanner(
                     }
 
                     KeyEvent.KEYCODE_DPAD_UP -> {
-                        upMenuFocusRequester.requestFocus()
-                        true
+                        onEnableMenuFocus()
+                        //upMenuFocusRequester.requestFocus()
+                        onRequestMenuFocus()
+                        false
                     }
 
                     KeyEvent.KEYCODE_DPAD_DOWN -> {
