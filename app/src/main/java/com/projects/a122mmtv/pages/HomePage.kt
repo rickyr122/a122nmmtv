@@ -65,7 +65,9 @@ fun HomePage(
     homeSession: HomeSessionViewModel,
     horizontalInset: Dp,
     homeViewModel: HomeViewModel = viewModel(),
-    scrollState: ScrollState
+    scrollState: ScrollState,
+    onDisableMenuFocus: () -> Unit,   // 👈 ADD
+    onEnableMenuFocus: () -> Unit     // 👈 ADD
 ) {
     val context = LocalContext.current
     val isLoading = homeViewModel.isLoading
@@ -209,6 +211,7 @@ fun HomePage(
                             }
                         } else {
                             // top-most row → go back to banner
+                            onDisableMenuFocus()
                             isBannerCollapsed = false
                             coroutineScope.launch {
                                 listState.animateScrollToItem(0)
@@ -219,13 +222,8 @@ fun HomePage(
                     ,
                     horizontalInset = horizontalInset,
                     onRowFocused = {
-                        activeRowIndex = index              // 👈 SET ACTIVE ROW
-                        coroutineScope.launch {
-                            val lazyIndex = index + 1       // banner = item 0
-                            listState.animateScrollToItem(
-                                index = lazyIndex,
-                                scrollOffset = 0
-                            )
+                        if (activeRowIndex != index) {
+                            activeRowIndex = index
                         }
                     },
                     isActiveRow = activeRowIndex == index,

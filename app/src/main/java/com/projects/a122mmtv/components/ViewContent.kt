@@ -258,8 +258,15 @@ fun ViewContent(
                                                 onMoveDown(); true
                                             }
                                             KeyEvent.KEYCODE_DPAD_UP -> {
-                                                onMoveUp(); true
+                                                if (sectionIndex == 0) {
+                                                    onMoveUp()
+                                                    false   // 🔥 LET FOCUS SYSTEM MOVE TO BANNER
+                                                } else {
+                                                    onMoveUp()
+                                                    true
+                                                }
                                             }
+
                                             else -> false
                                         }
                                     } else false

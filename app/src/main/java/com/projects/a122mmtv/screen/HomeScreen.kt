@@ -146,6 +146,15 @@ fun HomeScreen(
             //hasHomeAutoFocused = true
         }
 
+        val disableMenuFocus = {
+            isMenuFocused = false
+        }
+
+        val enableMenuFocus = {
+            isMenuFocused = true
+        }
+
+
         val topBarHeight = (80 * scale).dp
         val horizontalInset = (48 * scale).dp
         val profileFocusRequester = remember { FocusRequester() }
@@ -178,7 +187,10 @@ fun HomeScreen(
                     scrollState = scrollState,
                     onBannerFocused = {
                         isMenuFocused = false
-                    }
+                    },
+                    isMenuFocused = isMenuFocused,
+                    onDisableMenuFocus = disableMenuFocus,
+                    onEnableMenuFocus = enableMenuFocus
                 )
             }
 
@@ -271,7 +283,7 @@ fun HomeScreen(
                                         }
                                     }
 
-                                    .focusable()
+                                    .focusable(enabled = isMenuFocused)
                                     .clip(shape)
                                     .background(backgroundColor)
                                     .then(
@@ -410,7 +422,10 @@ fun ContentScreen(
     homeSession: HomeSessionViewModel,
     horizontalInset: Dp,
     scrollState: ScrollState,
-    onBannerFocused: () -> Unit
+    onBannerFocused: () -> Unit,
+    isMenuFocused: Boolean,
+    onDisableMenuFocus: () -> Unit,
+    onEnableMenuFocus: () -> Unit
 ) {
     Column(
         modifier = modifier
@@ -427,7 +442,9 @@ fun ContentScreen(
                 onBannerFocused = onBannerFocused,
                 homeSession = homeSession,
                 horizontalInset = horizontalInset,
-                scrollState = scrollState
+                scrollState = scrollState,
+                onDisableMenuFocus = onDisableMenuFocus,
+                onEnableMenuFocus = onEnableMenuFocus
             )
 
             // SEARCH
