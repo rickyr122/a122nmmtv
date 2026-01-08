@@ -127,6 +127,7 @@ fun HomeScreen(
         }
 
         val bannerFocusRequester = remember { FocusRequester() }
+        val scrollState = rememberScrollState()
 
 //        LaunchedEffect(selectedIndex) {
 //            if (selectedIndex == 1 && !hasHomeAutoFocused) {
@@ -151,7 +152,7 @@ fun HomeScreen(
         var isProfileFocused by remember { mutableStateOf(false) }
         val iconSz = 40
 
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black)
@@ -160,13 +161,35 @@ fun HomeScreen(
 //            Log.d("User_name::check", "user_name -> ${homeSession.userName}")
 //            Log.d("pp_link::check", "ppLink -> ${homeSession.pplink}")
 
+            /** CONTENT  **/
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = topBarHeight)
+            ) {
+                ContentScreen(
+                    modifier = Modifier.fillMaxSize(),
+                    navController = navController,
+                    selectedIndex = activePageIndex,
+                    bannerFocusRequester = bannerFocusRequester,
+                    upMenuFocusRequester = focusRequesters[selectedIndex],
+                    homeSession = homeSession,
+                    horizontalInset = horizontalInset,
+                    scrollState = scrollState,
+                    onBannerFocused = {
+                        isMenuFocused = false
+                    }
+                )
+            }
 
             /** TOP BAR **/
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(topBarHeight)
-                    .padding(horizontal = horizontalInset),
+                    .padding(horizontal = horizontalInset)
+                    .align(Alignment.TopCenter),
+                    //.background(Color.Transparent),
 //                    .onPreviewKeyEvent { event ->
 //                        if (
 //                            event.type == KeyEventType.KeyDown &&
@@ -298,25 +321,7 @@ fun HomeScreen(
                 }
             }
 
-            val scrollState = rememberScrollState()
 
-            Box(
-                modifier = Modifier.weight(1f)
-            ) {
-                ContentScreen(
-                    modifier = Modifier.fillMaxSize(),
-                    navController = navController,
-                    selectedIndex = activePageIndex,
-                    bannerFocusRequester = bannerFocusRequester,
-                    upMenuFocusRequester = focusRequesters[selectedIndex],
-                    homeSession = homeSession,
-                    horizontalInset = horizontalInset,
-                    scrollState = scrollState,
-                    onBannerFocused = {
-                        isMenuFocused = false
-                    }
-                )
-            }
 
         }
 

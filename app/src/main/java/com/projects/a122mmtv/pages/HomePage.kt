@@ -100,6 +100,10 @@ fun HomePage(
     val density = LocalDensity.current
     val snapOffsetPx = with(density) { 0.dp.roundToPx() }
 
+    var activeRowIndex by rememberSaveable { mutableStateOf(0) }
+
+
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -192,26 +196,40 @@ fun HomePage(
                     },
 
                     onMoveUp = {
-                        if (index == 0) {
+                        if (index > 0) {
+                            activeRowIndex = index - 1
+
+                            coroutineScope.launch {
+                                val lazyIndex = activeRowIndex + 1 // banner = 0
+                                listState.animateScrollToItem(lazyIndex, 0)
+
+                                // wait for scroll + recomposition
+                                delay(50)
+                                sectionFocusRequesters[activeRowIndex].requestFocus()
+                            }
+                        } else {
+                            // top-most row → go back to banner
                             isBannerCollapsed = false
                             coroutineScope.launch {
-                                delay(420)
                                 listState.animateScrollToItem(0)
                                 bannerFocusRequester.requestFocus()
                             }
-                        } else {
-                            sectionFocusRequesters[index - 1].requestFocus()
-                        }
-                    },
-                    horizontalInset = horizontalInset,
-                    onRowFocused = {
-                        coroutineScope.launch {
-                            val lazyIndex = index + 1                 // banner is item 0
-                            val anchorIndex = maxOf(0, lazyIndex - 1) // snap above focused row
-
-                            listState.animateScrollToItem(anchorIndex)
                         }
                     }
+                    ,
+                    horizontalInset = horizontalInset,
+                    onRowFocused = {
+                        activeRowIndex = index              // 👈 SET ACTIVE ROW
+                        coroutineScope.launch {
+                            val lazyIndex = index + 1       // banner = item 0
+                            listState.animateScrollToItem(
+                                index = lazyIndex,
+                                scrollOffset = 0
+                            )
+                        }
+                    },
+                    isActiveRow = activeRowIndex == index,
+                    activeRowIndex = activeRowIndex
                 )
                 //categoryIndex++
             }

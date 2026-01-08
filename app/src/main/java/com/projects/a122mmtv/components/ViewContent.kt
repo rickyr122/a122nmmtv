@@ -18,6 +18,13 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import android.view.KeyEvent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.border
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.LaunchedEffect
@@ -68,8 +75,9 @@ fun ViewContent(
     onMoveDown: () -> Unit,
     horizontalInset: Dp,
     sectionIndex: Int,
-    onRowFocused: () -> Unit
-
+    isActiveRow: Boolean,
+    onRowFocused: () -> Unit,
+    activeRowIndex: Int
 ) {
     // 🔥 MOCK DATA LIVES HERE
     var items by remember {
@@ -160,6 +168,11 @@ fun ViewContent(
     var focusedItem by remember { mutableStateOf<PosterItem?>(null) }
     //val isFocusableSection = sectionIndex == 0
 
+    val isAboveActive = sectionIndex < activeRowIndex
+    val isActive = sectionIndex == activeRowIndex
+    val isBelowActive = sectionIndex > activeRowIndex
+
+
 
     // ✅ MUST live here (top-level of the composable)
 //    LaunchedEffect(rotationTick) {
@@ -171,13 +184,22 @@ fun ViewContent(
         mutableStateOf<PosterItem?>(items.firstOrNull()) // 👈 id = 1 on first load
     }
 
+    if (isAboveActive) {
+        return
+    }
+
+    val rowAlpha by animateFloatAsState(
+        targetValue = if (isActive) 1f else 0.45f,
+        animationSpec = tween(220)
+    )
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(start = horizontalInset, top = 10.dp, bottom = 8.dp)
-            .alpha(if (isFirstFocused) 1f else 0.45f)
-            .border(2.5.dp, Color.Blue)
+            //.alpha(if (isFirstFocused) 1f else 0.45f)
+            .alpha(rowAlpha)
+            //.border(2.5.dp, Color.Blue)
     ) {
 
         Text(
@@ -211,7 +233,6 @@ fun ViewContent(
                 items = items,
                 key = { it.id }
             ) { item ->
-
                 val isFirst = item.id == items.first().id
 
                 PosterCard(
@@ -223,73 +244,68 @@ fun ViewContent(
                             Modifier
                                 .focusRequester(firstItemFocusRequester)
                                 .onFocusChanged {
-                                    isFirstFocused = it.isFocused
-                                    //focusedItem = if (it.isFocused) item else null
+                                    if (it.isFocused) {
+                                        isFirstFocused = true
+                                        onRowFocused()
+                                    } else {
+                                        isFirstFocused = false
+                                    }
                                 }
                                 .onPreviewKeyEvent { event ->
                                     if (event.type == KeyEventType.KeyDown) {
                                         when (event.nativeKeyEvent.keyCode) {
                                             KeyEvent.KEYCODE_DPAD_DOWN -> {
-                                                onMoveDown()
-                                                true
+                                                onMoveDown(); true
                                             }
                                             KeyEvent.KEYCODE_DPAD_UP -> {
-                                                onMoveUp()
-                                                true
+                                                onMoveUp(); true
                                             }
                                             else -> false
                                         }
                                     } else false
                                 }
-
-                        } else {
-                            if (isFirstFocused) Modifier.padding(start = 2.dp)
-                            else Modifier
-                        }
+                        } else Modifier
                     )
                 )
             }
         }
 
         selectedItem?.let { item ->
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(0.6f)
-                    //.height(150.dp) // 🔒 FIXED HEIGHT
-                    //.padding(start = horizontalInset)
-                    .background(Color.Black)
-                    .padding(horizontal = 0.dp, vertical = 12.dp)
-                    //.border(2.5.dp, Color.Red)
+            AnimatedVisibility(
+                visible = isActive,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
             ) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(0.6f)
+                        .background(Color.Black)
+                        .padding(vertical = 12.dp)
                 ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
 
-                    /* ===== META ROW ===== */
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        MetaText(item.mType)
-                        Bullets()
-                        MetaText(item.mGenre)
-                        Bullets()
-                        MetaText(item.mYear)
-                        Bullets()
-                        MetaText(item.mDuration)
-                        Bullets()
-                        MetaText(item.mContent)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            MetaText(item.mType)
+                            Bullets()
+                            MetaText(item.mGenre)
+                            Bullets()
+                            MetaText(item.mYear)
+                            Bullets()
+                            MetaText(item.mDuration)
+                            Bullets()
+                            MetaText(item.mContent)
+                        }
+
+                        Text(
+                            text = item.mDescription.fixEncoding(),
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            maxLines = 4
+                        )
                     }
-
-                    /* ===== DESCRIPTION ===== */
-                    Text(
-                        text = item.mDescription.fixEncoding(),
-                        color = Color.White,
-                        fontSize = 14.sp,
-                        maxLines = 4
-                    )
                 }
             }
+
         }
 
     }
