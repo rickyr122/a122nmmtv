@@ -82,7 +82,7 @@ fun HomeScreen(
     var isMenuFocused by remember { mutableStateOf(true) }
 
     var freezeSelection by remember { mutableStateOf(false) }
-
+    val menuBarFocusRequester = remember { FocusRequester() }
 
     TvScaledBox { scale ->
 
@@ -110,9 +110,14 @@ fun HomeScreen(
             }
         }
 
+//        LaunchedEffect(Unit) {
+//            focusRequesters[1].requestFocus()
+//        }
         LaunchedEffect(Unit) {
-            focusRequesters[1].requestFocus()
+            menuBarFocusRequester.requestFocus()
         }
+
+
 
         var activePageIndex by remember { mutableStateOf(selectedIndex) }
 
@@ -185,7 +190,7 @@ fun HomeScreen(
                     navController = navController,
                     selectedIndex = activePageIndex,
                     bannerFocusRequester = bannerFocusRequester,
-                    upMenuFocusRequester = focusRequesters[selectedIndex],
+                    menuBarFocusRequester = menuBarFocusRequester,
                     homeSession = homeSession,
                     horizontalInset = horizontalInset,
                     scrollState = scrollState,
@@ -201,6 +206,47 @@ fun HomeScreen(
             /** TOP BAR **/
             Row(
                 modifier = Modifier
+                    .focusRequester(menuBarFocusRequester)
+                    .focusable()
+                    .onFocusChanged {
+                        isMenuFocused = it.isFocused
+                    }
+                    .onPreviewKeyEvent { event ->
+                        if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+
+                        when (event.nativeKeyEvent.keyCode) {
+
+                            KeyEvent.KEYCODE_DPAD_LEFT -> {
+                                focusedIndex =
+                                    (focusedIndex - 1 + menuItems.size) % menuItems.size
+                                selectedIndex = focusedIndex   // 🔴 REQUIRED
+                                true
+                            }
+
+                            KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                                focusedIndex =
+                                    (focusedIndex + 1) % menuItems.size
+                                selectedIndex = focusedIndex
+                                true
+                            }
+
+                            KeyEvent.KEYCODE_DPAD_CENTER,
+                            KeyEvent.KEYCODE_ENTER -> {
+                                selectedIndex = focusedIndex
+                                true
+                            }
+
+                            KeyEvent.KEYCODE_DPAD_DOWN -> {
+                                bannerFocusRequester.requestFocus()
+                                isMenuFocused = false
+                                true
+                            }
+
+                            KeyEvent.KEYCODE_DPAD_UP -> true // lock UP
+
+                            else -> false
+                        }
+                    }
                     .fillMaxWidth()
                     .height(topBarHeight)
                     .padding(horizontal = horizontalInset)
@@ -258,14 +304,14 @@ fun HomeScreen(
                                 contentAlignment = Alignment.Center, // 👈 THIS is the fix
                                 modifier = Modifier
                                     .padding(end = (20 * scale).dp)
-                                    .focusRequester(focusRequesters[index])
-                                    .onFocusChanged {
-                                        if (it.isFocused) {
-                                            focusedIndex = index
-                                            selectedIndex = index
-                                            isMenuFocused = true
-                                        }
-                                    }
+//                                    .focusRequester(focusRequesters[index])
+//                                    .onFocusChanged {
+//                                        if (it.isFocused) {
+//                                            focusedIndex = index
+//                                            selectedIndex = index
+//                                            isMenuFocused = true
+//                                        }
+//                                    }
                                     .onPreviewKeyEvent { event ->
                                         if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
 
@@ -292,7 +338,7 @@ fun HomeScreen(
                                         }
                                     }
 
-                                    .focusable(enabled = isMenuFocused)
+                                    //.focusable(enabled = isMenuFocused)
                                     .clip(shape)
                                     .background(backgroundColor)
                                     .then(
@@ -427,7 +473,7 @@ fun ContentScreen(
     navController: NavController,
     selectedIndex: Int,
     bannerFocusRequester: FocusRequester,
-    upMenuFocusRequester: FocusRequester,
+    menuBarFocusRequester: FocusRequester,
     homeSession: HomeSessionViewModel,
     horizontalInset: Dp,
     scrollState: ScrollState,
@@ -439,12 +485,12 @@ fun ContentScreen(
 
     var requestMenuFocus by remember { mutableStateOf(false) }
 
-    LaunchedEffect(requestMenuFocus) {
-        if (requestMenuFocus) {
-            upMenuFocusRequester.requestFocus()
-            requestMenuFocus = false
-        }
-    }
+//    LaunchedEffect(requestMenuFocus) {
+//        if (requestMenuFocus) {
+//            upMenuFocusRequester.requestFocus()
+//            requestMenuFocus = false
+//        }
+//    }
 
     val onRequestMenuFocus: () -> Unit = {
         onEnableMenuFocus()           // ✅ ask HomeScreen to enable menu
@@ -463,7 +509,7 @@ fun ContentScreen(
             1 -> HomePage(
                 navController = navController,
                 bannerFocusRequester = bannerFocusRequester,
-                upMenuFocusRequester = upMenuFocusRequester,
+                menuBarFocusRequester = menuBarFocusRequester,
                 onBannerFocused = onBannerFocused,
                 homeSession = homeSession,
                 horizontalInset = horizontalInset,
@@ -483,7 +529,7 @@ fun ContentScreen(
             2 -> SeriesPage(
                 navController = navController,
                 bannerFocusRequester = bannerFocusRequester,
-                upMenuFocusRequester = upMenuFocusRequester,
+                upMenuFocusRequester = menuBarFocusRequester,
                 onBannerFocused = onBannerFocused,
                 homeSession = homeSession
             )
@@ -492,7 +538,7 @@ fun ContentScreen(
             3 -> MoviePage(
                 navController = navController,
                 bannerFocusRequester = bannerFocusRequester,
-                upMenuFocusRequester = upMenuFocusRequester,
+                upMenuFocusRequester = menuBarFocusRequester,
                 onBannerFocused = onBannerFocused,
                 homeSession = homeSession
             )

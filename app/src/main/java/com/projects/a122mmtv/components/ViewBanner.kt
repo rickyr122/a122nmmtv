@@ -92,7 +92,7 @@ fun ViewBanner(
     type: String,
     currentTabIndex: Int,
     focusRequester: FocusRequester,
-    upMenuFocusRequester: FocusRequester,
+    menuBarFocusRequester: FocusRequester,
     onBannerFocused: () -> Unit,
     viewModel: BannerViewModel,
     homeSession: HomeSessionViewModel,
@@ -175,15 +175,15 @@ fun ViewBanner(
             }
             .focusable()
             .onPreviewKeyEvent { event ->
+                if (!isBannerActive) return@onPreviewKeyEvent false
                 if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
 
                 when (event.nativeKeyEvent.keyCode) {
                     KeyEvent.KEYCODE_BACK -> {
                         onEnableMenuFocus()
-                        // Banner belongs to HOME → return focus to Home menu
-                        //upMenuFocusRequester.requestFocus()
-                        onRequestMenuFocus()
-                        false // 🔴 IMPORTANT: consume BACK
+                        isBannerActive = false
+                        menuBarFocusRequester.requestFocus() // ✅ CORRECT TARGET
+                        true
                     }
 
                     KeyEvent.KEYCODE_DPAD_LEFT -> {
@@ -210,10 +210,18 @@ fun ViewBanner(
 
                     KeyEvent.KEYCODE_DPAD_UP -> {
                         onEnableMenuFocus()
-                        //upMenuFocusRequester.requestFocus()
-                        onRequestMenuFocus()
-                        false
+                        isBannerActive = false
+                        menuBarFocusRequester.requestFocus() // ✅ CORRECT TARGET
+                        true
                     }
+
+                    KeyEvent.KEYCODE_BACK -> {
+                        onEnableMenuFocus()
+                        isBannerActive = false
+                        menuBarFocusRequester.requestFocus() // ✅ CORRECT TARGET
+                        true
+                    }
+
 
                     KeyEvent.KEYCODE_DPAD_DOWN -> {
                         onCollapseRequest()

@@ -60,7 +60,7 @@ import kotlinx.coroutines.launch
 fun HomePage(
     navController: NavController,
     bannerFocusRequester: FocusRequester,
-    upMenuFocusRequester: FocusRequester,
+    menuBarFocusRequester: FocusRequester,
     onBannerFocused: () -> Unit,
     homeSession: HomeSessionViewModel,
     horizontalInset: Dp,
@@ -130,7 +130,7 @@ fun HomePage(
                                 type = "HOM",
                                 currentTabIndex = 0,
                                 focusRequester = bannerFocusRequester,
-                                upMenuFocusRequester = upMenuFocusRequester,
+                                menuBarFocusRequester = menuBarFocusRequester,
                                 onBannerFocused = onBannerFocused,
                                 viewModel = bannerViewModel,   // ✅ pass explicitly
                                 homeSession = homeSession,
