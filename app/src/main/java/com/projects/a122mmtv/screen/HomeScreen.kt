@@ -214,16 +214,18 @@ fun HomeScreen(
                         when (event.nativeKeyEvent.keyCode) {
 
                             KeyEvent.KEYCODE_DPAD_LEFT -> {
-                                focusedIndex =
-                                    (focusedIndex - 1 + menuItems.size) % menuItems.size
-                                selectedIndex = focusedIndex   // 🔴 REQUIRED
+                                if (focusedIndex > 0) {
+                                    focusedIndex -= 1
+                                    selectedIndex = focusedIndex
+                                }
                                 true
                             }
 
                             KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                                focusedIndex =
-                                    (focusedIndex + 1) % menuItems.size
-                                selectedIndex = focusedIndex
+                                if (focusedIndex < menuItems.lastIndex) {
+                                    focusedIndex += 1
+                                    selectedIndex = focusedIndex
+                                }
                                 true
                             }
 
