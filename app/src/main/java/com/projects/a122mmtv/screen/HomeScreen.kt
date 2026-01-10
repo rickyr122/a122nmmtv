@@ -167,6 +167,9 @@ fun HomeScreen(
         var isProfileFocused by remember { mutableStateOf(false) }
         val iconSz = 40
 
+
+
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -266,39 +269,6 @@ fun HomeScreen(
 //                    },
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                /** LEFT PROFILE IMAGE **/
-                Box(
-                    modifier = Modifier
-                        .width((100 * scale).dp)
-                        .wrapContentHeight()
-                        .focusRequester(profileFocusRequester),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    //  COMPACT PROFILE (current behavior)
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(start = 0.dp)
-                    ) {
-                        AsyncImage(
-                            model = homeSession.pplink,
-                            contentDescription = "Profile",
-                            modifier = Modifier
-                                .size((iconSz * scale).dp)
-                                .clip(CircleShape),
-                            contentScale = ContentScale.Crop
-                        )
-
-//                    Spacer(modifier = Modifier.width((6 * scale).dp))
-//
-//                    Icon(
-//                        imageVector = Icons.Default.KeyboardArrowDown,
-//                        contentDescription = "Profile Menu",
-//                        tint = Color.LightGray,
-//                        modifier = Modifier.size((18 * scale).dp)
-//                    )
-                    }
-                }
-
                 /** CENTER MENU COLUMN **/
                 Column(
                     modifier = Modifier
@@ -424,47 +394,47 @@ fun HomeScreen(
 
         }
 
-//        /** LEFT PROFILE IMAGE **/
-//        Box(
-//            modifier = Modifier
-//                .width((240 * scale).dp)
-//                .wrapContentHeight()
-//                .focusRequester(profileFocusRequester)
-////                .onFocusChanged {
-////                    isProfileFocused = it.isFocused
-////                    freezeSelection = it.isFocused
-////                }
-////                .focusable()
-//                .offset(
-//                    x = (48 * scale).dp,
-//                    y = ((topBarHeight - (40 * scale).dp) / 2)
-//                ),
-//            contentAlignment = Alignment.CenterStart
-//        ) {
-//                //  COMPACT PROFILE (current behavior)
-//                Row(
-//                    verticalAlignment = Alignment.CenterVertically,
-//                    modifier = Modifier.padding(start = 8.dp)
-//                ) {
-//                    AsyncImage(
-//                        model = homeSession.pplink,
-//                        contentDescription = "Profile",
-//                        modifier = Modifier
-//                            .size((iconSz * scale).dp)
-//                            .clip(CircleShape),
-//                        contentScale = ContentScale.Crop
-//                    )
-//
-////                    Spacer(modifier = Modifier.width((6 * scale).dp))
-////
-////                    Icon(
-////                        imageVector = Icons.Default.KeyboardArrowDown,
-////                        contentDescription = "Profile Menu",
-////                        tint = Color.LightGray,
-////                        modifier = Modifier.size((18 * scale).dp)
-////                    )
+        /** LEFT PROFILE IMAGE **/
+        Box(
+            modifier = Modifier
+                .width((240 * scale).dp)
+                .wrapContentHeight()
+                .focusRequester(profileFocusRequester)
+//                .onFocusChanged {
+//                    isProfileFocused = it.isFocused
+//                    freezeSelection = it.isFocused
 //                }
-//        }
+//                .focusable()
+                .offset(
+                    x = (48 * scale).dp,
+                    y = ((topBarHeight - (40 * scale).dp) / 2)
+                ),
+            contentAlignment = Alignment.CenterStart
+        ) {
+                //  COMPACT PROFILE (current behavior)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(start = 8.dp)
+                ) {
+                    AsyncImage(
+                        model = homeSession.pplink,
+                        contentDescription = "Profile",
+                        modifier = Modifier
+                            .size((iconSz * scale).dp)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+
+//                    Spacer(modifier = Modifier.width((6 * scale).dp))
+//
+//                    Icon(
+//                        imageVector = Icons.Default.KeyboardArrowDown,
+//                        contentDescription = "Profile Menu",
+//                        tint = Color.LightGray,
+//                        modifier = Modifier.size((18 * scale).dp)
+//                    )
+                }
+        }
         val context = LocalContext.current
 
         if (showBackMenu) {
