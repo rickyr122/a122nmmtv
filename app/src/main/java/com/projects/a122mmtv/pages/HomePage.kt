@@ -104,7 +104,7 @@ fun HomePage(
     val density = LocalDensity.current
     val snapOffsetPx = with(density) { 0.dp.roundToPx() }
 
-    var activeRowIndex by rememberSaveable { mutableStateOf(0) }
+    var activeRowIndex by rememberSaveable { mutableStateOf(-1) }
 
     Box(
         modifier = Modifier
@@ -131,7 +131,10 @@ fun HomePage(
                                 currentTabIndex = 0,
                                 focusRequester = bannerFocusRequester,
                                 menuBarFocusRequester = menuBarFocusRequester,
-                                onBannerFocused = onBannerFocused,
+                                onBannerFocused = {
+                                    activeRowIndex = -1   // ✅ RESET ACTIVE ROW WHEN BANNER IS FOCUSED
+                                    onBannerFocused()     // forward to HomeScreen
+                                },
                                 viewModel = bannerViewModel,   // ✅ pass explicitly
                                 homeSession = homeSession,
                                 onCollapseRequest = {
@@ -194,9 +197,16 @@ fun HomePage(
                     },
 
                     onMoveDown = {
-                        sectionFocusRequesters
-                            .getOrNull(index + 1)
-                            ?.requestFocus()
+                        coroutineScope.launch {
+                            val target = index + 2 // +1 banner, +1 next row
+                            listState.animateScrollToItem(
+                                index = target,
+                                scrollOffset = 0
+                            )
+                            sectionFocusRequesters
+                                .getOrNull(index + 1)
+                                ?.requestFocus()
+                        }
                     },
 
                     onMoveUp = {

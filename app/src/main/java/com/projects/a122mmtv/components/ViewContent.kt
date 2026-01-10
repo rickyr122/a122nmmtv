@@ -85,16 +85,16 @@ fun ViewContent(
             listOf(
                 PosterItem(
                     1,
-                    "https://image.tmdb.org/t/p/w1280/9tOkjBEiiGcaClgJFtwocStZvIT.jpg",
-                    "https://image.tmdb.org/t/p/w500/gNkaNY2Cg2BvYunWVgMVcbmQgc5.png",
+                    "https://image.tmdb.org/t/p/w1280/34jW8LvjRplM8Pv06cBFDpLlenR.jpg",
+                    "https://image.tmdb.org/t/p/w500/lAEaCmWwqkZSp8lAw6F7CfPkA9N.png",
                     "Movie",
-                    "Animation",
-                    "2016",
-                    "1h 49m",
-                    "7+",
-                    "Determined to prove herself, Officer Judy Hopps, the first bunny on Zootopia's police force, " +
-                            "jumps at the chance to crack her first case - even if it means partnering " +
-                            "with scam-artist fox Nick Wilde to solve the mystery."
+                    "Action",
+                    "2019",
+                    "2h 9m",
+                    "13+",
+                    "Peter Parker and his friends go on a summer trip to Europe. However, they will hardly be able to rest" +
+                            " - Peter will have to agree to help Nick Fury uncover the mystery of creatures that cause " +
+                            "natural disasters and destruction throughout the continent."
                 ),
                 PosterItem(
                     2,
@@ -147,17 +147,18 @@ fun ViewContent(
                 ),
                 PosterItem(
                     6,
-                    "https://image.tmdb.org/t/p/w1280/34jW8LvjRplM8Pv06cBFDpLlenR.jpg",
-                    "https://image.tmdb.org/t/p/w500/lAEaCmWwqkZSp8lAw6F7CfPkA9N.png",
+                    "https://image.tmdb.org/t/p/w1280/9tOkjBEiiGcaClgJFtwocStZvIT.jpg",
+                    "https://image.tmdb.org/t/p/w500/gNkaNY2Cg2BvYunWVgMVcbmQgc5.png",
                     "Movie",
-                    "Action",
-                    "2019",
-                    "2h 9m",
-                    "13+",
-                    "Peter Parker and his friends go on a summer trip to Europe. However, they will hardly be able to rest" +
-                            " - Peter will have to agree to help Nick Fury uncover the mystery of creatures that cause " +
-                            "natural disasters and destruction throughout the continent."
+                    "Animation",
+                    "2016",
+                    "1h 49m",
+                    "7+",
+                    "Determined to prove herself, Officer Judy Hopps, the first bunny on Zootopia's police force, " +
+                            "jumps at the chance to crack her first case - even if it means partnering " +
+                            "with scam-artist fox Nick Wilde to solve the mystery."
                 )
+
             )
         )
     }
@@ -203,7 +204,7 @@ fun ViewContent(
     ) {
 
         Text(
-            text = "$title $sectionIndex",
+            text = "$title $sectionIndex $isActive",
             fontSize = 16.sp,
             color = Color.White,
             modifier = Modifier.padding(bottom = 12.dp)
@@ -278,11 +279,11 @@ fun ViewContent(
         }
 
         selectedItem?.let { item ->
-            AnimatedVisibility(
-                visible = isActive,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
-            ) {
+//            AnimatedVisibility(
+//                visible = isActive,
+//                enter = fadeIn(), //+ expandVertically(),
+//                exit = fadeOut() //+ shrinkVertically()
+//            ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(0.6f)
@@ -311,7 +312,7 @@ fun ViewContent(
                         )
                     }
                 }
-            }
+           // }
 
         }
 
