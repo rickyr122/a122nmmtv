@@ -197,12 +197,15 @@ fun ViewContent(
             hasActivatedOnce = true
         }
 
-        if (!isActive) {
+        if (!isActive && heroItem != null) {
+            items = buildList {
+                add(heroItem)
+                addAll(items.filter { it.id != heroItem.id })
+            }
             hasActivatedOnce = false
         }
+
     }
-
-
 
     var selectedItem by remember {
         mutableStateOf<PosterItem?>(items.firstOrNull()) // 👈 id = 1 on first load
@@ -251,7 +254,7 @@ fun ViewContent(
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
-                                    .border(0.5.dp, Color.White)
+                                    .border(1.dp, Color.White)
                     )
                 }
             }
