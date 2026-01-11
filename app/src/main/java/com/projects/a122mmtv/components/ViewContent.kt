@@ -173,13 +173,36 @@ fun ViewContent(
     val isActive = sectionIndex == activeRowIndex
     val isBelowActive = sectionIndex > activeRowIndex
 
+    val heroHeight = 260.dp
+    val heroWidth = heroHeight * (16f / 9f)
+    var heroItem by remember { mutableStateOf(items.first()) }
+    var hasActivatedOnce by remember { mutableStateOf(false) }
 
 
     // ✅ MUST live here (top-level of the composable)
-//    LaunchedEffect(rotationTick) {
-//        listState.scrollToItem(0)
-//        firstItemFocusRequester.requestFocus()
-//    }
+    LaunchedEffect(items) {
+        if (hasActivatedOnce) {
+            listState.scrollToItem(0)
+            firstItemFocusRequester.requestFocus()
+        }
+    }
+
+
+    LaunchedEffect(isActive) {
+        if (isActive && !hasActivatedOnce) {
+            heroItem = items.first()
+            items = rotateLeft(items)
+
+            // mark AFTER rotation
+            hasActivatedOnce = true
+        }
+
+        if (!isActive) {
+            hasActivatedOnce = false
+        }
+    }
+
+
 
     var selectedItem by remember {
         mutableStateOf<PosterItem?>(items.firstOrNull()) // 👈 id = 1 on first load
@@ -210,71 +233,103 @@ fun ViewContent(
             modifier = Modifier.padding(bottom = 12.dp)
         )
 
-        LazyRow(
-            state = listState,
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .clipToBounds()
-                .onPreviewKeyEvent { event ->
-                    if (
-                        event.type == KeyEventType.KeyDown &&
-                        event.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_DPAD_RIGHT &&
-                        isFirstFocused
-                    ) {
-                        items = rotateLeft(items)
-                        selectedItem = items.first()
-                        rotationTick++
-                        true
-                    } else false
-                },
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            contentPadding = PaddingValues(0.dp)
         ) {
-            items(
-                items = items,
-                key = { it.id }
-            ) { item ->
-                val isFirst = item.id == items.first().id
+            // HERO (only when active)
+            if (isActive) {
+                Box(
+                    modifier = Modifier
+                        .width(heroWidth)
+                        .height(heroHeight)
+                        .padding(end = 12.dp)
+                ) {
+                    AsyncImage(
+                        model = heroItem.posterUrl,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                                    .border(0.5.dp, Color.White)
+                    )
+                }
+            }
 
-                PosterCard(
-                    item = item,
-                    isFirst = isFirst,
-                    isFirstFocused = isFirstFocused,
-                    modifier = Modifier.then(
-                        if (isFirst) {
-                            Modifier
-                                .focusRequester(firstItemFocusRequester)
-                                .onFocusChanged {
-                                    if (it.isFocused) {
-                                        isFirstFocused = true
-                                        onRowFocused()
-                                    } else {
-                                        isFirstFocused = false
+            LazyRow(
+                state = listState,
+                modifier = Modifier
+                    .fillMaxWidth(),
+//                    .onPreviewKeyEvent { event ->
+//                        if (
+//                            event.type == KeyEventType.KeyDown &&
+//                            event.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_DPAD_RIGHT &&
+//                            isFirstFocused
+//                        ) {
+//                            items = rotateLeft(items)
+//                            heroItem = items.last()   // 👈 the promoted item
+//                            selectedItem = heroItem
+//                            true
+//                        } else false
+//                    },
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                contentPadding = PaddingValues(0.dp)
+            ) {
+                items(
+                    items = items,
+                    key = { it.id }
+                ) { item ->
+                    val isFirst = item.id == items.first().id
+
+                    PosterCard(
+                        item = item,
+                        isFirst = isFirst,
+                        isFirstFocused = isFirstFocused,
+                        modifier = Modifier.then(
+                            if (isFirst) {
+                                Modifier
+                                    .focusRequester(firstItemFocusRequester)
+                                    .onFocusChanged {
+                                        if (it.isFocused) {
+                                            isFirstFocused = true
+                                            onRowFocused()
+                                        } else {
+                                            isFirstFocused = false
+                                        }
                                     }
-                                }
-                                .onPreviewKeyEvent { event ->
-                                    if (event.type == KeyEventType.KeyDown) {
-                                        when (event.nativeKeyEvent.keyCode) {
-                                            KeyEvent.KEYCODE_DPAD_DOWN -> {
-                                                onMoveDown(); true
-                                            }
-                                            KeyEvent.KEYCODE_DPAD_UP -> {
-                                                if (sectionIndex == 0) {
-                                                    onMoveUp()
-                                                    false   // 🔥 LET FOCUS SYSTEM MOVE TO BANNER
-                                                } else {
-                                                    onMoveUp()
+                                    .onPreviewKeyEvent { event ->
+                                        if (event.type == KeyEventType.KeyDown) {
+                                            when (event.nativeKeyEvent.keyCode) {
+                                                KeyEvent.KEYCODE_DPAD_DOWN -> {
+                                                    onMoveDown(); true
+                                                }
+
+                                                KeyEvent.KEYCODE_DPAD_UP -> {
+                                                    if (sectionIndex == 0) {
+                                                        onMoveUp()
+                                                        false   // 🔥 LET FOCUS SYSTEM MOVE TO BANNER
+                                                    } else {
+                                                        onMoveUp()
+                                                        true
+                                                    }
+                                                }
+
+                                                KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                                                    items = rotateLeft(items)
+                                                    heroItem = items.last()
+                                                    selectedItem = heroItem
                                                     true
                                                 }
-                                            }
 
-                                            else -> false
-                                        }
-                                    } else false
-                                }
-                        } else Modifier
+
+                                                else -> false
+                                            }
+                                        } else false
+                                    }
+                            } else Modifier
+                        )
                     )
-                )
+                }
             }
         }
 
@@ -332,12 +387,13 @@ private fun PosterCard(
         modifier = modifier
             //.height(if (showHero) 160.dp else 225.dp)   // 👈 HEIGHT FIRST
             .height(260.dp)
-            .aspectRatio(if (showHero) 16f / 9.5f else 9.5f / 16f)
+            .aspectRatio(9.5f / 16f)
+            //.aspectRatio(if (showHero) 16f / 9.5f else 9.5f / 16f)
             //.clip(RoundedCornerShape(6.dp))
-            .then(
-                if (showHero) Modifier.border(0.5.dp, Color.White)
-                else Modifier
-            )
+//            .then(
+//                if (showHero) Modifier.border(0.5.dp, Color.White)
+//                else Modifier
+//            )
             .focusable()
     )
     {
