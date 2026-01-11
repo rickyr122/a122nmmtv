@@ -262,11 +262,16 @@ fun ViewContent(
                         }
 
                         KeyEvent.KEYCODE_DPAD_LEFT -> {
+                            // Step 1: rotate right
                             items = rotateRight(items)
-                            heroItem = items.first()
+
+                            // Step 2: hero becomes LAST item (not first!)
+                            heroItem = items.last()
                             selectedItem = heroItem
+
                             true
                         }
+
 
                         else -> false
                     }
