@@ -32,6 +32,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment.Companion.BottomCenter
+import androidx.compose.ui.Alignment.Companion.BottomStart
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.KeyEventType
@@ -64,6 +66,13 @@ private fun rotateLeft(list: List<PosterItem>): List<PosterItem> {
     return list.drop(1) + list.first()
 }
 
+private fun rotateRight(list: List<PosterItem>): List<PosterItem> {
+    if (list.isEmpty()) return list
+    return buildList {
+        add(list.last())
+        addAll(list.dropLast(1))
+    }
+}
 
 @Composable
 fun ViewContent(
@@ -226,7 +235,7 @@ fun ViewContent(
             .padding(start = horizontalInset, top = 10.dp, bottom = 8.dp)
             //.alpha(if (isFirstFocused) 1f else 0.45f)
             .alpha(rowAlpha)
-            //.border(2.5.dp, Color.Blue)
+        //.border(2.5.dp, Color.Blue)
     ) {
 
         Text(
@@ -240,6 +249,28 @@ fun ViewContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .clipToBounds()
+                .onPreviewKeyEvent { event ->
+                    if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+
+                    when (event.nativeKeyEvent.keyCode) {
+
+                        KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                            items = rotateLeft(items)
+                            heroItem = items.last()
+                            selectedItem = heroItem
+                            true
+                        }
+
+                        KeyEvent.KEYCODE_DPAD_LEFT -> {
+                            items = rotateRight(items)
+                            heroItem = items.first()
+                            selectedItem = heroItem
+                            true
+                        }
+
+                        else -> false
+                    }
+                }
         ) {
             // HERO (only when active)
             if (isActive) {
@@ -247,15 +278,52 @@ fun ViewContent(
                     modifier = Modifier
                         .width(heroWidth)
                         .height(heroHeight)
-                        .padding(end = 12.dp)
+                        .padding(end = 6.dp)
                 ) {
                     AsyncImage(
                         model = heroItem.posterUrl,
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
-                                    .border(1.dp, Color.White)
+                            .border(1.dp, Color.White)
                     )
+
+                    // bottom gradient
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(72.dp)
+                            .align(BottomCenter)
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(
+                                        Color.Transparent,
+                                        Color.Black.copy(alpha = 0.8f)
+                                    )
+                                )
+                            )
+                    )
+
+                    BoxWithConstraints(
+                        modifier = Modifier
+                            .align(BottomStart)
+                            .padding(
+                                start =  16.dp,
+                                bottom = 12.dp
+                            )
+                    ) {
+                        val maxLogoWidth =
+                            maxWidth * 0.5f   // or whatever your normal size is
+
+                        AsyncImage(
+                            model = heroItem.logoUrl,
+                            contentDescription = null,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier
+                                .widthIn(max = maxLogoWidth)
+                                .heightIn(max = 36.dp)
+                        )
+                    }
                 }
             }
 
@@ -263,18 +331,7 @@ fun ViewContent(
                 state = listState,
                 modifier = Modifier
                     .fillMaxWidth(),
-//                    .onPreviewKeyEvent { event ->
-//                        if (
-//                            event.type == KeyEventType.KeyDown &&
-//                            event.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_DPAD_RIGHT &&
-//                            isFirstFocused
-//                        ) {
-//                            items = rotateLeft(items)
-//                            heroItem = items.last()   // 👈 the promoted item
-//                            selectedItem = heroItem
-//                            true
-//                        } else false
-//                    },
+
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 contentPadding = PaddingValues(0.dp)
             ) {
@@ -317,12 +374,26 @@ fun ViewContent(
                                                     }
                                                 }
 
-                                                KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                                                    items = rotateLeft(items)
-                                                    heroItem = items.last()
-                                                    selectedItem = heroItem
-                                                    true
-                                                }
+//                                                KeyEvent.KEYCODE_DPAD_RIGHT -> {
+//                                                    items = rotateLeft(items)
+//                                                    heroItem = items.last()
+//                                                    selectedItem = heroItem
+//                                                    true
+//                                                }
+//
+//                                                KeyEvent.KEYCODE_DPAD_LEFT -> {
+//                                                    // bring previous item back
+//                                                    items = rotateRight(items)
+//
+//                                                    // promote it as hero
+//                                                    heroItem = items.first()
+//                                                    selectedItem = heroItem
+//
+//                                                    // shift row so hero is not duplicated
+//                                                    items = rotateLeft(items)
+//
+//                                                    true
+//                                                }
 
 
                                                 else -> false
@@ -342,35 +413,35 @@ fun ViewContent(
 //                enter = fadeIn(), //+ expandVertically(),
 //                exit = fadeOut() //+ shrinkVertically()
 //            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(0.6f)
-                        .background(Color.Black)
-                        .padding(vertical = 12.dp)
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.6f)
+                    .background(Color.Black)
+                    .padding(vertical = 12.dp)
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
 
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            MetaText(item.mType)
-                            Bullets()
-                            MetaText(item.mGenre)
-                            Bullets()
-                            MetaText(item.mYear)
-                            Bullets()
-                            MetaText(item.mDuration)
-                            Bullets()
-                            MetaText(item.mContent)
-                        }
-
-                        Text(
-                            text = item.mDescription.fixEncoding(),
-                            color = Color.White,
-                            fontSize = 14.sp,
-                            maxLines = 4
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        MetaText(item.mType)
+                        Bullets()
+                        MetaText(item.mGenre)
+                        Bullets()
+                        MetaText(item.mYear)
+                        Bullets()
+                        MetaText(item.mDuration)
+                        Bullets()
+                        MetaText(item.mContent)
                     }
+
+                    Text(
+                        text = item.mDescription.fixEncoding(),
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        maxLines = 4
+                    )
                 }
-           // }
+            }
+            // }
 
         }
 
@@ -388,18 +459,10 @@ private fun PosterCard(
 
     Box(
         modifier = modifier
-            //.height(if (showHero) 160.dp else 225.dp)   // 👈 HEIGHT FIRST
             .height(260.dp)
             .aspectRatio(9.5f / 16f)
-            //.aspectRatio(if (showHero) 16f / 9.5f else 9.5f / 16f)
-            //.clip(RoundedCornerShape(6.dp))
-//            .then(
-//                if (showHero) Modifier.border(0.5.dp, Color.White)
-//                else Modifier
-//            )
             .focusable()
-    )
-    {
+    ) {
 
         AsyncImage(
             model = item.posterUrl,
@@ -407,14 +470,13 @@ private fun PosterCard(
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
         )
-        val showMeta = isFirst && isFirstFocused
 
         // bottom gradient
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(72.dp)
-                .align(Alignment.BottomCenter)
+                .align(BottomCenter)
                 .background(
                     Brush.verticalGradient(
                         listOf(
@@ -427,15 +489,14 @@ private fun PosterCard(
 
         BoxWithConstraints(
             modifier = Modifier
-                .align(if (showHero) Alignment.BottomStart else Alignment.BottomCenter)
+                .align(BottomCenter)
                 .padding(
-                    start = if (showHero) 16.dp else 0.dp,
+                    //start = if (showHero) 16.dp else 0.dp,
                     bottom = 12.dp
                 )
         ) {
             val maxLogoWidth =
-                if (showHero) maxWidth * 0.5f
-                else maxWidth * 0.8f   // or whatever your normal size is
+                maxWidth * 0.8f   // or whatever your normal size is
 
             AsyncImage(
                 model = item.logoUrl,
@@ -443,33 +504,9 @@ private fun PosterCard(
                 contentScale = ContentScale.Fit,
                 modifier = Modifier
                     .widthIn(max = maxLogoWidth)
-                    .heightIn(max = if (showHero) 48.dp else 36.dp)
+                    .heightIn(max = 36.dp)
             )
         }
-
-//        if (showMeta) {
-//            Box(
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .height(300.dp)
-//                    .background(Color.Black)
-//                    .padding(horizontal = 12.dp, vertical = 10.dp)
-//            ) {
-//                Row(
-//                    verticalAlignment = Alignment.CenterVertically
-//                ) {
-//                    MetaText(item.mType)
-//                    Bullets()
-//                    MetaText(item.mGenre)
-//                    Bullets()
-//                    MetaText(item.mYear)
-//                    Bullets()
-//                    MetaText(item.mDuration)
-//                    Bullets()
-//                    MetaText(item.mContent)
-//                }
-//            }
-//        }
     }
 }
 
