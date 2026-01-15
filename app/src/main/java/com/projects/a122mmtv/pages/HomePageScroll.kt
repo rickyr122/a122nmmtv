@@ -1,5 +1,6 @@
 package com.projects.a122mmtv.pages
 
+import android.util.Log
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -68,7 +69,7 @@ fun HomePageNoScroll(
     var activeRowIndex by rememberSaveable { mutableStateOf(-1) }
 
     val BANNER_HEIGHT = 420.dp
-    val ROW_HEIGHT = 260.dp
+    val ROW_HEIGHT = 420.dp
 
     LaunchedEffect(Unit) {
         awaitFrame()
@@ -97,16 +98,26 @@ fun HomePageNoScroll(
 
     val allSections = homeViewModel.allSections
 
-    val requestMenuFocus: () -> Unit = {
-        menuBarFocusRequester.requestFocus()
-    }
+//    val requestMenuFocus: () -> Unit = {
+//        menuBarFocusRequester.requestFocus()
+//    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
             .onPreviewKeyEvent { event ->
+                Log.d(
+                    "DPAD_FLOW",
+                    "HomePage preview key=${event.nativeKeyEvent.keyCode} activeRowIndex=$activeRowIndex"
+                )
+
                 if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+
+                // 🔥 Banner owns ALL DPAD when active
+                if (activeRowIndex == -1) {
+                    return@onPreviewKeyEvent false
+                }
 
                 when (event.nativeKeyEvent.keyCode) {
                     KeyEvent.KEYCODE_DPAD_DOWN -> {
@@ -117,16 +128,11 @@ fun HomePageNoScroll(
                     }
 
                     KeyEvent.KEYCODE_DPAD_UP -> {
-                        if (activeRowIndex >= 0) {
-                            activeRowIndex =
-                                (activeRowIndex - 1)
-                                    .coerceAtLeast(-1)
-                            true
-                        } else {
-                            false   // 🔥 let ViewBanner handle it
-                        }
+                        activeRowIndex =
+                            (activeRowIndex - 1)
+                                .coerceAtLeast(-1)
+                        true
                     }
-
 
                     else -> false
                 }
@@ -158,7 +164,10 @@ fun HomePageNoScroll(
                 homeSession = homeSession,
                 horizontalInset = horizontalInset,
                 onEnableMenuFocus = onEnableMenuFocus,
-                onRequestMenuFocus = requestMenuFocus
+                onRequestMenuFocus = onRequestMenuFocus,
+                onRequestContentFocus = {
+                    activeRowIndex = 0    // 🔥 first content row becomes active
+                }
             )
         }
 
@@ -212,7 +221,8 @@ fun HomePageNoScroll(
             ) {
                 ViewContent2(
                     modifier = Modifier.fillMaxSize(),
-                    horizontalInset = horizontalInset
+                    horizontalInset = horizontalInset,
+                    isActive = isActive
                 )
             }
         }

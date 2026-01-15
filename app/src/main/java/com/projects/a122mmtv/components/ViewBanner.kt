@@ -1,5 +1,6 @@
 package com.projects.a122mmtv.components
 
+import android.util.Log
 import android.view.KeyEvent
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
@@ -68,6 +69,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -99,7 +101,8 @@ fun ViewBanner(
     //onCollapseRequest: () -> Unit,
     horizontalInset: Dp,
     onEnableMenuFocus: () -> Unit,
-    onRequestMenuFocus: () -> Unit
+    onRequestMenuFocus: () -> Unit,
+    onRequestContentFocus: () -> Unit
 ) {
     var isBannerActive by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(0.dp)
@@ -115,6 +118,8 @@ fun ViewBanner(
 
     var isOnPlay by remember { mutableStateOf(true) }
     var isOnInfo by remember { mutableStateOf(false) }
+
+    val focusManager = LocalFocusManager.current
 
     LaunchedEffect(type, userId) {
 
@@ -175,6 +180,11 @@ fun ViewBanner(
             }
             .focusable()
             .onPreviewKeyEvent { event ->
+                Log.d(
+                    "DPAD_FLOW",
+                    "Banner preview key=${event.nativeKeyEvent.keyCode} isBannerActive=$isBannerActive"
+                )
+
                 if (!isBannerActive) return@onPreviewKeyEvent false
                 if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
 
@@ -209,6 +219,17 @@ fun ViewBanner(
                         true
                     }
 
+
+                    KeyEvent.KEYCODE_DPAD_UP -> {
+                        onRequestMenuFocus()
+
+                        // 🔥 FORCE focus to leave banner
+                        focusManager.moveFocus(FocusDirection.Up)
+
+                        true
+                    }
+
+
 //                    KeyEvent.KEYCODE_DPAD_UP -> {
 //                        onEnableMenuFocus()
 //                        isBannerActive = false
@@ -216,10 +237,12 @@ fun ViewBanner(
 //                        true
 //                    }
 
-//                    KeyEvent.KEYCODE_DPAD_DOWN -> {
-//                        onCollapseRequest()
-//                        true
-//                    }
+                    KeyEvent.KEYCODE_DPAD_DOWN -> {
+                        onRequestContentFocus()              // 🔥 activate content
+                        focusManager.moveFocus(FocusDirection.Down) // 🔥 force focus transfer
+                        true
+                    }
+
 
                     else -> false
                 }
