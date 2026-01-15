@@ -102,7 +102,8 @@ fun ViewBanner(
     horizontalInset: Dp,
     onEnableMenuFocus: () -> Unit,
     onRequestMenuFocus: () -> Unit,
-    onRequestContentFocus: () -> Unit
+    onRequestContentFocus: () -> Unit,
+    isMenuFocused: Boolean
 ) {
     var isBannerActive by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(0.dp)
@@ -120,6 +121,13 @@ fun ViewBanner(
     var isOnInfo by remember { mutableStateOf(false) }
 
     val focusManager = LocalFocusManager.current
+
+    LaunchedEffect(isBannerActive) {
+        if (isBannerActive && !isMenuFocused) {
+            playFocusRequester.requestFocus()
+        }
+    }
+
 
     LaunchedEffect(type, userId) {
 
@@ -160,7 +168,7 @@ fun ViewBanner(
 //        playFocusRequester.requestFocus()
 //    }
 
-    var hasBannerGivenInitialFocus by rememberSaveable { mutableStateOf(false) }
+//    var hasBannerGivenInitialFocus by rememberSaveable { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -172,10 +180,10 @@ fun ViewBanner(
                 if (it.isFocused) {
                     onBannerFocused()
 
-                    if (!hasBannerGivenInitialFocus) {
-                        playFocusRequester.requestFocus()
-                        hasBannerGivenInitialFocus = true
-                    }
+//                    if (!hasBannerGivenInitialFocus) {
+//                        playFocusRequester.requestFocus()
+//                        hasBannerGivenInitialFocus = true
+//                    }
                 }
             }
             .focusable()
@@ -430,9 +438,9 @@ fun ViewBanner(
 //                        ) {
 
 
-                        LaunchedEffect(isBannerActive) {
-                            if (isBannerActive) playFocusRequester.requestFocus()
-                        }
+//                        LaunchedEffect(isBannerActive) {
+//                            if (isBannerActive) playFocusRequester.requestFocus()
+//                        }
                         val buttonsOffset by animateDpAsState(
                             targetValue = if (isBannerActive) 0.dp else 20.dp,
                             label = "bannerButtonsOffset"

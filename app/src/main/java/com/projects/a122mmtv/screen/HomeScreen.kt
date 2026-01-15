@@ -143,14 +143,25 @@ fun HomeScreen(
 //                hasHomeAutoFocused = true
 //            }
 //        }
+        var hasHomeColdStarted by rememberSaveable { mutableStateOf(true) }
 
-        LaunchedEffect(Unit) {
-            // Cold app start only
-            delay(200)
-            isMenuFocused = false
-            bannerFocusRequester.requestFocus()
-            //hasHomeAutoFocused = true
+        LaunchedEffect(selectedIndex) {
+            if (selectedIndex == 1 && hasHomeColdStarted) {
+                delay(200)
+                isMenuFocused = false
+                bannerFocusRequester.requestFocus()
+                hasHomeColdStarted = false   // 🔥 only once
+            }
         }
+
+//        LaunchedEffect(Unit) {
+//            // Cold app start only
+//            delay(200)
+//            isMenuFocused = false
+//            bannerFocusRequester.requestFocus()
+//            //hasHomeAutoFocused = true
+//        }
+
 
         val disableMenuFocus = {
             isMenuFocused = false
@@ -530,7 +541,8 @@ fun ContentScreen(
                 scrollState = scrollState,
                 onDisableMenuFocus = onDisableMenuFocus,
                 onEnableMenuFocus = onEnableMenuFocus,
-                onRequestMenuFocus = onRequestMenuFocus
+                onRequestMenuFocus = onRequestMenuFocus,
+                isMenuFocused = isMenuFocused
             )
 
 

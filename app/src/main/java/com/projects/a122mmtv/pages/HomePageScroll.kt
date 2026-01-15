@@ -62,7 +62,8 @@ fun HomePageNoScroll(
     scrollState: ScrollState,
     onDisableMenuFocus: () -> Unit,   // 👈 ADD
     onEnableMenuFocus: () -> Unit,     // 👈 ADD
-    onRequestMenuFocus: () -> Unit
+    onRequestMenuFocus: () -> Unit,
+    isMenuFocused: Boolean
 ) {
     // -1 = banner
     //  0..n = content rows
@@ -71,10 +72,10 @@ fun HomePageNoScroll(
     val BANNER_HEIGHT = 420.dp
     val ROW_HEIGHT = 420.dp
 
-    LaunchedEffect(Unit) {
-        awaitFrame()
-        bannerFocusRequester.requestFocus()
-    }
+//    LaunchedEffect(Unit) {
+//        awaitFrame()
+//        bannerFocusRequester.requestFocus()
+//    }
 
     val transition = updateTransition(
         targetState = activeRowIndex,
@@ -167,7 +168,8 @@ fun HomePageNoScroll(
                 onRequestMenuFocus = onRequestMenuFocus,
                 onRequestContentFocus = {
                     activeRowIndex = 0    // 🔥 first content row becomes active
-                }
+                },
+                isMenuFocused = isMenuFocused
             )
         }
 
