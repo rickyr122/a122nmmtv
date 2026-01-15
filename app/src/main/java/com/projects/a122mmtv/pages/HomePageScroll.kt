@@ -97,6 +97,9 @@ fun HomePageNoScroll(
 
     val allSections = homeViewModel.allSections
 
+    val requestMenuFocus: () -> Unit = {
+        menuBarFocusRequester.requestFocus()
+    }
 
     Box(
         modifier = Modifier
@@ -114,11 +117,16 @@ fun HomePageNoScroll(
                     }
 
                     KeyEvent.KEYCODE_DPAD_UP -> {
-                        activeRowIndex =
-                            (activeRowIndex - 1)
-                                .coerceAtLeast(-1)
-                        true
+                        if (activeRowIndex >= 0) {
+                            activeRowIndex =
+                                (activeRowIndex - 1)
+                                    .coerceAtLeast(-1)
+                            true
+                        } else {
+                            false   // 🔥 let ViewBanner handle it
+                        }
                     }
+
 
                     else -> false
                 }
@@ -150,7 +158,7 @@ fun HomePageNoScroll(
                 homeSession = homeSession,
                 horizontalInset = horizontalInset,
                 onEnableMenuFocus = onEnableMenuFocus,
-                onRequestMenuFocus = onRequestMenuFocus
+                onRequestMenuFocus = requestMenuFocus
             )
         }
 

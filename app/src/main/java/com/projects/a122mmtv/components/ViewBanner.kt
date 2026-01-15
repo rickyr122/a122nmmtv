@@ -179,6 +179,7 @@ fun ViewBanner(
                 if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
 
                 when (event.nativeKeyEvent.keyCode) {
+
                     KeyEvent.KEYCODE_BACK -> {
                         onEnableMenuFocus()
                         isBannerActive = false
@@ -208,12 +209,12 @@ fun ViewBanner(
                         true
                     }
 
-                    KeyEvent.KEYCODE_DPAD_UP -> {
-                        onEnableMenuFocus()
-                        isBannerActive = false
-                        menuBarFocusRequester.requestFocus() // ✅ CORRECT TARGET
-                        true
-                    }
+//                    KeyEvent.KEYCODE_DPAD_UP -> {
+//                        onEnableMenuFocus()
+//                        isBannerActive = false
+//                        menuBarFocusRequester.requestFocus() // ✅ CORRECT TARGET
+//                        true
+//                    }
 
 //                    KeyEvent.KEYCODE_DPAD_DOWN -> {
 //                        onCollapseRequest()
