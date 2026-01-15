@@ -96,7 +96,7 @@ fun ViewBanner(
     onBannerFocused: () -> Unit,
     viewModel: BannerViewModel,
     homeSession: HomeSessionViewModel,
-    onCollapseRequest: () -> Unit,
+    //onCollapseRequest: () -> Unit,
     horizontalInset: Dp,
     onEnableMenuFocus: () -> Unit,
     onRequestMenuFocus: () -> Unit
@@ -215,18 +215,10 @@ fun ViewBanner(
                         true
                     }
 
-                    KeyEvent.KEYCODE_BACK -> {
-                        onEnableMenuFocus()
-                        isBannerActive = false
-                        menuBarFocusRequester.requestFocus() // ✅ CORRECT TARGET
-                        true
-                    }
-
-
-                    KeyEvent.KEYCODE_DPAD_DOWN -> {
-                        onCollapseRequest()
-                        true
-                    }
+//                    KeyEvent.KEYCODE_DPAD_DOWN -> {
+//                        onCollapseRequest()
+//                        true
+//                    }
 
                     else -> false
                 }

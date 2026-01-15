@@ -6,7 +6,6 @@ import android.view.KeyEvent
 import androidx.activity.compose.BackHandler
 import com.projects.a122mmtv.R
 import com.projects.a122mmtv.helper.TvScaledBox
-import com.projects.a122mmtv.pages.HomePage
 import com.projects.a122mmtv.pages.MoviePage
 import com.projects.a122mmtv.pages.ProfilePage
 import com.projects.a122mmtv.pages.SearchPage
@@ -55,6 +54,7 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import coil.compose.AsyncImage
 import com.projects.a122mmtv.auth.HomeSessionViewModel
+import com.projects.a122mmtv.pages.HomePageNoScroll
 import kotlinx.coroutines.delay
 
 @Composable
@@ -508,7 +508,19 @@ fun ContentScreen(
         when (selectedIndex) {
 
             // HOME
-            1 -> HomePage(
+//            1 -> HomePageNoScroll(
+//                navController = navController,
+//                bannerFocusRequester = bannerFocusRequester,
+//                menuBarFocusRequester = menuBarFocusRequester,
+//                onBannerFocused = onBannerFocused,
+//                homeSession = homeSession,
+//                horizontalInset = horizontalInset,
+//                scrollState = scrollState,
+//                onDisableMenuFocus = onDisableMenuFocus,
+//                onEnableMenuFocus = onEnableMenuFocus,
+//                onRequestMenuFocus = onRequestMenuFocus
+//            )
+            1 -> HomePageNoScroll(
                 navController = navController,
                 bannerFocusRequester = bannerFocusRequester,
                 menuBarFocusRequester = menuBarFocusRequester,
@@ -520,6 +532,7 @@ fun ContentScreen(
                 onEnableMenuFocus = onEnableMenuFocus,
                 onRequestMenuFocus = onRequestMenuFocus
             )
+
 
             // SEARCH
             0 -> SearchPage(
