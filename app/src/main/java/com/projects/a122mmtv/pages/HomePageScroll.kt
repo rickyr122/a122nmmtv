@@ -36,6 +36,8 @@ import androidx.navigation.NavController
 import android.view.KeyEvent
 import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.updateTransition
+import androidx.compose.foundation.focusable
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.times
 import com.projects.a122mmtv.auth.BannerViewModel
 import com.projects.a122mmtv.auth.BannerViewModelFactory
@@ -98,6 +100,19 @@ fun HomePageNoScroll(
     )
 
     val allSections = homeViewModel.allSections
+    val categorySections = remember(homeViewModel.allSections) {
+        homeViewModel.allSections.filterIsInstance<Section.Category>()
+    }
+
+    val rowFocusRequesters = remember(categorySections.size) {
+        List(categorySections.size) { FocusRequester() }
+    }
+
+    LaunchedEffect(activeRowIndex) {
+        if (activeRowIndex in rowFocusRequesters.indices) {
+            rowFocusRequesters[activeRowIndex].requestFocus()
+        }
+    }
 
 //    val requestMenuFocus: () -> Unit = {
 //        menuBarFocusRequester.requestFocus()
@@ -122,20 +137,29 @@ fun HomePageNoScroll(
 
                 when (event.nativeKeyEvent.keyCode) {
                     KeyEvent.KEYCODE_DPAD_DOWN -> {
-                        activeRowIndex =
-                            (activeRowIndex + 1)
-                                .coerceAtMost(allSections.lastIndex)
-                        true
+                        val next = activeRowIndex + 1
+                        if (activeRowIndex >= categorySections.lastIndex) {
+                            true   // consume, but no movement
+                        } else {
+                            if (next in categorySections.indices) {
+                                activeRowIndex = next
+                                rowFocusRequesters[next].requestFocus()
+                                true
+                            } else false
+                        }
                     }
 
                     KeyEvent.KEYCODE_DPAD_UP -> {
-                        activeRowIndex =
-                            (activeRowIndex - 1).coerceAtLeast(-1)
-
-                        if (activeRowIndex == -1) {
+                        val prev = activeRowIndex - 1
+                        if (prev in categorySections.indices) {
+                            activeRowIndex = prev
+                            rowFocusRequesters[prev].requestFocus()
+                            true
+                        } else if (activeRowIndex == 0) {
+                            activeRowIndex = -1
                             bannerFocusRequester.requestFocus()
-                        }
-                        true
+                            true
+                        } else false
                     }
 
 
@@ -181,7 +205,7 @@ fun HomePageNoScroll(
         /* =======================
          * CONTENT ROWS
          * ======================= */
-        allSections.forEachIndexed { index, section ->
+        categorySections.forEachIndexed { index, section ->
 
             val isAbove = index < activeRowIndex
             val isActive = index == activeRowIndex
@@ -224,11 +248,26 @@ fun HomePageNoScroll(
                     .height(rowHeight)
                     .alpha(rowAlpha)
                     .clipToBounds()
+                    .focusRequester(rowFocusRequesters[index])
+                    //.focusable()
             ) {
                 ViewContent2(
                     modifier = Modifier.fillMaxSize(),
                     horizontalInset = horizontalInset,
-                    isActive = isActive
+                    isActive = isActive,
+                    focusRequester = rowFocusRequesters[index],
+                    onMoveDown = {
+                        activeRowIndex =
+                            (activeRowIndex + 1).coerceAtMost(allSections.lastIndex)
+                    },
+                    onMoveUp = {
+                        activeRowIndex =
+                            (activeRowIndex - 1).coerceAtLeast(-1)
+
+                        if (activeRowIndex == -1) {
+                            bannerFocusRequester.requestFocus()
+                        }
+                    }
                 )
             }
         }

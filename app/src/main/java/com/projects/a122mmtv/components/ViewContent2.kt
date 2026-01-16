@@ -36,6 +36,8 @@ import androidx.compose.ui.Alignment.Companion.BottomStart
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
@@ -69,7 +71,10 @@ private fun rotateRight(list: List<PosterItem2>): List<PosterItem2> {
 fun ViewContent2(
     modifier: Modifier = Modifier,
     horizontalInset: Dp,
-    isActive: Boolean
+    isActive: Boolean,
+    focusRequester: FocusRequester,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
 ) {
 
     // 🔥 MOCK DATA LIVES HERE
@@ -170,6 +175,8 @@ fun ViewContent2(
         mutableStateOf<PosterItem2?>(items.firstOrNull()) // 👈 id = 1 on first load
     }
 
+    //val firstItemFocusRequester = remember { FocusRequester() }
+
     LaunchedEffect(items) {
         if (hasActivatedOnce) {
             listState.scrollToItem(0)
@@ -215,8 +222,12 @@ fun ViewContent2(
             modifier = Modifier
                 .fillMaxWidth()
                 .clipToBounds()
+                .focusRequester(focusRequester)
+                .focusable()
                 .onPreviewKeyEvent { event ->
+                    if (!isActive) return@onPreviewKeyEvent false
                     if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+
 
                     when (event.nativeKeyEvent.keyCode) {
 
@@ -238,6 +249,16 @@ fun ViewContent2(
                             true
                         }
 
+                        KeyEvent.KEYCODE_DPAD_DOWN -> {
+                            onMoveDown()   // 🔥 delegate to parent
+                            true
+                        }
+
+                        KeyEvent.KEYCODE_DPAD_UP -> {
+                            onMoveUp()     // 🔥 delegate to parent
+                            true
+                        }
+
 
                         else -> false
                     }
@@ -250,6 +271,7 @@ fun ViewContent2(
                         .width(heroWidth)
                         .height(heroHeight)
                         .padding(end = 6.dp)
+                        .border(1.dp, Color.White)
                         //.focusable()
                 ) {
                     AsyncImage(
@@ -257,7 +279,7 @@ fun ViewContent2(
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
-                            .border(1.dp, Color.White)
+                            //.border(1.dp, Color.White)
                     )
 
                     // bottom gradient
