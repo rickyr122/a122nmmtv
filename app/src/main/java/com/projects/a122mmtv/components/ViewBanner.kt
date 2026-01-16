@@ -103,7 +103,8 @@ fun ViewBanner(
     onEnableMenuFocus: () -> Unit,
     onRequestMenuFocus: () -> Unit,
     onRequestContentFocus: () -> Unit,
-    isMenuFocused: Boolean
+    isMenuFocused: Boolean,
+    onExitToMenu: () -> Unit
 ) {
     var isBannerActive by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(0.dp)
@@ -205,6 +206,7 @@ fun ViewBanner(
                         onEnableMenuFocus()
                         isBannerActive = false
                         menuBarFocusRequester.requestFocus() // ✅ CORRECT TARGET
+                        onExitToMenu()
                         true
                     }
 

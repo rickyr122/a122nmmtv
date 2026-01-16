@@ -75,6 +75,7 @@ fun ViewContent2(
     focusRequester: FocusRequester,
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
+    onExitToMenu: () -> Unit
 ) {
 
     // 🔥 MOCK DATA LIVES HERE
@@ -259,6 +260,10 @@ fun ViewContent2(
                             true
                         }
 
+                        KeyEvent.KEYCODE_BACK -> {
+                            onExitToMenu()
+                            true
+                        }
 
                         else -> false
                     }

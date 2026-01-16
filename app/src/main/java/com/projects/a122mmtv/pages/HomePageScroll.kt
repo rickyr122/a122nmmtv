@@ -65,7 +65,8 @@ fun HomePageNoScroll(
     onDisableMenuFocus: () -> Unit,   // 👈 ADD
     onEnableMenuFocus: () -> Unit,     // 👈 ADD
     onRequestMenuFocus: () -> Unit,
-    isMenuFocused: Boolean
+    isMenuFocused: Boolean,
+    onReturnedToMenuFromContent: () -> Unit
 ) {
     // -1 = banner
     //  0..n = content rows
@@ -114,10 +115,15 @@ fun HomePageNoScroll(
         }
     }
 
+    val shouldBlockSystemBack = remember {
+        mutableStateOf(true)
+    }
+
+
+
 //    val requestMenuFocus: () -> Unit = {
 //        menuBarFocusRequester.requestFocus()
 //    }
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -197,7 +203,8 @@ fun HomePageNoScroll(
                 onRequestContentFocus = {
                     activeRowIndex = 0    // 🔥 first content row becomes active
                 },
-                isMenuFocused = isMenuFocused
+                isMenuFocused = isMenuFocused,
+                onExitToMenu = onReturnedToMenuFromContent
             )
         }
 
@@ -267,7 +274,12 @@ fun HomePageNoScroll(
                         if (activeRowIndex == -1) {
                             bannerFocusRequester.requestFocus()
                         }
-                    }
+                    },
+                    onExitToMenu = onReturnedToMenuFromContent,
+//                    onExitToMenu = {
+//                        menuBarFocusRequester.requestFocus(),
+//                        onReturnedToMenuFromContent
+//                    }
                 )
             }
         }
