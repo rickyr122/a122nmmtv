@@ -1,46 +1,46 @@
 package com.projects.a122mmtv.components
 
+import android.view.KeyEvent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import android.view.KeyEvent
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.border
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.BottomCenter
 import androidx.compose.ui.Alignment.Companion.BottomStart
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.Bullet
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,18 +48,6 @@ import coil.compose.AsyncImage
 import com.projects.a122mmtv.helper.Bullets
 import com.projects.a122mmtv.helper.MetaText
 import com.projects.a122mmtv.helper.fixEncoding
-
-private data class PosterItem(
-    val id: Int,
-    val posterUrl: String,
-    val logoUrl: String,
-    val mType: String,
-    val mGenre: String,
-    val mYear: String,
-    val mDuration: String,
-    val mContent: String,
-    val mDescription: String
-)
 
 private fun rotateLeft(list: List<PosterItem>): List<PosterItem> {
     if (list.isEmpty()) return list
@@ -76,18 +64,15 @@ private fun rotateRight(list: List<PosterItem>): List<PosterItem> {
 
 @Composable
 fun ViewContent(
-    title: String = "Fresh from Theater",
-    firstItemFocusRequester: FocusRequester,
-    onRequestShowBanner: () -> Unit,
-    onRequestFocusSelf: () -> Unit,
+    modifier: Modifier = Modifier,
+    horizontalInset: Dp,
+    isActive: Boolean,
+    focusRequester: FocusRequester,
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
-    horizontalInset: Dp,
-    sectionIndex: Int,
-    isActiveRow: Boolean,
-    onRowFocused: () -> Unit,
-    activeRowIndex: Int
+    onExitToMenu: () -> Unit
 ) {
+
     // 🔥 MOCK DATA LIVES HERE
     var items by remember {
         mutableStateOf(
@@ -172,27 +157,26 @@ fun ViewContent(
         )
     }
 
-    var isFirstFocused by remember { mutableStateOf(false) }
-    var rotationTick by remember { mutableStateOf(0) }
-    val listState = rememberLazyListState()
-    var focusedItem by remember { mutableStateOf<PosterItem?>(null) }
-    //val isFocusableSection = sectionIndex == 0
-
-    val isAboveActive = sectionIndex < activeRowIndex
-    val isActive = sectionIndex == activeRowIndex
-    val isBelowActive = sectionIndex > activeRowIndex
+    val title = "Fresh From Theater"
 
     val heroHeight = 260.dp
     val heroWidth = heroHeight * (16f / 9f)
     var heroItem by remember { mutableStateOf(items.first()) }
     var hasActivatedOnce by remember { mutableStateOf(false) }
 
+    var isFirstFocused by remember { mutableStateOf(false) }
+    val listState = rememberLazyListState()
 
-    // ✅ MUST live here (top-level of the composable)
+    var selectedItem by remember {
+        mutableStateOf<PosterItem?>(items.firstOrNull()) // 👈 id = 1 on first load
+    }
+
+    //val firstItemFocusRequester = remember { FocusRequester() }
+
     LaunchedEffect(items) {
         if (hasActivatedOnce) {
             listState.scrollToItem(0)
-            firstItemFocusRequester.requestFocus()
+            //firstItemFocusRequester.requestFocus()
         }
     }
 
@@ -216,30 +200,15 @@ fun ViewContent(
 
     }
 
-    var selectedItem by remember {
-        mutableStateOf<PosterItem?>(items.firstOrNull()) // 👈 id = 1 on first load
-    }
-
-    if (isAboveActive) {
-        return
-    }
-
-    val rowAlpha by animateFloatAsState(
-        targetValue = if (isActive) 1f else 0.45f,
-        animationSpec = tween(220)
-    )
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(start = horizontalInset, top = 10.dp, bottom = 8.dp)
-            //.alpha(if (isFirstFocused) 1f else 0.45f)
-            .alpha(rowAlpha)
         //.border(2.5.dp, Color.Blue)
     ) {
 
         Text(
-            text = "$title $sectionIndex $isActive",
+            text = "$title $isActive $isFirstFocused",
             fontSize = 16.sp,
             color = Color.White,
             modifier = Modifier.padding(bottom = 12.dp)
@@ -249,8 +218,12 @@ fun ViewContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .clipToBounds()
+                .focusRequester(focusRequester)
+                .focusable()
                 .onPreviewKeyEvent { event ->
+                    if (!isActive) return@onPreviewKeyEvent false
                     if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+
 
                     when (event.nativeKeyEvent.keyCode) {
 
@@ -272,6 +245,20 @@ fun ViewContent(
                             true
                         }
 
+                        KeyEvent.KEYCODE_DPAD_DOWN -> {
+                            onMoveDown()   // 🔥 delegate to parent
+                            true
+                        }
+
+                        KeyEvent.KEYCODE_DPAD_UP -> {
+                            onMoveUp()     // 🔥 delegate to parent
+                            true
+                        }
+
+                        KeyEvent.KEYCODE_BACK -> {
+                            onExitToMenu()
+                            true
+                        }
 
                         else -> false
                     }
@@ -284,13 +271,15 @@ fun ViewContent(
                         .width(heroWidth)
                         .height(heroHeight)
                         .padding(end = 6.dp)
+                        .border(1.dp, Color.White)
+                        //.focusable()
                 ) {
                     AsyncImage(
                         model = heroItem.posterUrl,
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
-                            .border(1.dp, Color.White)
+                            //.border(1.dp, Color.White)
                     )
 
                     // bottom gradient
@@ -349,75 +338,13 @@ fun ViewContent(
                     PosterCard(
                         item = item,
                         isFirst = isFirst,
-                        isFirstFocused = isFirstFocused,
-                        modifier = Modifier.then(
-                            if (isFirst) {
-                                Modifier
-                                    .focusRequester(firstItemFocusRequester)
-                                    .onFocusChanged {
-                                        if (it.isFocused) {
-                                            isFirstFocused = true
-                                            onRowFocused()
-                                        } else {
-                                            isFirstFocused = false
-                                        }
-                                    }
-                                    .onPreviewKeyEvent { event ->
-                                        if (event.type == KeyEventType.KeyDown) {
-                                            when (event.nativeKeyEvent.keyCode) {
-                                                KeyEvent.KEYCODE_DPAD_DOWN -> {
-                                                    onMoveDown(); true
-                                                }
-
-                                                KeyEvent.KEYCODE_DPAD_UP -> {
-                                                    if (sectionIndex == 0) {
-                                                        onMoveUp()
-                                                        false   // 🔥 LET FOCUS SYSTEM MOVE TO BANNER
-                                                    } else {
-                                                        onMoveUp()
-                                                        true
-                                                    }
-                                                }
-
-//                                                KeyEvent.KEYCODE_DPAD_RIGHT -> {
-//                                                    items = rotateLeft(items)
-//                                                    heroItem = items.last()
-//                                                    selectedItem = heroItem
-//                                                    true
-//                                                }
-//
-//                                                KeyEvent.KEYCODE_DPAD_LEFT -> {
-//                                                    // bring previous item back
-//                                                    items = rotateRight(items)
-//
-//                                                    // promote it as hero
-//                                                    heroItem = items.first()
-//                                                    selectedItem = heroItem
-//
-//                                                    // shift row so hero is not duplicated
-//                                                    items = rotateLeft(items)
-//
-//                                                    true
-//                                                }
-
-
-                                                else -> false
-                                            }
-                                        } else false
-                                    }
-                            } else Modifier
-                        )
+                        isFirstFocused = isFirstFocused
                     )
                 }
             }
         }
 
         selectedItem?.let { item ->
-//            AnimatedVisibility(
-//                visible = isActive,
-//                enter = fadeIn(), //+ expandVertically(),
-//                exit = fadeOut() //+ shrinkVertically()
-//            ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth(0.6f)
@@ -446,10 +373,7 @@ fun ViewContent(
                     )
                 }
             }
-            // }
-
         }
-
     }
 }
 
@@ -515,4 +439,15 @@ private fun PosterCard(
     }
 }
 
+private data class PosterItem(
+    val id: Int,
+    val posterUrl: String,
+    val logoUrl: String,
+    val mType: String,
+    val mGenre: String,
+    val mYear: String,
+    val mDuration: String,
+    val mContent: String,
+    val mDescription: String
+)
 

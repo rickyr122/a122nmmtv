@@ -1,7 +1,6 @@
 package com.projects.a122mmtv.screen
 
 import android.app.Activity
-import android.util.Log
 import android.view.KeyEvent
 import androidx.activity.compose.BackHandler
 import com.projects.a122mmtv.R
@@ -10,20 +9,16 @@ import com.projects.a122mmtv.pages.MoviePage
 import com.projects.a122mmtv.pages.ProfilePage
 import com.projects.a122mmtv.pages.SearchPage
 import com.projects.a122mmtv.pages.SeriesPage
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExitToApp
-import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
@@ -33,7 +28,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -49,12 +43,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import coil.compose.AsyncImage
 import com.projects.a122mmtv.auth.HomeSessionViewModel
-import com.projects.a122mmtv.pages.HomePageNoScroll
+import com.projects.a122mmtv.pages.HomePage
 import kotlinx.coroutines.delay
 
 @Composable
@@ -578,7 +571,7 @@ fun ContentScreen(
 //                onEnableMenuFocus = onEnableMenuFocus,
 //                onRequestMenuFocus = onRequestMenuFocus
 //            )
-            1 -> HomePageNoScroll(
+            1 -> HomePage(
                 navController = navController,
                 bannerFocusRequester = bannerFocusRequester,
                 menuBarFocusRequester = menuBarFocusRequester,
