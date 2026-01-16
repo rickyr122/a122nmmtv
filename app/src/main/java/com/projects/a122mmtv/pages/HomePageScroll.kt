@@ -130,10 +130,14 @@ fun HomePageNoScroll(
 
                     KeyEvent.KEYCODE_DPAD_UP -> {
                         activeRowIndex =
-                            (activeRowIndex - 1)
-                                .coerceAtLeast(-1)
+                            (activeRowIndex - 1).coerceAtLeast(-1)
+
+                        if (activeRowIndex == -1) {
+                            bannerFocusRequester.requestFocus()
+                        }
                         true
                     }
+
 
                     else -> false
                 }

@@ -124,6 +124,9 @@ fun ViewBanner(
 
     LaunchedEffect(isBannerActive) {
         if (isBannerActive && !isMenuFocused) {
+            // 🔥 DEFAULT banner state
+            isOnPlay = true
+            isOnInfo = false
             playFocusRequester.requestFocus()
         }
     }
@@ -246,6 +249,11 @@ fun ViewBanner(
 //                    }
 
                     KeyEvent.KEYCODE_DPAD_DOWN -> {
+                        // 🔥 RESET banner button state
+                        isOnPlay = false
+                        isOnInfo = false
+
+                        isBannerActive = false
                         onRequestContentFocus()              // 🔥 activate content
                         focusManager.moveFocus(FocusDirection.Down) // 🔥 force focus transfer
                         true

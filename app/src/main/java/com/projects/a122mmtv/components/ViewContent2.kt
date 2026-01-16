@@ -25,6 +25,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,6 +51,19 @@ import coil.compose.AsyncImage
 import com.projects.a122mmtv.helper.Bullets
 import com.projects.a122mmtv.helper.MetaText
 import com.projects.a122mmtv.helper.fixEncoding
+
+private fun rotateLeft(list: List<PosterItem2>): List<PosterItem2> {
+    if (list.isEmpty()) return list
+    return list.drop(1) + list.first()
+}
+
+private fun rotateRight(list: List<PosterItem2>): List<PosterItem2> {
+    if (list.isEmpty()) return list
+    return buildList {
+        add(list.last())
+        addAll(list.dropLast(1))
+    }
+}
 
 @Composable
 fun ViewContent2(
@@ -147,12 +161,40 @@ fun ViewContent2(
     val heroHeight = 260.dp
     val heroWidth = heroHeight * (16f / 9f)
     var heroItem by remember { mutableStateOf(items.first()) }
+    var hasActivatedOnce by remember { mutableStateOf(false) }
 
     var isFirstFocused by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
 
     var selectedItem by remember {
         mutableStateOf<PosterItem2?>(items.firstOrNull()) // 👈 id = 1 on first load
+    }
+
+    LaunchedEffect(items) {
+        if (hasActivatedOnce) {
+            listState.scrollToItem(0)
+            //firstItemFocusRequester.requestFocus()
+        }
+    }
+
+
+    LaunchedEffect(isActive) {
+        if (isActive && !hasActivatedOnce) {
+            heroItem = items.first()
+            items = rotateLeft(items)
+
+            // mark AFTER rotation
+            hasActivatedOnce = true
+        }
+
+        if (!isActive && heroItem != null) {
+            items = buildList {
+                add(heroItem)
+                addAll(items.filter { it.id != heroItem.id })
+            }
+            hasActivatedOnce = false
+        }
+
     }
 
     Column(
@@ -163,7 +205,7 @@ fun ViewContent2(
     ) {
 
         Text(
-            text = "$title $isActive",
+            text = "$title $isActive $isFirstFocused",
             fontSize = 16.sp,
             color = Color.White,
             modifier = Modifier.padding(bottom = 12.dp)
@@ -173,6 +215,33 @@ fun ViewContent2(
             modifier = Modifier
                 .fillMaxWidth()
                 .clipToBounds()
+                .onPreviewKeyEvent { event ->
+                    if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+
+                    when (event.nativeKeyEvent.keyCode) {
+
+                        KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                            items = rotateLeft(items)
+                            heroItem = items.last()
+                            selectedItem = heroItem
+                            true
+                        }
+
+                        KeyEvent.KEYCODE_DPAD_LEFT -> {
+                            // Step 1: rotate right
+                            items = rotateRight(items)
+
+                            // Step 2: hero becomes LAST item (not first!)
+                            heroItem = items.last()
+                            selectedItem = heroItem
+
+                            true
+                        }
+
+
+                        else -> false
+                    }
+                }
         ) {
             // HERO (only when active)
             if (isActive) {
@@ -181,6 +250,7 @@ fun ViewContent2(
                         .width(heroWidth)
                         .height(heroHeight)
                         .padding(end = 6.dp)
+                        //.focusable()
                 ) {
                     AsyncImage(
                         model = heroItem.posterUrl,
@@ -298,7 +368,7 @@ private fun PosterCard(
         modifier = modifier
             .height(260.dp)
             .aspectRatio(9.5f / 16f)
-            //.focusable()
+            .focusable()
     ) {
 
         AsyncImage(
