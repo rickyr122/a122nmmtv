@@ -1,5 +1,6 @@
 package com.projects.a122mmtv.auth
 
+import com.projects.a122mmtv.components.HomeMenuResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.Field
@@ -237,5 +238,12 @@ interface AuthApiService {
         @Query("type") type: String
     ): Response<BannerDto>
 
+    @GET("gethomemenu")
+    suspend fun getHomeMenu(
+        @Query("code") code: Int,
+        @Query("page") page: Int,
+        @Query("pageSize") pageSize: Int,
+        @Query("user_id") userId: Int
+    ): HomeMenuResponse
 
 }

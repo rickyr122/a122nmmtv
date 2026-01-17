@@ -583,7 +583,8 @@ fun ContentScreen(
                 onEnableMenuFocus = onEnableMenuFocus,
                 onRequestMenuFocus = onRequestMenuFocus,
                 isMenuFocused = isMenuFocused,
-                onReturnedToMenuFromContent = onReturnedToMenuFromContent
+                onReturnedToMenuFromContent = onReturnedToMenuFromContent,
+                type = "HOM"
             )
 
 

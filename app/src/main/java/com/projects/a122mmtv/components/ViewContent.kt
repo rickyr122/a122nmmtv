@@ -41,14 +41,53 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.projects.a122mmtv.auth.AuthApiService
 import com.projects.a122mmtv.auth.HomeSessionViewModel
+import com.projects.a122mmtv.dataclass.ApiClient
 import com.projects.a122mmtv.helper.Bullets
 import com.projects.a122mmtv.helper.MetaText
 import com.projects.a122mmtv.helper.fixEncoding
+
+// --- API MODELS (LOCAL) ---
+
+data class HomeMenuResponse(
+    val title: String,
+    val items: List<HomeMenuItem>
+)
+
+data class HomeMenuItem(
+    val m_id: String,
+    val m_title: String,
+    val m_duration: String,
+    val m_release_date: String,
+    val m_year: String,
+    val m_content: String,
+    val mGenre: String,
+    val mDescription: String,
+    val cvrUrl: String,
+    val bdropUrl: String,
+    val logoUrl: String
+)
+
+private fun HomeMenuItem.toPosterItem(id: Int): PosterItem {
+    return PosterItem(
+        id = id,
+        posterUrl = bdropUrl.ifBlank { cvrUrl },
+        logoUrl = logoUrl,
+        mType = "TV",
+        mGenre = mGenre,
+        mYear = m_year,
+        mDuration = m_duration,
+        mContent = m_content,
+        mDescription = mDescription
+    )
+}
+
 
 private fun rotateLeft(list: List<PosterItem>): List<PosterItem> {
     if (list.isEmpty()) return list
@@ -68,6 +107,7 @@ fun ViewContent(
     modifier: Modifier = Modifier,
     horizontalInset: Dp,
     homeSession: HomeSessionViewModel,
+    code: Int,
     isActive: Boolean,
     focusRequester: FocusRequester,
     onMoveUp: () -> Unit,
@@ -76,94 +116,103 @@ fun ViewContent(
 ) {
 
     // 🔥 MOCK DATA LIVES HERE
-    var items by remember {
-        mutableStateOf(
-            listOf(
-                PosterItem(
-                    1,
-                    "https://image.tmdb.org/t/p/w1280/34jW8LvjRplM8Pv06cBFDpLlenR.jpg",
-                    "https://image.tmdb.org/t/p/w500/lAEaCmWwqkZSp8lAw6F7CfPkA9N.png",
-                    "Movie",
-                    "Action",
-                    "2019",
-                    "2h 9m",
-                    "13+",
-                    "Peter Parker and his friends go on a summer trip to Europe. However, they will hardly be able to rest" +
-                            " - Peter will have to agree to help Nick Fury uncover the mystery of creatures that cause " +
-                            "natural disasters and destruction throughout the continent."
-                ),
-                PosterItem(
-                    2,
-                    "https://image.tmdb.org/t/p/w1280/xPNDRM50a58uvv1il2GVZrtWjkZ.jpg",
-                    "https://image.tmdb.org/t/p/w500/7yXEfWFDGpqIfq9wdpMOHcHbi8g.png",
-                    "Movie",
-                    "Action",
-                    "2025",
-                    "2h 50m",
-                    "18+",
-                    "Ethan Hunt and team continue their search for the terrifying AI known as the Entity — " +
-                            "which has infiltrated intelligence networks all over the globe — with the world's governments " +
-                            "and a mysterious ghost from Hunt's past on their trail."
-                ),
-                PosterItem(
-                    3,
-                    "https://image.tmdb.org/t/p/w1280/cKvDv2LpwVEqbdXWoQl4XgGN6le.jpg",
-                    "https://image.tmdb.org/t/p/w500/f1EpI3C6wd1iv7dCxNi3vU5DAX7.png",
-                    "Movie",
-                    "Action",
-                    "2008",
-                    "2h 6m",
-                    "13+",
-                    "After being held captive in an Afghan cave, billionaire engineer Tony Stark creates a unique " +
-                            "weaponized suit of armor to fight evil."
-                ),
-                PosterItem(
-                    4,
-                    "https://image.tmdb.org/t/p/w1280/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg",
-                    "https://image.tmdb.org/t/p/w500/b07VisHvZb0WzUpA8VB77wfMXwg.png",
-                    "Movie",
-                    "Drama",
-                    "2023",
-                    "3h 1m",
-                    "18+",
-                    "The story of J. Robert Oppenheimer's role in the development of the atomic bomb during World War II."
-                ),
-                PosterItem(
-                    5,
-                    "https://image.tmdb.org/t/p/w1280/ufpeVEM64uZHPpzzeiDNIAdaeOD.jpg",
-                    "https://image.tmdb.org/t/p/w500/xJMMxfKD9WJQLxq03p7T0c2AWb4.png",
-                    "Movie",
-                    "Action",
-                    "2024",
-                    "2h 8m",
-                    "18+",
-                    "A listless Wade Wilson toils away in civilian life with his days as the morally flexible mercenary, Deadpool, behind him. " +
-                            "But when his homeworld faces an existential threat, Wade must reluctantly suit-up again " +
-                            "with an even more reluctant Wolverine."
-                ),
-                PosterItem(
-                    6,
-                    "https://image.tmdb.org/t/p/w1280/9tOkjBEiiGcaClgJFtwocStZvIT.jpg",
-                    "https://image.tmdb.org/t/p/w500/gNkaNY2Cg2BvYunWVgMVcbmQgc5.png",
-                    "Movie",
-                    "Animation",
-                    "2016",
-                    "1h 49m",
-                    "7+",
-                    "Determined to prove herself, Officer Judy Hopps, the first bunny on Zootopia's police force, " +
-                            "jumps at the chance to crack her first case - even if it means partnering " +
-                            "with scam-artist fox Nick Wilde to solve the mystery."
-                )
+//    var items by remember {
+//        mutableStateOf(
+//            listOf(
+//                PosterItem(
+//                    1,
+//                    "https://image.tmdb.org/t/p/w1280/34jW8LvjRplM8Pv06cBFDpLlenR.jpg",
+//                    "https://image.tmdb.org/t/p/w500/lAEaCmWwqkZSp8lAw6F7CfPkA9N.png",
+//                    "Movie",
+//                    "Action",
+//                    "2019",
+//                    "2h 9m",
+//                    "13+",
+//                    "Peter Parker and his friends go on a summer trip to Europe. However, they will hardly be able to rest" +
+//                            " - Peter will have to agree to help Nick Fury uncover the mystery of creatures that cause " +
+//                            "natural disasters and destruction throughout the continent."
+//                ),
+//                PosterItem(
+//                    2,
+//                    "https://image.tmdb.org/t/p/w1280/xPNDRM50a58uvv1il2GVZrtWjkZ.jpg",
+//                    "https://image.tmdb.org/t/p/w500/7yXEfWFDGpqIfq9wdpMOHcHbi8g.png",
+//                    "Movie",
+//                    "Action",
+//                    "2025",
+//                    "2h 50m",
+//                    "18+",
+//                    "Ethan Hunt and team continue their search for the terrifying AI known as the Entity — " +
+//                            "which has infiltrated intelligence networks all over the globe — with the world's governments " +
+//                            "and a mysterious ghost from Hunt's past on their trail."
+//                ),
+//                PosterItem(
+//                    3,
+//                    "https://image.tmdb.org/t/p/w1280/cKvDv2LpwVEqbdXWoQl4XgGN6le.jpg",
+//                    "https://image.tmdb.org/t/p/w500/f1EpI3C6wd1iv7dCxNi3vU5DAX7.png",
+//                    "Movie",
+//                    "Action",
+//                    "2008",
+//                    "2h 6m",
+//                    "13+",
+//                    "After being held captive in an Afghan cave, billionaire engineer Tony Stark creates a unique " +
+//                            "weaponized suit of armor to fight evil."
+//                ),
+//                PosterItem(
+//                    4,
+//                    "https://image.tmdb.org/t/p/w1280/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg",
+//                    "https://image.tmdb.org/t/p/w500/b07VisHvZb0WzUpA8VB77wfMXwg.png",
+//                    "Movie",
+//                    "Drama",
+//                    "2023",
+//                    "3h 1m",
+//                    "18+",
+//                    "The story of J. Robert Oppenheimer's role in the development of the atomic bomb during World War II."
+//                ),
+//                PosterItem(
+//                    5,
+//                    "https://image.tmdb.org/t/p/w1280/ufpeVEM64uZHPpzzeiDNIAdaeOD.jpg",
+//                    "https://image.tmdb.org/t/p/w500/xJMMxfKD9WJQLxq03p7T0c2AWb4.png",
+//                    "Movie",
+//                    "Action",
+//                    "2024",
+//                    "2h 8m",
+//                    "18+",
+//                    "A listless Wade Wilson toils away in civilian life with his days as the morally flexible mercenary, Deadpool, behind him. " +
+//                            "But when his homeworld faces an existential threat, Wade must reluctantly suit-up again " +
+//                            "with an even more reluctant Wolverine."
+//                ),
+//                PosterItem(
+//                    6,
+//                    "https://image.tmdb.org/t/p/w1280/9tOkjBEiiGcaClgJFtwocStZvIT.jpg",
+//                    "https://image.tmdb.org/t/p/w500/gNkaNY2Cg2BvYunWVgMVcbmQgc5.png",
+//                    "Movie",
+//                    "Animation",
+//                    "2016",
+//                    "1h 49m",
+//                    "7+",
+//                    "Determined to prove herself, Officer Judy Hopps, the first bunny on Zootopia's police force, " +
+//                            "jumps at the chance to crack her first case - even if it means partnering " +
+//                            "with scam-artist fox Nick Wilde to solve the mystery."
+//                )
+//
+//            )
+//        )
+//    }
 
-            )
-        )
-    }
+    //val title = "Fresh From Theater"
 
-    val title = "Fresh From Theater"
+    val context = LocalContext.current
+    val api = ApiClient.create(AuthApiService::class.java)
+
+    var title by remember { mutableStateOf("") }
+    var items by remember { mutableStateOf<List<PosterItem>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(false) }
 
     val heroHeight = 260.dp
     val heroWidth = heroHeight * (16f / 9f)
-    var heroItem by remember { mutableStateOf(items.first()) }
+    //var heroItem by remember { mutableStateOf(items.first()) }
+    var heroItem by remember { mutableStateOf<PosterItem?>(null) }
+
     var hasActivatedOnce by remember { mutableStateOf(false) }
 
     var isFirstFocused by remember { mutableStateOf(false) }
@@ -174,7 +223,12 @@ fun ViewContent(
     }
 
     //val firstItemFocusRequester = remember { FocusRequester() }
-
+//    LaunchedEffect(items) {
+//        if (heroItem == null && items.isNotEmpty()) {
+//            heroItem = items.first()
+//        }
+//    }
+//
     LaunchedEffect(items) {
         if (hasActivatedOnce) {
             listState.scrollToItem(0)
@@ -182,25 +236,71 @@ fun ViewContent(
         }
     }
 
+//    LaunchedEffect(items, isActive) {
+//        // if (!isActive) return@LaunchedEffect
+//        if (hasActivatedOnce) return@LaunchedEffect
+//        if (items.isEmpty()) return@LaunchedEffect
+//
+//        // 🔥 EXACT old behavior
+//        heroItem = items.first()
+//        items = rotateLeft(items)
+//        hasActivatedOnce = true
+//    }
 
-    LaunchedEffect(isActive) {
-        if (isActive && !hasActivatedOnce) {
-            heroItem = items.first()
-            items = rotateLeft(items)
 
-            // mark AFTER rotation
-            hasActivatedOnce = true
-        }
+//    LaunchedEffect(items) {
+//        if (hasActivatedOnce) return@LaunchedEffect
+//        if (items.isEmpty()) return@LaunchedEffect
+//
+//        val first = items.first()
+//        val rotated = rotateLeft(items)
+//
+//        // ✅ atomic state transition
+//        heroItem = first
+//        items = rotated
+//        selectedItem = first
+//        hasActivatedOnce = true
+//    }
 
-        if (!isActive && heroItem != null) {
-            items = buildList {
-                add(heroItem)
-                addAll(items.filter { it.id != heroItem.id })
+
+
+    LaunchedEffect(code) {
+        isLoading = true
+
+        try {
+            val userId = homeSession.userId ?: 0
+
+            val res = api.getHomeMenu(
+                code = code,
+                page = 1,
+                pageSize = 20,
+                userId = userId
+            )
+
+            title = res.title   // ✅ FIX #1
+
+            val mapped = res.items.mapIndexed { i: Int, item: HomeMenuItem ->
+                item.toPosterItem(i)
             }
-            hasActivatedOnce = false
+
+            if (mapped.isNotEmpty()) {
+                heroItem = mapped.first()
+                items = rotateLeft(mapped)
+                selectedItem = heroItem
+            } else {
+                items = emptyList()
+                heroItem = null
+            }
+
+        } catch (e: Exception) {
+            items = emptyList()
+            heroItem = null
         }
 
+        hasActivatedOnce = true
+        isLoading = false
     }
+
 
     Column(
         modifier = Modifier
@@ -208,9 +308,9 @@ fun ViewContent(
             .padding(start = horizontalInset, top = 10.dp, bottom = 8.dp)
         //.border(2.5.dp, Color.Blue)
     ) {
-
+        val userId = homeSession.userId
         Text(
-            text = "$title $isActive $isFirstFocused",
+            text = "$title $userId",
             fontSize = 16.sp,
             color = Color.White,
             modifier = Modifier.padding(bottom = 12.dp)
@@ -266,6 +366,7 @@ fun ViewContent(
                     }
                 }
         ) {
+            val hero = heroItem
             // HERO (only when active)
             if (isActive) {
                 Box(
@@ -277,7 +378,7 @@ fun ViewContent(
                         //.focusable()
                 ) {
                     AsyncImage(
-                        model = heroItem.posterUrl,
+                        model = hero?.posterUrl,
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
@@ -312,7 +413,7 @@ fun ViewContent(
                             maxWidth * 0.5f   // or whatever your normal size is
 
                         AsyncImage(
-                            model = heroItem.logoUrl,
+                            model = hero?.logoUrl,
                             contentDescription = null,
                             contentScale = ContentScale.Fit,
                             modifier = Modifier

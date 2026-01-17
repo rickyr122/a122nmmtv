@@ -59,7 +59,8 @@ fun HomePage(
     onEnableMenuFocus: () -> Unit,     // 👈 ADD
     onRequestMenuFocus: () -> Unit,
     isMenuFocused: Boolean,
-    onReturnedToMenuFromContent: () -> Unit
+    onReturnedToMenuFromContent: () -> Unit,
+    type: String = "HOM"
 ) {
     // -1 = banner
     //  0..n = content rows
@@ -256,6 +257,7 @@ fun HomePage(
                     horizontalInset = horizontalInset,
                     homeSession = homeSession,
                     isActive = isActive,
+                    code = section.code,
                     focusRequester = rowFocusRequesters[index],
                     onMoveDown = {
                         activeRowIndex =
