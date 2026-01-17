@@ -51,7 +51,9 @@ import com.projects.a122mmtv.auth.HomeSessionViewModel
 import com.projects.a122mmtv.dataclass.ApiClient
 import com.projects.a122mmtv.helper.Bullets
 import com.projects.a122mmtv.helper.MetaText
+import com.projects.a122mmtv.helper.convertContentRating
 import com.projects.a122mmtv.helper.fixEncoding
+import com.projects.a122mmtv.utility.formatDurationFromMinutes
 
 // --- API MODELS (LOCAL) ---
 
@@ -77,9 +79,9 @@ data class HomeMenuItem(
 private fun HomeMenuItem.toPosterItem(id: Int): PosterItem {
     return PosterItem(
         id = id,
+        mId = m_id,
         posterUrl = bdropUrl.ifBlank { cvrUrl },
         logoUrl = logoUrl,
-        mType = "TV",
         mGenre = mGenre,
         mYear = m_year,
         mDuration = m_duration,
@@ -285,7 +287,7 @@ fun ViewContent(
 
             if (mapped.isNotEmpty()) {
                 heroItem = mapped.first()
-                items = rotateLeft(mapped)
+                items = mapped // if (isActive) rotateLeft(mapped) else mapped //rotateLeft(mapped)
                 selectedItem = heroItem
             } else {
                 items = emptyList()
@@ -301,6 +303,22 @@ fun ViewContent(
         isLoading = false
     }
 
+    var wasActive by remember { mutableStateOf(false) }
+
+    LaunchedEffect(isActive) {
+        if (isActive && !wasActive && items.isNotEmpty()) {
+            items = rotateLeft(items)
+        }
+
+        if (!isActive && wasActive && items.isNotEmpty()) {
+            // restore original order
+            items = rotateRight(items)
+        }
+
+        wasActive = isActive
+    }
+
+
 
     Column(
         modifier = Modifier
@@ -310,7 +328,7 @@ fun ViewContent(
     ) {
         val userId = homeSession.userId
         Text(
-            text = "$title $userId",
+            text = title,
             fontSize = 16.sp,
             color = Color.White,
             modifier = Modifier.padding(bottom = 12.dp)
@@ -348,7 +366,9 @@ fun ViewContent(
                         }
 
                         KeyEvent.KEYCODE_DPAD_DOWN -> {
+                            rotateLeft(items)
                             onMoveDown()   // 🔥 delegate to parent
+
                             true
                         }
 
@@ -455,17 +475,20 @@ fun ViewContent(
                     .padding(vertical = 12.dp)
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        MetaText(item.mType)
+                    val sType = if (item.mId.startsWith("MOV")) "Movie" else "Shows"
+                    val sDuration = if (item.mId.startsWith("MOV")) formatDurationFromMinutes(item.mDuration.toIntOrNull() ?: 0) else item.mDuration
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        MetaText(sType)
                         Bullets()
                         MetaText(item.mGenre)
                         Bullets()
                         MetaText(item.mYear)
                         Bullets()
-                        MetaText(item.mDuration)
+                        MetaText(sDuration)
                         Bullets()
-                        MetaText(item.mContent)
+                        MetaText(item.mContent.convertContentRating())
                     }
 
                     Text(
@@ -544,9 +567,9 @@ private fun PosterCard(
 
 private data class PosterItem(
     val id: Int,
+    val mId: String,
     val posterUrl: String,
     val logoUrl: String,
-    val mType: String,
     val mGenre: String,
     val mYear: String,
     val mDuration: String,
