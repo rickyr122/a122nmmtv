@@ -265,17 +265,17 @@ fun ViewContent(
 //    }
 
 
-
+    val userId = homeSession.userId ?: 0
     LaunchedEffect(code) {
         isLoading = true
 
         try {
-            val userId = homeSession.userId ?: 0
+            //val userId = homeSession.userId ?: 0
 
             val res = api.getHomeMenu(
                 code = code,
                 page = 1,
-                pageSize = 20,
+                pageSize = 100,
                 userId = userId
             )
 
@@ -318,7 +318,7 @@ fun ViewContent(
         wasActive = isActive
     }
 
-
+    var stepIndex by remember { mutableStateOf(0) }
 
     Column(
         modifier = Modifier
@@ -326,7 +326,7 @@ fun ViewContent(
             .padding(start = horizontalInset, top = 10.dp, bottom = 8.dp)
         //.border(2.5.dp, Color.Blue)
     ) {
-        val userId = homeSession.userId
+        //val userId = homeSession.userId
         Text(
             text = title,
             fontSize = 16.sp,
@@ -348,6 +348,8 @@ fun ViewContent(
                     when (event.nativeKeyEvent.keyCode) {
 
                         KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                            stepIndex += 1
+
                             items = rotateLeft(items)
                             heroItem = items.last()
                             selectedItem = heroItem
@@ -355,6 +357,13 @@ fun ViewContent(
                         }
 
                         KeyEvent.KEYCODE_DPAD_LEFT -> {
+                            if (stepIndex == 0) {
+                                // 🚫 already at start → block LEFT
+                                return@onPreviewKeyEvent true
+                            }
+
+                            stepIndex -= 1
+
                             // Step 1: rotate right
                             items = rotateRight(items)
 
