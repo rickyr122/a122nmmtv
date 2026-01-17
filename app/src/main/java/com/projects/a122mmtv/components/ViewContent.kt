@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.projects.a122mmtv.auth.HomeSessionViewModel
 import com.projects.a122mmtv.helper.Bullets
 import com.projects.a122mmtv.helper.MetaText
 import com.projects.a122mmtv.helper.fixEncoding
@@ -66,6 +67,7 @@ private fun rotateRight(list: List<PosterItem>): List<PosterItem> {
 fun ViewContent(
     modifier: Modifier = Modifier,
     horizontalInset: Dp,
+    homeSession: HomeSessionViewModel,
     isActive: Boolean,
     focusRequester: FocusRequester,
     onMoveUp: () -> Unit,

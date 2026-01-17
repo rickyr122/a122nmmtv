@@ -254,6 +254,7 @@ fun HomePage(
                 ViewContent(
                     modifier = Modifier.fillMaxSize(),
                     horizontalInset = horizontalInset,
+                    homeSession = homeSession,
                     isActive = isActive,
                     focusRequester = rowFocusRequesters[index],
                     onMoveDown = {
