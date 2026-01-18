@@ -560,10 +560,10 @@ fun BannerActionButtons(
                 modifier = Modifier
                     .height(buttonHeight)
                     .background(
-                        if (isOnPlay) Color.White else Color(0xFF3A3A3A),
+                        if (isOnPlay) Color.White else Color.Gray,
                         RoundedCornerShape(50)
                     )
-                    .padding(horizontal = 28.dp),
+                    .padding(horizontal = 20.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
@@ -585,10 +585,10 @@ fun BannerActionButtons(
                 modifier = Modifier
                     .height(buttonHeight)
                     .background(
-                        if (isOnInfo) Color.White else Color(0xFF3A3A3A),
+                        if (isOnInfo) Color.White else Color.Gray,
                         RoundedCornerShape(50)
                     )
-                    .padding(horizontal = 24.dp),
+                    .padding(horizontal = 18.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
