@@ -90,7 +90,6 @@ import org.json.JSONObject
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ViewBanner(
-    navController: NavController,
     type: String,
     currentTabIndex: Int,
     focusRequester: FocusRequester,
@@ -104,7 +103,9 @@ fun ViewBanner(
     onRequestMenuFocus: () -> Unit,
     onRequestContentFocus: () -> Unit,
     isMenuFocused: Boolean,
-    onExitToMenu: () -> Unit
+    onExitToMenu: () -> Unit,
+    onOpenDetail: (String) -> Unit,
+    restoreInfoFocus: Boolean
 ) {
     var isBannerActive by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(0.dp)
@@ -123,15 +124,28 @@ fun ViewBanner(
 
     val focusManager = LocalFocusManager.current
 
-    LaunchedEffect(isBannerActive) {
+//    LaunchedEffect(isBannerActive) {
+//        if (isBannerActive && !isMenuFocused) {
+//            // 🔥 DEFAULT banner state
+//            isOnPlay = true
+//            isOnInfo = false
+//            playFocusRequester.requestFocus()
+//        }
+//    }
+
+    LaunchedEffect(isBannerActive, restoreInfoFocus) {
         if (isBannerActive && !isMenuFocused) {
-            // 🔥 DEFAULT banner state
-            isOnPlay = true
-            isOnInfo = false
-            playFocusRequester.requestFocus()
+            if (restoreInfoFocus) {
+                isOnPlay = false
+                isOnInfo = true
+                infoFocusRequester.requestFocus()
+            } else {
+                isOnPlay = true
+                isOnInfo = false
+                playFocusRequester.requestFocus()
+            }
         }
     }
-
 
     LaunchedEffect(type, userId) {
 
@@ -227,7 +241,9 @@ fun ViewBanner(
                         if (isOnPlay) {
                             Toast.makeText(context, "Play pressed", Toast.LENGTH_SHORT).show()
                         } else {
-                            Toast.makeText(context, "More Info pressed", Toast.LENGTH_SHORT).show()
+//                            Toast.makeText(context, "More Info pressed", Toast.LENGTH_SHORT).show()
+                            val banner = (uiState as? BannerUiState.Success)?.data
+                            banner?.mId?.let { onOpenDetail(it) }
                         }
                         true
                     }
@@ -358,7 +374,9 @@ fun ViewBanner(
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         alignment = Alignment.TopCenter,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .alpha(0.8f)
                     )
 
                     // Gradient overlay
@@ -429,6 +447,7 @@ fun ViewBanner(
                             exit = fadeOut()
                         ) {
                             Text(
+                                modifier = Modifier.alpha(0.8f),
                                 text = banner.mDescription.fixEncoding(),
                                 color = Color.White.copy(alpha = 0.9f),
                                 fontSize = 12.sp,

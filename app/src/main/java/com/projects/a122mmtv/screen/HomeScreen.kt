@@ -77,6 +77,12 @@ fun HomeScreen(
     var freezeSelection by remember { mutableStateOf(false) }
     val menuBarFocusRequester = remember { FocusRequester() }
 
+    var isDetailOpen by remember { mutableStateOf(false) }
+    val onDetailVisibilityChanged: (Boolean) -> Unit = { open ->
+        isDetailOpen = open
+    }
+
+
     TvScaledBox { scale ->
 
         // 1️⃣ BACK closes popup (highest priority)
@@ -205,7 +211,7 @@ fun HomeScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = topBarHeight)
+                    .padding(top = if (isDetailOpen) 0.dp else topBarHeight)
             ) {
                 ContentScreen(
                     modifier = Modifier.fillMaxSize(),
@@ -223,243 +229,245 @@ fun HomeScreen(
                     onDisableMenuFocus = disableMenuFocus,
                     onEnableMenuFocus = enableMenuFocus,
                     onRequestContentFocus = onRequestContentFocus,
-                    onReturnedToMenuFromContent = onReturnedToMenuFromContent
+                    onReturnedToMenuFromContent = onReturnedToMenuFromContent,
+                    isDetailOpen = isDetailOpen,
+                    onDetailVisibilityChanged = onDetailVisibilityChanged
                 )
             }
-
-            /** TOP BAR **/
-            Row(
-                modifier = Modifier
-                    .focusRequester(menuBarFocusRequester)
-                    .focusable()
-                    .onFocusChanged {
-                        isMenuFocused = it.isFocused
-                    }
-                    .onPreviewKeyEvent { event ->
-                        if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-
-                        when (event.nativeKeyEvent.keyCode) {
-
-                            KeyEvent.KEYCODE_DPAD_LEFT -> {
-                                if (focusedIndex > 0) {
-                                    focusedIndex -= 1
-                                    selectedIndex = focusedIndex
-                                }
-                                true
-                            }
-
-                            KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                                if (focusedIndex < menuItems.lastIndex) {
-                                    focusedIndex += 1
-                                    selectedIndex = focusedIndex
-                                }
-                                true
-                            }
-
-                            KeyEvent.KEYCODE_DPAD_CENTER,
-                            KeyEvent.KEYCODE_ENTER -> {
-                                selectedIndex = focusedIndex
-                                true
-                            }
-
-//                            KeyEvent.KEYCODE_DPAD_DOWN -> {
-//                                bannerFocusRequester.requestFocus()
-//                                isMenuFocused = false
-//                                true
-//                            }
-
-//                            KeyEvent.KEYCODE_DPAD_DOWN -> {
-//                                if (isMenuFocused) {
-//                                    onRequestContentFocus()   // 🔥 THIS is the missing wire
-//                                    isMenuFocused = false
-//                                    true
-//                                } else false
-//                            }
-
-                            KeyEvent.KEYCODE_DPAD_DOWN -> {
-                                if (!isMenuFocused) return@onPreviewKeyEvent false
-
-                                if (backJustClosedMenu) {
-                                    // 🔁 Return to previous content state
-                                    backJustClosedMenu = false
-                                    onRequestContentFocus()   // content decides (row or banner)
-                                } else {
-                                    // ⬇ Normal flow: enter via banner
-                                    bannerFocusRequester.requestFocus()
-                                }
-
-                                isMenuFocused = false
-                                true
-                            }
-
-                            KeyEvent.KEYCODE_DPAD_UP -> true // lock UP
-
-                            else -> false
-                        }
-                    }
-                    .fillMaxWidth()
-                    .height(topBarHeight)
-                    .padding(horizontal = horizontalInset)
-                    .align(Alignment.TopCenter),
-                    //.background(Color.Transparent),
-//                    .onPreviewKeyEvent { event ->
-//                        if (
-//                            event.type == KeyEventType.KeyDown &&
-//                            event.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_BACK &&
-//                            isMenuFocused &&
-//                            !showBackMenu
-//                        ) {
-//                            showBackMenu = true
-//                            true // consume BACK
-//                        } else {
-//                            false
-//                        }
-//                    },
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                /** CENTER MENU COLUMN **/
-                Column(
+            if (!isDetailOpen) {
+                /** TOP BAR **/
+                Row(
                     modifier = Modifier
-                        .weight(1f),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
+                        .focusRequester(menuBarFocusRequester)
+                        .focusable()
+                        .onFocusChanged {
+                            isMenuFocused = it.isFocused
+                        }
+                        .onPreviewKeyEvent { event ->
+                            if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                            //if (isDetailOpen) return@onPreviewKeyEvent true
 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        menuItems.forEachIndexed { index, title ->
-                            val isFocused = isMenuFocused && focusedIndex == index
-                            val isSelected = !isFocused && selectedIndex == index
+                            when (event.nativeKeyEvent.keyCode) {
 
-                            val isSearch = index == 0
+                                KeyEvent.KEYCODE_DPAD_LEFT -> {
+                                    if (focusedIndex > 0) {
+                                        focusedIndex -= 1
+                                        selectedIndex = focusedIndex
+                                    }
+                                    true
+                                }
 
-                            val backgroundColor = when {
-                                isProfileFocused -> Color.Black
-                                isSearch && isProfileFocused -> Color.DarkGray   // 👈 force gray
-                                isFocused -> Color.White
-                                isSelected -> Color.DarkGray
-                                else -> Color.Transparent
-                            }
+                                KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                                    if (focusedIndex < menuItems.lastIndex) {
+                                        focusedIndex += 1
+                                        selectedIndex = focusedIndex
+                                    }
+                                    true
+                                }
 
-                            val textColor = when {
-                                isSearch && isProfileFocused -> Color.White      // 👈 force white
-                                isFocused -> Color.Black
-                                else -> Color.White
-                            }
+                                KeyEvent.KEYCODE_DPAD_CENTER,
+                                KeyEvent.KEYCODE_ENTER -> {
+                                    selectedIndex = focusedIndex
+                                    true
+                                }
 
+    //                            KeyEvent.KEYCODE_DPAD_DOWN -> {
+    //                                bannerFocusRequester.requestFocus()
+    //                                isMenuFocused = false
+    //                                true
+    //                            }
 
-                            //val isSearch = index == 0
-                            val shape = if (index == 0) CircleShape else capsuleShape
+    //                            KeyEvent.KEYCODE_DPAD_DOWN -> {
+    //                                if (isMenuFocused) {
+    //                                    onRequestContentFocus()   // 🔥 THIS is the missing wire
+    //                                    isMenuFocused = false
+    //                                    true
+    //                                } else false
+    //                            }
 
-                            Box(
-                                contentAlignment = Alignment.Center, // 👈 THIS is the fix
-                                modifier = Modifier
-                                    .padding(end = (20 * scale).dp)
-//                                    .focusRequester(focusRequesters[index])
-//                                    .onFocusChanged {
-//                                        if (it.isFocused) {
-//                                            focusedIndex = index
-//                                            selectedIndex = index
-//                                            isMenuFocused = true
-//                                        }
-//                                    }
-                                    .onPreviewKeyEvent { event ->
-                                        if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                                KeyEvent.KEYCODE_DPAD_DOWN -> {
+                                    if (!isMenuFocused) return@onPreviewKeyEvent false
 
-                                        when (event.nativeKeyEvent.keyCode) {
-
-                                            // 🔒 DISABLE UP when menu is focused
-                                            KeyEvent.KEYCODE_DPAD_UP ->
-                                                isMenuFocused
-
-                                            // ✅ DOWN goes to banner
-                                            KeyEvent.KEYCODE_DPAD_DOWN ->
-                                                if (
-                                                    isMenuFocused &&
-                                                    selectedIndex == index &&
-                                                    !backJustClosedMenu      // 🔥 GUARD HERE
-                                                ) {
-                                                    bannerFocusRequester.requestFocus()
-                                                    isMenuFocused = false
-                                                    true
-                                                } else {
-                                                    false
-                                                }
-
-                                            else -> false
-                                        }
+                                    if (backJustClosedMenu) {
+                                        // 🔁 Return to previous content state
+                                        backJustClosedMenu = false
+                                        onRequestContentFocus()   // content decides (row or banner)
+                                    } else {
+                                        // ⬇ Normal flow: enter via banner
+                                        bannerFocusRequester.requestFocus()
                                     }
 
-                                    //.focusable(enabled = isMenuFocused)
-                                    .clip(shape)
-                                    .background(backgroundColor)
-                                    .then(
-                                        if (isSearch) {
-                                            Modifier.size((44 * scale).dp)
-                                        } else {
-                                            Modifier.padding(
-                                                horizontal = (24 * scale).dp,
-                                                vertical = (6 * scale).dp
-                                            )
-                                        }
-                                    )
-                            )
-                            {
-                                if (isSearch) {
-                                    Icon(
-                                        imageVector = Icons.Default.Search,
-                                        contentDescription = "Search",
-                                        tint = textColor,
-                                        modifier = Modifier.size((20 * scale).dp)
-                                    )
-                                } else {
-                                    Text(
-                                        text = title,
-                                        color = textColor,
-                                        fontSize = (18 * scale).sp,
-                                        fontWeight = FontWeight.Medium
-                                    )
+                                    isMenuFocused = false
+                                    true
                                 }
+
+                                KeyEvent.KEYCODE_DPAD_UP -> true // lock UP
+
+                                else -> false
                             }
+                        }
+                        .fillMaxWidth()
+                        .height(topBarHeight)
+                        .padding(horizontal = horizontalInset)
+                        .align(Alignment.TopCenter),
+                    //.background(Color.Transparent),
+    //                    .onPreviewKeyEvent { event ->
+    //                        if (
+    //                            event.type == KeyEventType.KeyDown &&
+    //                            event.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_BACK &&
+    //                            isMenuFocused &&
+    //                            !showBackMenu
+    //                        ) {
+    //                            showBackMenu = true
+    //                            true // consume BACK
+    //                        } else {
+    //                            false
+    //                        }
+    //                    },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    /** CENTER MENU COLUMN **/
+                    Column(
+                        modifier = Modifier
+                            .weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            menuItems.forEachIndexed { index, title ->
+                                val isFocused = isMenuFocused && focusedIndex == index
+                                val isSelected = !isFocused && selectedIndex == index
+
+                                val isSearch = index == 0
+
+                                val backgroundColor = when {
+                                    isProfileFocused -> Color.Black
+                                    isSearch && isProfileFocused -> Color.DarkGray   // 👈 force gray
+                                    isFocused -> Color.White
+                                    isSelected -> Color.DarkGray
+                                    else -> Color.Transparent
+                                }
+
+                                val textColor = when {
+                                    isSearch && isProfileFocused -> Color.White      // 👈 force white
+                                    isFocused -> Color.Black
+                                    else -> Color.White
+                                }
 
 
+                                //val isSearch = index == 0
+                                val shape = if (index == 0) CircleShape else capsuleShape
+
+                                Box(
+                                    contentAlignment = Alignment.Center, // 👈 THIS is the fix
+                                    modifier = Modifier
+                                        .padding(end = (20 * scale).dp)
+    //                                    .focusRequester(focusRequesters[index])
+    //                                    .onFocusChanged {
+    //                                        if (it.isFocused) {
+    //                                            focusedIndex = index
+    //                                            selectedIndex = index
+    //                                            isMenuFocused = true
+    //                                        }
+    //                                    }
+                                        .onPreviewKeyEvent { event ->
+                                            if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+
+                                            when (event.nativeKeyEvent.keyCode) {
+
+                                                // 🔒 DISABLE UP when menu is focused
+                                                KeyEvent.KEYCODE_DPAD_UP ->
+                                                    isMenuFocused
+
+                                                // ✅ DOWN goes to banner
+                                                KeyEvent.KEYCODE_DPAD_DOWN ->
+                                                    if (
+                                                        isMenuFocused &&
+                                                        selectedIndex == index &&
+                                                        !backJustClosedMenu      // 🔥 GUARD HERE
+                                                    ) {
+                                                        bannerFocusRequester.requestFocus()
+                                                        isMenuFocused = false
+                                                        true
+                                                    } else {
+                                                        false
+                                                    }
+
+                                                else -> false
+                                            }
+                                        }
+
+                                        //.focusable(enabled = isMenuFocused)
+                                        .clip(shape)
+                                        .background(backgroundColor)
+                                        .then(
+                                            if (isSearch) {
+                                                Modifier.size((44 * scale).dp)
+                                            } else {
+                                                Modifier.padding(
+                                                    horizontal = (24 * scale).dp,
+                                                    vertical = (6 * scale).dp
+                                                )
+                                            }
+                                        )
+                                )
+                                {
+                                    if (isSearch) {
+                                        Icon(
+                                            imageVector = Icons.Default.Search,
+                                            contentDescription = "Search",
+                                            tint = textColor,
+                                            modifier = Modifier.size((20 * scale).dp)
+                                        )
+                                    } else {
+                                        Text(
+                                            text = title,
+                                            color = textColor,
+                                            fontSize = (18 * scale).sp,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    }
+                                }
+
+
+                            }
                         }
                     }
-                }
 
-                /** RIGHT LOGO COLUMN **/
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.a122mm_logo),
-                        contentDescription = "App Logo",
-                        modifier = Modifier.height((iconSz * scale).dp)
-                    )
+                    /** RIGHT LOGO COLUMN **/
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.a122mm_logo),
+                            contentDescription = "App Logo",
+                            modifier = Modifier.height((iconSz * scale).dp)
+                        )
+                    }
                 }
             }
-
-
-
         }
 
-        /** LEFT PROFILE IMAGE **/
-        Box(
-            modifier = Modifier
-                .width((240 * scale).dp)
-                .wrapContentHeight()
-                .focusRequester(profileFocusRequester)
+        if (!isDetailOpen) {
+            /** LEFT PROFILE IMAGE **/
+            Box(
+                modifier = Modifier
+                    .width((240 * scale).dp)
+                    .wrapContentHeight()
+                    .focusRequester(profileFocusRequester)
 //                .onFocusChanged {
 //                    isProfileFocused = it.isFocused
 //                    freezeSelection = it.isFocused
 //                }
 //                .focusable()
-                .offset(
-                    x = (48 * scale).dp,
-                    y = ((topBarHeight - (40 * scale).dp) / 2)
-                ),
-            contentAlignment = Alignment.CenterStart
-        ) {
+                    .offset(
+                        x = (48 * scale).dp,
+                        y = ((topBarHeight - (40 * scale).dp) / 2)
+                    ),
+                contentAlignment = Alignment.CenterStart
+            ) {
                 //  COMPACT PROFILE (current behavior)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -483,7 +491,9 @@ fun HomeScreen(
 //                        modifier = Modifier.size((18 * scale).dp)
 //                    )
                 }
+            }
         }
+
         val context = LocalContext.current
 
         if (showBackMenu) {
@@ -533,10 +543,14 @@ fun ContentScreen(
     onDisableMenuFocus: () -> Unit,
     onEnableMenuFocus: () -> Unit,
     onRequestContentFocus: () -> Unit,
-    onReturnedToMenuFromContent: () -> Unit
+    onReturnedToMenuFromContent: () -> Unit,
+    isDetailOpen: Boolean,
+    onDetailVisibilityChanged: (Boolean) -> Unit
 ) {
 
     var requestMenuFocus by remember { mutableStateOf(false) }
+
+
 
 //    LaunchedEffect(requestMenuFocus) {
 //        if (requestMenuFocus) {
@@ -584,6 +598,8 @@ fun ContentScreen(
                 onRequestMenuFocus = onRequestMenuFocus,
                 isMenuFocused = isMenuFocused,
                 onReturnedToMenuFromContent = onReturnedToMenuFromContent,
+                isDetailOpen = isDetailOpen,              // 👈 PASS DOWN
+                onDetailVisibilityChanged = onDetailVisibilityChanged,
                 type = "HOM"
             )
 

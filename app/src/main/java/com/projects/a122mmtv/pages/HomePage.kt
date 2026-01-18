@@ -42,8 +42,16 @@ import com.projects.a122mmtv.auth.BannerViewModelFactory
 import com.projects.a122mmtv.auth.HomeSessionViewModel
 import com.projects.a122mmtv.components.ViewBanner
 import com.projects.a122mmtv.components.ViewContent
+import com.projects.a122mmtv.components.ViewMovieDetail
 import com.projects.a122mmtv.dataclass.Section
 import com.projects.a122mmtv.viewmodels.HomeViewModel
+
+enum class DetailSource {
+    BANNER,
+    CONTENT
+}
+
+
 
 @Composable
 fun HomePage(
@@ -60,6 +68,8 @@ fun HomePage(
     onRequestMenuFocus: () -> Unit,
     isMenuFocused: Boolean,
     onReturnedToMenuFromContent: () -> Unit,
+    onDetailVisibilityChanged: (Boolean) -> Unit,
+    isDetailOpen: Boolean,
     type: String = "HOM"
 ) {
     // -1 = banner
@@ -68,6 +78,20 @@ fun HomePage(
 
     val BANNER_HEIGHT = 420.dp
     val ROW_HEIGHT = 420.dp
+
+    var detailMovieId by rememberSaveable {
+        mutableStateOf<String?>(null)
+    }
+
+    var detailSource by rememberSaveable {
+        mutableStateOf<DetailSource?>(null)
+    }
+
+    val heroFocusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(detailMovieId) {
+        onDetailVisibilityChanged(detailMovieId != null)
+    }
 
 //    LaunchedEffect(Unit) {
 //        awaitFrame()
@@ -113,6 +137,7 @@ fun HomePage(
         mutableStateOf(true)
     }
 
+    var restoreBannerInfo by remember { mutableStateOf(false) }
 
 
 //    val requestMenuFocus: () -> Unit = {
@@ -129,6 +154,7 @@ fun HomePage(
                 )
 
                 if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                if (isDetailOpen) return@onPreviewKeyEvent true
 
                 // 🔥 Banner owns ALL DPAD when active
                 if (activeRowIndex == -1) {
@@ -180,7 +206,6 @@ fun HomePage(
                 .clipToBounds()
         ) {
             ViewBanner(
-                navController = navController,
                 type = "HOM",
                 currentTabIndex = 0,
                 focusRequester = bannerFocusRequester,
@@ -198,7 +223,12 @@ fun HomePage(
                     activeRowIndex = 0    // 🔥 first content row becomes active
                 },
                 isMenuFocused = isMenuFocused,
-                onExitToMenu = onReturnedToMenuFromContent
+                onExitToMenu = onReturnedToMenuFromContent,
+                onOpenDetail = { mId ->
+                    detailSource = DetailSource.BANNER
+                    detailMovieId = mId
+                },
+                restoreInfoFocus = restoreBannerInfo
             )
         }
 
@@ -272,12 +302,38 @@ fun HomePage(
                         }
                     },
                     onExitToMenu = onReturnedToMenuFromContent,
-//                    onExitToMenu = {
-//                        menuBarFocusRequester.requestFocus(),
-//                        onReturnedToMenuFromContent
-//                    }
+                    onOpenDetail = { mId ->
+                        detailSource = DetailSource.CONTENT
+                        detailMovieId = mId
+                    },
+                    heroFocusRequester = heroFocusRequester
                 )
             }
+        }
+        if (detailMovieId != null) {
+            ViewMovieDetail(
+                mId = detailMovieId!!,
+                onClose = {
+                    detailMovieId = null
+
+                    when (detailSource) {
+                        DetailSource.BANNER -> {
+                            restoreBannerInfo = true
+                            activeRowIndex = -1
+                            bannerFocusRequester.requestFocus()
+                        }
+
+                        DetailSource.CONTENT -> {
+                            restoreBannerInfo = false
+                            heroFocusRequester.requestFocus()
+                        }
+
+                        else -> {}
+                    }
+
+                    detailSource = null
+                }
+            )
         }
 
     }

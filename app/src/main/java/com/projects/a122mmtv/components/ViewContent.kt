@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.BottomCenter
 import androidx.compose.ui.Alignment.Companion.BottomStart
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -114,7 +115,9 @@ fun ViewContent(
     focusRequester: FocusRequester,
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
-    onExitToMenu: () -> Unit
+    onExitToMenu: () -> Unit,
+    onOpenDetail: (String) -> Unit,
+    heroFocusRequester: FocusRequester
 ) {
 
     // 🔥 MOCK DATA LIVES HERE
@@ -391,6 +394,12 @@ fun ViewContent(
                             true
                         }
 
+                        KeyEvent.KEYCODE_DPAD_CENTER,
+                        KeyEvent.KEYCODE_ENTER -> {
+                            heroItem?.mId?.let { onOpenDetail(it) }
+                            true
+                        }
+
                         else -> false
                     }
                 }
@@ -404,7 +413,9 @@ fun ViewContent(
                         .height(heroHeight)
                         .padding(end = 6.dp)
                         .border(1.dp, Color.White)
-                        //.focusable()
+                        .focusRequester(heroFocusRequester)
+                        .focusable()
+                        .alpha(0.8f)
                 ) {
                     AsyncImage(
                         model = hero?.posterUrl,
@@ -456,8 +467,8 @@ fun ViewContent(
             LazyRow(
                 state = listState,
                 modifier = Modifier
-                    .fillMaxWidth(),
-
+                    .fillMaxWidth()
+                    .alpha(0.8f),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 contentPadding = PaddingValues(0.dp)
             ) {
@@ -501,6 +512,7 @@ fun ViewContent(
                     }
 
                     Text(
+                        modifier = Modifier.alpha(0.8f),
                         text = item.mDescription.fixEncoding(),
                         color = Color.White,
                         fontSize = 14.sp,

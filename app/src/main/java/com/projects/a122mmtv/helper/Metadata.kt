@@ -22,7 +22,7 @@ fun MetaText(text: String) {
         color = Color.White,
         fontSize = 10.sp,
         fontWeight = FontWeight.Medium,
-        modifier = Modifier.alpha(0.9f)
+        //modifier = Modifier.alpha(0.9f)
     )
 }
 
