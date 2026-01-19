@@ -1,5 +1,6 @@
 package com.projects.a122mmtv.components
 
+import android.util.Log
 import android.view.KeyEvent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -238,6 +239,7 @@ fun ViewContent(
     }
 
     var previousHero by remember { mutableStateOf<PosterItem?>(null) }
+//    var leftHero by remember { mutableStateOf<PosterItem?>(null) }
 
     //val firstItemFocusRequester = remember { FocusRequester() }
 //    LaunchedEffect(items) {
@@ -363,11 +365,17 @@ fun ViewContent(
                     when (event.nativeKeyEvent.keyCode) {
 
                         KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                            previousHero = heroItem
+//                            leftHero = previousHero
+//                            previousHero = heroItem
+//                            Log.d("heroItem::check", "heroItem DR -> $heroItem")
+//                            Log.d("leftHero::check", "LeftHero DR -> $leftHero")
                             stepIndex += 1
+
 
                             items = rotateLeft(items)
                             heroItem = items.last()
+                            previousHero = items.getOrNull(items.lastIndex - 1)
+
                             selectedItem = heroItem
                             true
                         }
@@ -378,7 +386,9 @@ fun ViewContent(
                                 return@onPreviewKeyEvent true
                             }
 
-                            previousHero = heroItem
+//                            previousHero = leftHero //heroItem
+//                            Log.d("heroItem::check", "heroItem DL -> $heroItem")
+//                            Log.d("leftHero::check", "LeftHero DL -> $leftHero")
                             stepIndex -= 1
 
                             // Step 1: rotate right
@@ -386,6 +396,8 @@ fun ViewContent(
 
                             // Step 2: hero becomes LAST item (not first!)
                             heroItem = items.last()
+                            previousHero = items.getOrNull(items.lastIndex - 1)
+
                             selectedItem = heroItem
 
                             true
@@ -551,6 +563,8 @@ fun ViewContent(
                         MetaText(sDuration)
                         Bullets()
                         MetaText(item.mContent.convertContentRating())
+                        Bullets()
+                        MetaText(item.mId)
                     }
 
                     Text(
