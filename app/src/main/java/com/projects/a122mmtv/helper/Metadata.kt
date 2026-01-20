@@ -36,3 +36,25 @@ fun Bullets() {
             .background(Color.Red.copy(alpha = 0.7f))
     )
 }
+
+@Composable
+fun MetaTextContinue(text: String) {
+    Text(
+        text = text,
+        color = Color.Gray,
+        fontSize = 12.sp,
+        fontWeight = FontWeight.Medium,
+        modifier = Modifier.alpha(0.9f)
+    )
+}
+
+@Composable
+fun BulletsContinue() {
+    Box(
+        modifier = Modifier
+            .padding(horizontal = 4.dp, vertical = 2.dp)
+            .size(4.dp)
+            .clip(CircleShape)
+            .background(Color.Gray.copy(alpha = 0.7f))
+    )
+}

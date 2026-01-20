@@ -564,7 +564,9 @@ fun ViewContent(
                     .background(Color.Black)
                     .padding(horizontal = horizontalInset, vertical = 12.dp)
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
                     val sType = if (item.mId.startsWith("MOV")) "Movie" else "Shows"
                     val sDuration = if (item.mId.startsWith("MOV")) formatDurationFromMinutes(item.mDuration.toIntOrNull() ?: 0) else item.mDuration
                     Row(

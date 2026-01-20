@@ -16,7 +16,9 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -59,7 +61,9 @@ import com.projects.a122mmtv.auth.AuthApiService
 import com.projects.a122mmtv.auth.HomeSessionViewModel
 import com.projects.a122mmtv.dataclass.ApiClient
 import com.projects.a122mmtv.helper.Bullets
+import com.projects.a122mmtv.helper.BulletsContinue
 import com.projects.a122mmtv.helper.MetaText
+import com.projects.a122mmtv.helper.MetaTextContinue
 import com.projects.a122mmtv.helper.convertContentRating
 import com.projects.a122mmtv.helper.fixEncoding
 import com.projects.a122mmtv.pages.InteractionLayer
@@ -74,7 +78,7 @@ data class ContinueWatchingResponse(
     val bdropUrl: String,
     val logoUrl: String,
     val cPercent: String,
-    val seasonNum: String?,
+    val seasonNum: String,
     val duration: Int,
     val updateDate: String,
     val hasRated: String,
@@ -90,28 +94,36 @@ data class ContinueWatchingResponse(
 private data class ContinuePosterItem(
     val id: Int,
     val mId: String,
+    val mTitle: String,
     val posterUrl: String,
     val logoUrl: String,
     val title: String,
     val duration: Int,
+    val cProgress: Int,
     val progressPercent: Float,
     val playId: String,
+    val playTitle: String,
     val vidId: String,
-    val srtId: String
+    val srtId: String,
+    val seasonNum: String
 )
 
 private fun ContinueWatchingResponse.toPosterItem(index: Int): ContinuePosterItem {
     return ContinuePosterItem(
         id = index,
         mId = mId,
+        mTitle = mTitle,
         posterUrl = bdropUrl.ifBlank { cvrUrl },
         logoUrl = logoUrl,
         title = mTitle,
         duration = duration,
+        cProgress = cProgress,
         progressPercent = cPercent.toFloatOrNull() ?: 0f,
         playId = playId,
+        playTitle = playTitle,
         vidId = vidId,
-        srtId = srtId
+        srtId = srtId,
+        seasonNum = seasonNum
     )
 }
 
@@ -442,26 +454,60 @@ fun ViewContinue(
                             )
                     )
 
-                    BoxWithConstraints(
+                    Column(
                         modifier = Modifier
-                            .align(BottomStart)
-                            .padding(
-                                start =  16.dp,
-                                bottom = 12.dp
-                            )
+                            .fillMaxWidth()
+                            .align(Alignment.BottomStart)
                     ) {
-                        val maxLogoWidth =
-                            maxWidth * 0.5f   // or whatever your normal size is
-
+                        // LOGO with padding
                         AsyncImage(
                             model = hero?.logoUrl,
                             contentDescription = null,
                             contentScale = ContentScale.Fit,
                             modifier = Modifier
-                                .widthIn(max = maxLogoWidth)
+                                .padding(start = 16.dp, end = 16.dp)
+                                .widthIn(max = heroWidth * 0.5f)
                                 .heightIn(max = 36.dp)
                         )
+
+                        // SPACE BETWEEN LOGO & BAR
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // PROGRESS BAR — FULL HERO WIDTH
+                        val progress = (hero?.progressPercent ?: 0f).coerceIn(0f, 1f)
+                        val gap = 1.dp
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // RED = watched
+                            Box(
+                                modifier = Modifier
+                                    .weight(progress)
+                                    .fillMaxHeight()
+                                    .background(Color.Red)
+                            )
+
+                            if (progress in 0f..0.999f) {
+                                Spacer(modifier = Modifier.width(gap))
+                            }
+
+                            // GRAY = remaining
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f - progress)
+                                    .fillMaxHeight()
+                                    .background(Color.LightGray.copy(alpha = 0.6f))
+                            )
+                        }
+
+
                     }
+
+
                 }
             }
 
@@ -496,28 +542,29 @@ fun ViewContinue(
                     .background(Color.Black)
                     .padding(horizontal = horizontalInset, vertical = 12.dp)
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    val sType = if (item.mId.startsWith("MOV")) "Movie" else "Shows"
-                    val sDuration = if (item.mId.startsWith("MOV")) formatDurationFromMinutes(item.duration ?: 0) else item.duration
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    val sFirst = if (item.mId.startsWith("TVG")) item.seasonNum else item.playTitle.fixEncoding()
+                    val sSecond = if (item.mId.startsWith("TVG")) item.playTitle.fixEncoding() else ""
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        MetaText(sType)
-//                        Bullets()
-//                        MetaText(item.mGenre)
-//                        Bullets()
-//                        MetaText(item.mYear)
-                        Bullets()
-                        MetaText(sDuration.toString())
-//                        Bullets()
-//                        MetaText(item.mContent.convertContentRating())
-                        Bullets()
-                        MetaText(item.mId)
+                        MetaTextContinue(sFirst)
+
+                        if (sSecond.isNotBlank()) {
+                            BulletsContinue()
+                            MetaTextContinue(sSecond)
+                        }
                     }
+
+                    val remainingSeconds = ((item.duration * 60) - item.cProgress).coerceAtLeast(0)
+                    val timeLeftText = if (item.cProgress > 10) "${formatDurationFromMinutes(remainingSeconds / 60)} left"
+                                        else "Start next episode"
 
                     Text(
                         modifier = Modifier.alpha(0.8f),
-                        text = "Hello!",
+                        text = timeLeftText,
                         color = Color.White,
                         fontSize = 14.sp,
                         maxLines = 4
