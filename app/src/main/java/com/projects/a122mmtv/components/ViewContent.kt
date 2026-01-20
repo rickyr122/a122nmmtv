@@ -62,6 +62,7 @@ import com.projects.a122mmtv.helper.Bullets
 import com.projects.a122mmtv.helper.MetaText
 import com.projects.a122mmtv.helper.convertContentRating
 import com.projects.a122mmtv.helper.fixEncoding
+import com.projects.a122mmtv.pages.InteractionLayer
 import com.projects.a122mmtv.utility.formatDurationFromMinutes
 
 // --- API MODELS (LOCAL) ---
@@ -125,7 +126,8 @@ fun ViewContent(
     onMoveDown: () -> Unit,
     onExitToMenu: () -> Unit,
     onOpenDetail: (String) -> Unit,
-    heroFocusRequester: FocusRequester
+    heroFocusRequester: FocusRequester,
+    interactionLayer: InteractionLayer
 ) {
 
     // 🔥 MOCK DATA LIVES HERE
@@ -359,6 +361,7 @@ fun ViewContent(
                 .focusable()
                 .onPreviewKeyEvent { event ->
                     if (!isActive) return@onPreviewKeyEvent false
+                    if (interactionLayer != InteractionLayer.HOME) return@onPreviewKeyEvent false
                     if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
 
 

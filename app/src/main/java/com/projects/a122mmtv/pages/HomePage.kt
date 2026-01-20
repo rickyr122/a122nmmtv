@@ -51,7 +51,10 @@ enum class DetailSource {
     CONTENT
 }
 
-
+enum class InteractionLayer {
+    HOME,
+    DETAIL
+}
 
 @Composable
 fun HomePage(
@@ -139,6 +142,7 @@ fun HomePage(
 
     var restoreBannerInfo by remember { mutableStateOf(false) }
 
+    var interactionLayer by remember { mutableStateOf(InteractionLayer.HOME) }
 
 //    val requestMenuFocus: () -> Unit = {
 //        menuBarFocusRequester.requestFocus()
@@ -154,7 +158,11 @@ fun HomePage(
                 )
 
                 if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-                if (isDetailOpen) return@onPreviewKeyEvent true
+//                if (isDetailOpen) return@onPreviewKeyEvent true
+                if (interactionLayer != InteractionLayer.HOME) {
+                    return@onPreviewKeyEvent false
+                }
+
 
                 // 🔥 Banner owns ALL DPAD when active
                 if (activeRowIndex == -1) {
@@ -227,8 +235,10 @@ fun HomePage(
                 onOpenDetail = { mId ->
                     detailSource = DetailSource.BANNER
                     detailMovieId = mId
+                    interactionLayer = InteractionLayer.DETAIL
                 },
-                restoreInfoFocus = restoreBannerInfo
+                restoreInfoFocus = restoreBannerInfo,
+                interactionLayer = interactionLayer
             )
         }
 
@@ -305,16 +315,21 @@ fun HomePage(
                     onOpenDetail = { mId ->
                         detailSource = DetailSource.CONTENT
                         detailMovieId = mId
+                        interactionLayer = InteractionLayer.DETAIL
                     },
-                    heroFocusRequester = heroFocusRequester
+                    heroFocusRequester = heroFocusRequester,
+                    interactionLayer = interactionLayer
                 )
             }
         }
+
         if (detailMovieId != null) {
             ViewMovieDetail(
                 mId = detailMovieId!!,
+                isActive = interactionLayer == InteractionLayer.DETAIL,
                 onClose = {
                     detailMovieId = null
+                    interactionLayer = InteractionLayer.HOME
 
                     when (detailSource) {
                         DetailSource.BANNER -> {
@@ -322,12 +337,10 @@ fun HomePage(
                             activeRowIndex = -1
                             bannerFocusRequester.requestFocus()
                         }
-
                         DetailSource.CONTENT -> {
                             restoreBannerInfo = false
                             heroFocusRequester.requestFocus()
                         }
-
                         else -> {}
                     }
 
@@ -335,6 +348,7 @@ fun HomePage(
                 }
             )
         }
+
 
     }
 }

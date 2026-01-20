@@ -83,6 +83,7 @@ import com.projects.a122mmtv.helper.Bullets
 import com.projects.a122mmtv.helper.MetaText
 import com.projects.a122mmtv.helper.convertContentRating
 import com.projects.a122mmtv.helper.fixEncoding
+import com.projects.a122mmtv.pages.InteractionLayer
 import com.projects.a122mmtv.utility.BannerStorage
 import com.projects.a122mmtv.utility.formatDurationFromMinutes
 import org.json.JSONObject
@@ -105,7 +106,8 @@ fun ViewBanner(
     isMenuFocused: Boolean,
     onExitToMenu: () -> Unit,
     onOpenDetail: (String) -> Unit,
-    restoreInfoFocus: Boolean
+    restoreInfoFocus: Boolean,
+    interactionLayer: InteractionLayer
 ) {
     var isBannerActive by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(0.dp)
@@ -212,6 +214,7 @@ fun ViewBanner(
                 )
 
                 if (!isBannerActive) return@onPreviewKeyEvent false
+                if (interactionLayer != InteractionLayer.HOME) return@onPreviewKeyEvent false
                 if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
 
                 when (event.nativeKeyEvent.keyCode) {
