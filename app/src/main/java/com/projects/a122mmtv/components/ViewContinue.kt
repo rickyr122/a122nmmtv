@@ -67,59 +67,60 @@ import com.projects.a122mmtv.utility.formatDurationFromMinutes
 
 // --- API MODELS (LOCAL) ---
 
-data class HomeMenuResponse(
-    val title: String,
-    val items: List<HomeMenuItem>
-)
-
-data class HomeMenuItem(
-    val m_id: String,
-    val m_title: String,
-    val m_duration: String,
-    val m_release_date: String,
-    val m_year: String,
-    val m_content: String,
-    val mGenre: String,
-    val mDescription: String,
+data class ContinueWatchingResponse(
+    val mId: String,
+    val mTitle: String,
     val cvrUrl: String,
     val bdropUrl: String,
-    val logoUrl: String
+    val logoUrl: String,
+    val cPercent: String,
+    val seasonNum: String?,
+    val duration: Int,
+    val updateDate: String,
+    val hasRated: String,
+    val playId: String,
+    val playTitle: String,
+    val cProgress: Int,
+    val cFlareVid: String,
+    val cFlareSrt: String,
+    val vidId: String,
+    val srtId: String
 )
 
-private fun HomeMenuItem.toPosterItem(id: Int): PosterItem {
-    return PosterItem(
-        id = id,
-        mId = m_id,
-        posterUrl = bdropUrl.ifBlank { cvrUrl },
-        logoUrl = logoUrl,
-        mGenre = mGenre,
-        mYear = m_year,
-        mDuration = m_duration,
-        mContent = m_content,
-        mDescription = mDescription
-    )
-}
-
-private data class PosterItem(
+private data class ContinuePosterItem(
     val id: Int,
     val mId: String,
     val posterUrl: String,
     val logoUrl: String,
-    val mGenre: String,
-    val mYear: String,
-    val mDuration: String,
-    val mContent: String,
-    val mDescription: String
+    val title: String,
+    val duration: Int,
+    val progressPercent: Float,
+    val playId: String,
+    val vidId: String,
+    val srtId: String
 )
 
+private fun ContinueWatchingResponse.toPosterItem(index: Int): ContinuePosterItem {
+    return ContinuePosterItem(
+        id = index,
+        mId = mId,
+        posterUrl = bdropUrl.ifBlank { cvrUrl },
+        logoUrl = logoUrl,
+        title = mTitle,
+        duration = duration,
+        progressPercent = cPercent.toFloatOrNull() ?: 0f,
+        playId = playId,
+        vidId = vidId,
+        srtId = srtId
+    )
+}
 
-
-private fun rotateLeft(list: List<PosterItem>): List<PosterItem> {
+private fun rotateLeft(list: List<ContinuePosterItem>): List<ContinuePosterItem> {
     if (list.isEmpty()) return list
     return list.drop(1) + list.first()
 }
 
-private fun rotateRight(list: List<PosterItem>): List<PosterItem> {
+private fun rotateRight(list: List<ContinuePosterItem>): List<ContinuePosterItem> {
     if (list.isEmpty()) return list
     return buildList {
         add(list.last())
@@ -127,9 +128,24 @@ private fun rotateRight(list: List<PosterItem>): List<PosterItem> {
     }
 }
 
+//private data class ContinuePosterItem(
+//    val id: Int,
+//    val mId: String,
+//    val posterUrl: String,
+//    val logoUrl: String,
+//    val mGenre: String,
+//    val mYear: String,
+//    val mDuration: String,
+//    val mContent: String,
+//    val mDescription: String
+//)
+
+
+
 @Composable
-fun ViewContent(
+fun ViewContinue(
     modifier: Modifier = Modifier,
+    type: String,
     horizontalInset: Dp,
     homeSession: HomeSessionViewModel,
     code: Int,
@@ -143,103 +159,19 @@ fun ViewContent(
     interactionLayer: InteractionLayer
 ) {
 
-    // 🔥 MOCK DATA LIVES HERE
-//    var items by remember {
-//        mutableStateOf(
-//            listOf(
-//                PosterItem(
-//                    1,
-//                    "https://image.tmdb.org/t/p/w1280/34jW8LvjRplM8Pv06cBFDpLlenR.jpg",
-//                    "https://image.tmdb.org/t/p/w500/lAEaCmWwqkZSp8lAw6F7CfPkA9N.png",
-//                    "Movie",
-//                    "Action",
-//                    "2019",
-//                    "2h 9m",
-//                    "13+",
-//                    "Peter Parker and his friends go on a summer trip to Europe. However, they will hardly be able to rest" +
-//                            " - Peter will have to agree to help Nick Fury uncover the mystery of creatures that cause " +
-//                            "natural disasters and destruction throughout the continent."
-//                ),
-//                PosterItem(
-//                    2,
-//                    "https://image.tmdb.org/t/p/w1280/xPNDRM50a58uvv1il2GVZrtWjkZ.jpg",
-//                    "https://image.tmdb.org/t/p/w500/7yXEfWFDGpqIfq9wdpMOHcHbi8g.png",
-//                    "Movie",
-//                    "Action",
-//                    "2025",
-//                    "2h 50m",
-//                    "18+",
-//                    "Ethan Hunt and team continue their search for the terrifying AI known as the Entity — " +
-//                            "which has infiltrated intelligence networks all over the globe — with the world's governments " +
-//                            "and a mysterious ghost from Hunt's past on their trail."
-//                ),
-//                PosterItem(
-//                    3,
-//                    "https://image.tmdb.org/t/p/w1280/cKvDv2LpwVEqbdXWoQl4XgGN6le.jpg",
-//                    "https://image.tmdb.org/t/p/w500/f1EpI3C6wd1iv7dCxNi3vU5DAX7.png",
-//                    "Movie",
-//                    "Action",
-//                    "2008",
-//                    "2h 6m",
-//                    "13+",
-//                    "After being held captive in an Afghan cave, billionaire engineer Tony Stark creates a unique " +
-//                            "weaponized suit of armor to fight evil."
-//                ),
-//                PosterItem(
-//                    4,
-//                    "https://image.tmdb.org/t/p/w1280/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg",
-//                    "https://image.tmdb.org/t/p/w500/b07VisHvZb0WzUpA8VB77wfMXwg.png",
-//                    "Movie",
-//                    "Drama",
-//                    "2023",
-//                    "3h 1m",
-//                    "18+",
-//                    "The story of J. Robert Oppenheimer's role in the development of the atomic bomb during World War II."
-//                ),
-//                PosterItem(
-//                    5,
-//                    "https://image.tmdb.org/t/p/w1280/ufpeVEM64uZHPpzzeiDNIAdaeOD.jpg",
-//                    "https://image.tmdb.org/t/p/w500/xJMMxfKD9WJQLxq03p7T0c2AWb4.png",
-//                    "Movie",
-//                    "Action",
-//                    "2024",
-//                    "2h 8m",
-//                    "18+",
-//                    "A listless Wade Wilson toils away in civilian life with his days as the morally flexible mercenary, Deadpool, behind him. " +
-//                            "But when his homeworld faces an existential threat, Wade must reluctantly suit-up again " +
-//                            "with an even more reluctant Wolverine."
-//                ),
-//                PosterItem(
-//                    6,
-//                    "https://image.tmdb.org/t/p/w1280/9tOkjBEiiGcaClgJFtwocStZvIT.jpg",
-//                    "https://image.tmdb.org/t/p/w500/gNkaNY2Cg2BvYunWVgMVcbmQgc5.png",
-//                    "Movie",
-//                    "Animation",
-//                    "2016",
-//                    "1h 49m",
-//                    "7+",
-//                    "Determined to prove herself, Officer Judy Hopps, the first bunny on Zootopia's police force, " +
-//                            "jumps at the chance to crack her first case - even if it means partnering " +
-//                            "with scam-artist fox Nick Wilde to solve the mystery."
-//                )
-//
-//            )
-//        )
-//    }
-
-    //val title = "Fresh From Theater"
+   //val title = "Fresh From Theater"
 
     val context = LocalContext.current
     val api = ApiClient.create(AuthApiService::class.java)
 
     var title by remember { mutableStateOf("") }
-    var items by remember { mutableStateOf<List<PosterItem>>(emptyList()) }
+    var items by remember { mutableStateOf<List<ContinuePosterItem>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
 
     val heroHeight = 260.dp
     val heroWidth = heroHeight * (16f / 9f)
     //var heroItem by remember { mutableStateOf(items.first()) }
-    var heroItem by remember { mutableStateOf<PosterItem?>(null) }
+    var heroItem by remember { mutableStateOf<ContinuePosterItem?>(null) }
 
     val previewHeight = heroHeight
     val previewWidth = previewHeight * (6f / 19f)
@@ -250,11 +182,11 @@ fun ViewContent(
     val listState = rememberLazyListState()
 
     var selectedItem by remember {
-        mutableStateOf<PosterItem?>(items.firstOrNull()) // 👈 id = 1 on first load
+        mutableStateOf<ContinuePosterItem?>(items.firstOrNull()) // 👈 id = 1 on first load
     }
 
-    var previousHero by remember { mutableStateOf<PosterItem?>(null) }
-//    var leftHero by remember { mutableStateOf<PosterItem?>(null) }
+    var previousHero by remember { mutableStateOf<ContinuePosterItem?>(null) }
+//    var leftHero by remember { mutableStateOf<ContinuePosterItem?>(null) }
 
     //val firstItemFocusRequester = remember { FocusRequester() }
 //    LaunchedEffect(items) {
@@ -298,28 +230,27 @@ fun ViewContent(
 
 
     val userId = homeSession.userId ?: 0
-    LaunchedEffect(code) {
+
+    LaunchedEffect(type, userId) {
+        if (userId == 0) return@LaunchedEffect
+
         isLoading = true
 
         try {
-            //val userId = homeSession.userId ?: 0
-
-            val res = api.getHomeMenu(
-                code = code,
-                page = 1,
-                pageSize = 100,
+            val res = api.getContinueWatching(
+                type = type,
                 userId = userId
             )
 
-            title = res.title   // ✅ FIX #1
+            title = "Continue Watching"
 
-            val mapped = res.items.mapIndexed { i: Int, item: HomeMenuItem ->
-                item.toPosterItem(i)
+            val mapped = res.mapIndexed { index, item ->
+                item.toPosterItem(index)
             }
 
             if (mapped.isNotEmpty()) {
                 heroItem = mapped.first()
-                items = mapped // if (isActive) rotateLeft(mapped) else mapped //rotateLeft(mapped)
+                items = mapped
                 selectedItem = heroItem
             } else {
                 items = emptyList()
@@ -334,6 +265,7 @@ fun ViewContent(
         hasActivatedOnce = true
         isLoading = false
     }
+
 
     var wasActive by remember { mutableStateOf(false) }
 
@@ -491,7 +423,7 @@ fun ViewContent(
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
-                            //.border(1.dp, Color.White)
+                        //.border(1.dp, Color.White)
                     )
 
                     // bottom gradient
@@ -566,24 +498,26 @@ fun ViewContent(
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     val sType = if (item.mId.startsWith("MOV")) "Movie" else "Shows"
-                    val sDuration = if (item.mId.startsWith("MOV")) formatDurationFromMinutes(item.mDuration.toIntOrNull() ?: 0) else item.mDuration
+                    val sDuration = if (item.mId.startsWith("MOV")) formatDurationFromMinutes(item.duration ?: 0) else item.duration
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         MetaText(sType)
+//                        Bullets()
+//                        MetaText(item.mGenre)
+//                        Bullets()
+//                        MetaText(item.mYear)
                         Bullets()
-                        MetaText(item.mGenre)
+                        MetaText(sDuration.toString())
+//                        Bullets()
+//                        MetaText(item.mContent.convertContentRating())
                         Bullets()
-                        MetaText(item.mYear)
-                        Bullets()
-                        MetaText(sDuration)
-                        Bullets()
-                        MetaText(item.mContent.convertContentRating())
+                        MetaText(item.mId)
                     }
 
                     Text(
                         modifier = Modifier.alpha(0.8f),
-                        text = item.mDescription.fixEncoding(),
+                        text = "Hello!",
                         color = Color.White,
                         fontSize = 14.sp,
                         maxLines = 4
@@ -596,7 +530,7 @@ fun ViewContent(
 
 @Composable
 private fun PosterCard(
-    item: PosterItem,
+    item: ContinuePosterItem,
     modifier: Modifier = Modifier,
     isFirst: Boolean,
     isFirstFocused: Boolean

@@ -1,5 +1,6 @@
 package com.projects.a122mmtv.auth
 
+import com.projects.a122mmtv.components.ContinueWatchingResponse
 import com.projects.a122mmtv.components.HomeMenuResponse
 import retrofit2.Response
 import retrofit2.http.Body
@@ -245,5 +246,11 @@ interface AuthApiService {
         @Query("pageSize") pageSize: Int,
         @Query("user_id") userId: Int
     ): HomeMenuResponse
+
+    @GET("getcontinuewatching")
+    suspend fun getContinueWatching(
+        @Query("type") type: String,
+        @Query("user_id") userId: Int
+    ): List<ContinueWatchingResponse>
 
 }

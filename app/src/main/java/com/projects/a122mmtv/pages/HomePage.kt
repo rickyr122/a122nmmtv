@@ -42,6 +42,7 @@ import com.projects.a122mmtv.auth.BannerViewModelFactory
 import com.projects.a122mmtv.auth.HomeSessionViewModel
 import com.projects.a122mmtv.components.ViewBanner
 import com.projects.a122mmtv.components.ViewContent
+import com.projects.a122mmtv.components.ViewContinue
 import com.projects.a122mmtv.components.ViewMovieDetail
 import com.projects.a122mmtv.dataclass.Section
 import com.projects.a122mmtv.viewmodels.HomeViewModel
@@ -123,7 +124,7 @@ fun HomePage(
 
     val allSections = homeViewModel.allSections
     val categorySections = remember(homeViewModel.allSections) {
-        homeViewModel.allSections.filterIsInstance<Section.Category>()
+        homeViewModel.allSections //.filterIsInstance<Section.Category>()
     }
 
     val rowFocusRequesters = remember(categorySections.size) {
@@ -214,7 +215,7 @@ fun HomePage(
                 .clipToBounds()
         ) {
             ViewBanner(
-                type = "HOM",
+                type = type,
                 currentTabIndex = 0,
                 focusRequester = bannerFocusRequester,
                 menuBarFocusRequester = menuBarFocusRequester,
@@ -292,34 +293,68 @@ fun HomePage(
                     .focusRequester(rowFocusRequesters[index])
                     //.focusable()
             ) {
-                ViewContent(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalInset = horizontalInset,
-                    homeSession = homeSession,
-                    isActive = isActive,
-                    code = section.code,
-                    focusRequester = rowFocusRequesters[index],
-                    onMoveDown = {
-                        activeRowIndex =
-                            (activeRowIndex + 1).coerceAtMost(allSections.lastIndex)
-                    },
-                    onMoveUp = {
-                        activeRowIndex =
-                            (activeRowIndex - 1).coerceAtLeast(-1)
+                when (section) {
+                    is Section.Continue -> ViewContinue(
+                        modifier = Modifier.fillMaxSize(),
+                        type = type,
+                        horizontalInset = horizontalInset,
+                        homeSession = homeSession,
+                        isActive = isActive,
+                        code = section.code,
+                        focusRequester = rowFocusRequesters[index],
+                        onMoveDown = {
+                            activeRowIndex =
+                                (activeRowIndex + 1).coerceAtMost(allSections.lastIndex)
+                        },
+                        onMoveUp = {
+                            activeRowIndex =
+                                (activeRowIndex - 1).coerceAtLeast(-1)
 
-                        if (activeRowIndex == -1) {
-                            bannerFocusRequester.requestFocus()
-                        }
-                    },
-                    onExitToMenu = onReturnedToMenuFromContent,
-                    onOpenDetail = { mId ->
-                        detailSource = DetailSource.CONTENT
-                        detailMovieId = mId
-                        interactionLayer = InteractionLayer.DETAIL
-                    },
-                    heroFocusRequester = heroFocusRequester,
-                    interactionLayer = interactionLayer
-                )
+                            if (activeRowIndex == -1) {
+                                bannerFocusRequester.requestFocus()
+                            }
+                        },
+                        onExitToMenu = onReturnedToMenuFromContent,
+                        onOpenDetail = { mId ->
+                            detailSource = DetailSource.CONTENT
+                            detailMovieId = mId
+                            interactionLayer = InteractionLayer.DETAIL
+                        },
+                        heroFocusRequester = heroFocusRequester,
+                        interactionLayer = interactionLayer
+                    )
+
+                    is Section.Category ->  ViewContent(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalInset = horizontalInset,
+                        homeSession = homeSession,
+                        isActive = isActive,
+                        code = section.code,
+                        focusRequester = rowFocusRequesters[index],
+                        onMoveDown = {
+                            activeRowIndex =
+                                (activeRowIndex + 1).coerceAtMost(allSections.lastIndex)
+                        },
+                        onMoveUp = {
+                            activeRowIndex =
+                                (activeRowIndex - 1).coerceAtLeast(-1)
+
+                            if (activeRowIndex == -1) {
+                                bannerFocusRequester.requestFocus()
+                            }
+                        },
+                        onExitToMenu = onReturnedToMenuFromContent,
+                        onOpenDetail = { mId ->
+                            detailSource = DetailSource.CONTENT
+                            detailMovieId = mId
+                            interactionLayer = InteractionLayer.DETAIL
+                        },
+                        heroFocusRequester = heroFocusRequester,
+                        interactionLayer = interactionLayer
+                    )
+
+                    else -> Unit
+                }
             }
         }
 
