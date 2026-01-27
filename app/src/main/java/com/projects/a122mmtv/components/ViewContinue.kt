@@ -407,7 +407,7 @@ fun ViewContinue(
                             .alpha(0.45f)
                     ) {
                         AsyncImage(
-                            model = previousHero?.posterUrl,
+                            model = previousHero?.posterUrl?.replace("/w1280", "/w780"),
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
@@ -431,7 +431,7 @@ fun ViewContinue(
                         .alpha(0.8f)
                 ) {
                     AsyncImage(
-                        model = hero?.posterUrl,
+                        model = hero?.posterUrl?.replace("/w1280", "/w780"),
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
@@ -592,7 +592,7 @@ private fun PosterCard(
     ) {
 
         AsyncImage(
-            model = item.posterUrl,
+            model = item.posterUrl.replace("/w1280", "/w780"),
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()

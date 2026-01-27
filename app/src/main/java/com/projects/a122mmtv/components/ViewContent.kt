@@ -1,8 +1,6 @@
 package com.projects.a122mmtv.components
 
-import android.util.Log
 import android.view.KeyEvent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -463,7 +461,7 @@ fun ViewContent(
                             .alpha(0.45f)
                     ) {
                         AsyncImage(
-                            model = previousHero?.posterUrl,
+                            model = previousHero?.posterUrl?.replace("/w1280", "/w780"),
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
@@ -473,6 +471,7 @@ fun ViewContent(
             }
 
             val hero = heroItem
+
             // HERO (only when active)
             if (isActive) {
                 Box(
@@ -487,7 +486,7 @@ fun ViewContent(
                         .alpha(0.8f)
                 ) {
                     AsyncImage(
-                        model = hero?.posterUrl,
+                        model = hero?.posterUrl?.replace("/w1280", "/w780"),
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
@@ -611,9 +610,9 @@ private fun PosterCard(
             .aspectRatio(9.5f / 16f)
             .focusable()
     ) {
-
+        val itemUrlResize = item.posterUrl.replace("/w1280", "/w780")
         AsyncImage(
-            model = item.posterUrl,
+            model = itemUrlResize, //item.posterUrl.replace("/w1280", "/w780"),
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
