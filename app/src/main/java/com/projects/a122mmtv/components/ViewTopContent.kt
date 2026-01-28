@@ -48,6 +48,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
@@ -392,6 +394,7 @@ fun ViewTopContent(
                     numberSpace = 72.dp,
                     overlap = 24.dp,
                     showBorder = true,
+                    centerLogo = false,
                     modifier = Modifier
                         .offset(x = horizontalInset)
                         .focusRequester(heroFocusRequester)
@@ -413,25 +416,31 @@ fun ViewTopContent(
                                     72.dp +
                                     heroWidth -
                                     24.dp +
-                                    16.dp
+                                    28.dp
                         }
                     ),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
                 contentPadding = PaddingValues(0.dp)
             ) {
                 itemsIndexed(visibleItems)
                 { index, item ->
                     //val isFirst = item.id == items.first().id
                     val isFirst = item.id == visibleItems.first().id
+                    val displayRank = if (!isActive) {
+                        index + 1
+                    } else {
+                        stepIndex + index + 2
+                    }
 
                     RankedPosterTV(
-                        rank = index + 1,
+                        rank = displayRank,
                         posterUrl = item.posterUrl,
                         logoUrl = item.logoUrl,
                         cardHeight = 260.dp,
                         cardWidth = 260.dp * (9.5f / 16f),
                         numberSpace = 56.dp,
-                        overlap = 20.dp
+                        overlap = 20.dp,
+                        centerLogo = true
                     )
 
                 }
@@ -564,11 +573,15 @@ fun RankNumber(
     val density = LocalDensity.current
    // val fontSize = containerHeight * 0.4f // 72.sp
     val fontSizeSp = with(density) {
-        (containerHeight * 0.6f).toSp()
+        (containerHeight * 0.5f).toSp()
     }
 
-    val strokePx = with(density) { 8.dp.toPx() }
-    val trackingFactor = 0.92f
+    val strokePx = with(density) { 6.dp.toPx() }
+    val isMultiDigit = text.length > 1
+
+    val trackingFactor =
+        if (isMultiDigit) 0.5f   // 👈 overlap digits (for 10)
+        else 0.92f               // normal spacing (1–9)
 
     val measurer = rememberTextMeasurer()
 
@@ -589,6 +602,10 @@ fun RankNumber(
     val combinedOutlineWidthPx =
         glyphs.sumOf { it.first.size.width }.toFloat() * trackingFactor
 
+
+    val shiftLeftPx =
+        if (isMultiDigit) combinedOutlineWidthPx * 0.15f else 0f
+
     Box(
         modifier = modifier
             .fillMaxHeight()
@@ -597,7 +614,8 @@ fun RankNumber(
                     glyphs.maxOfOrNull { it.first.size.height } ?: 0
 
                 val startX =
-                    (size.width - combinedOutlineWidthPx) / 2f
+                    (size.width - combinedOutlineWidthPx) / 2f - shiftLeftPx
+//                    (size.width - combinedOutlineWidthPx) / 2f
                 val startY =
                     (size.height - maxGlyphHeight) / 2f
 
@@ -608,8 +626,12 @@ fun RankNumber(
                     drawText(
                         textLayoutResult = outline,
                         topLeft = Offset(cursorX, startY),
-                        color = Color.White,
-                        drawStyle = Stroke(width = strokePx)
+                        color = Color.White.copy(alpha = 0.8f),
+                        drawStyle = Stroke(
+                            width = strokePx,
+                            join = StrokeJoin.Round,
+                            cap = StrokeCap.Round
+                        )
                     )
 
                     // FILL
@@ -621,7 +643,7 @@ fun RankNumber(
                     drawText(
                         textLayoutResult = fill,
                         topLeft = Offset(fillX, fillY),
-                        color = Color.Black
+                        color = Color.Black.copy(alpha = 0.8f)
                     )
 
                     val advance =
@@ -645,7 +667,8 @@ private fun RankedPosterTV(
     cardHeight: Dp,
     cardWidth: Dp,
     numberSpace: Dp,
-    showBorder: Boolean = false, // 👈 ADD
+    showBorder: Boolean = false,
+    centerLogo: Boolean = false,
     overlap: Dp
 ) {
     val totalWidth = numberSpace + cardWidth
@@ -663,7 +686,21 @@ private fun RankedPosterTV(
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .width(numberSpace)
-                .fillMaxHeight(0.6f)
+                .fillMaxHeight(0.5f)
+        )
+
+        // Gradient between image & rank
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.horizontalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            Color.Black.copy(alpha = 0.85f)
+                        )
+                    )
+                )
         )
 
         // RIGHT: poster overlaps number
@@ -707,16 +744,32 @@ private fun RankedPosterTV(
             if (logoUrl != null) {
                 BoxWithConstraints(
                     modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(start = 16.dp, bottom = 12.dp)
+                        .align(
+                            if (centerLogo)
+                                BottomCenter
+                            else
+                                BottomStart
+                        )
+                        .padding(start = if (centerLogo) 0.dp else 16.dp,
+                            bottom = 12.dp)
                 ) {
                     AsyncImage(
                         model = logoUrl,
                         contentDescription = null,
                         contentScale = ContentScale.Fit,
                         modifier = Modifier
-                            .widthIn(max = maxWidth * 0.6f)
-                            .heightIn(max = 36.dp)
+                            .widthIn(
+                                max = if (centerLogo)
+                                    maxWidth * 0.8f   // LazyRow
+                                else
+                                    maxWidth * 0.6f   // Hero (unchanged)
+                            )
+                            .heightIn(
+                                max = if (centerLogo)
+                                    36.dp             // LazyRow
+                                else
+                                    36.dp             // Hero (same as before)
+                            )
                     )
                 }
             }
