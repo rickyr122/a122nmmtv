@@ -258,6 +258,6 @@ interface AuthApiService {
     @GET("gettopcontent")
     suspend fun getTopContent(
         @Query("type") type: String
-    ): TopContentResponse  // ✅ API returns array
+    ): List<TopContentItem>  // ✅ API returns array
 
 }

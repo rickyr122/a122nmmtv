@@ -74,7 +74,6 @@ data class TopContentItem(
     val mId: String,
     val m_title: String,
     val m_duration: String,
-    val m_release_date: String,
     val m_year: String,
     val m_content: String,
     val mGenre: String,
@@ -146,7 +145,7 @@ fun ViewTopContent(
     val context = LocalContext.current
     val api = ApiClient.create(AuthApiService::class.java)
 
-    var title by remember { mutableStateOf("") }
+    //var title by remember { mutableStateOf("") }
     var items by remember { mutableStateOf<List<TopPosterItem>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
 
@@ -188,9 +187,7 @@ fun ViewTopContent(
                 type = type
             )
 
-            title = ""   // ✅ FIX #1
-
-            val mapped = res.items.mapIndexed { i, item ->
+            val mapped = res.mapIndexed { i, item ->
                 item.toTopPosterItem(i)
             }
 
@@ -228,6 +225,14 @@ fun ViewTopContent(
     }
 
     var stepIndex by remember { mutableStateOf(0) }
+
+    val title = when (type) {
+        "HOM" -> "Top 10 TV Shows and Movies"
+        "MOV" -> "Top 10 Movies"
+        "TVG" -> "Top 10 TV Shows"
+        else  -> "Top 10"
+    }
+
 
     Column(
         modifier = Modifier

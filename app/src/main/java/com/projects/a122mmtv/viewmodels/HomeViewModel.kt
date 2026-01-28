@@ -23,10 +23,10 @@ class HomeViewModel : ViewModel() {
 
     val allSections: List<Section> by derivedStateOf {
         val filtered = codes.filter { it != 0 }
-//        (listOf(
-//            Section.Continue, Section.TopContent) + filtered.map { Section.Category(it) }).shuffled()
         (listOf(
-            Section.Continue) + filtered.map { Section.Category(it) }).shuffled()
+            Section.Continue, Section.TopContent) + filtered.map { Section.Category(it) }).shuffled()
+//        (listOf(
+//            Section.Continue) + filtered.map { Section.Category(it) }).shuffled()
     }
 
 

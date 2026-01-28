@@ -44,6 +44,7 @@ import com.projects.a122mmtv.components.ViewBanner
 import com.projects.a122mmtv.components.ViewContent
 import com.projects.a122mmtv.components.ViewContinue
 import com.projects.a122mmtv.components.ViewMovieDetail
+import com.projects.a122mmtv.components.ViewTopContent
 import com.projects.a122mmtv.dataclass.Section
 import com.projects.a122mmtv.viewmodels.HomeViewModel
 
@@ -353,7 +354,37 @@ fun HomePage(
                         interactionLayer = interactionLayer
                     )
 
-                    else -> Unit
+                    is Section.TopContent ->  ViewTopContent(
+                        modifier = Modifier.fillMaxSize(),
+                        type = type,
+                        horizontalInset = horizontalInset,
+                        homeSession = homeSession,
+                        isActive = isActive,
+                        code = section.code,
+                        focusRequester = rowFocusRequesters[index],
+                        onMoveDown = {
+                            activeRowIndex =
+                                (activeRowIndex + 1).coerceAtMost(allSections.lastIndex)
+                        },
+                        onMoveUp = {
+                            activeRowIndex =
+                                (activeRowIndex - 1).coerceAtLeast(-1)
+
+                            if (activeRowIndex == -1) {
+                                bannerFocusRequester.requestFocus()
+                            }
+                        },
+                        onExitToMenu = onReturnedToMenuFromContent,
+                        onOpenDetail = { mId ->
+                            detailSource = DetailSource.CONTENT
+                            detailMovieId = mId
+                            interactionLayer = InteractionLayer.DETAIL
+                        },
+                        heroFocusRequester = heroFocusRequester,
+                        interactionLayer = interactionLayer
+                    )
+
+//                    else -> Unit
                 }
             }
         }
