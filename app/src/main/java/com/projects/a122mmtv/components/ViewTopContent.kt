@@ -166,6 +166,8 @@ fun ViewTopContent(
         mutableStateOf<TopPosterItem?>(items.firstOrNull()) // 👈 id = 1 on first load
     }
 
+    val MAX_VISIBLE_ITEMS = 9
+
     var previousHero by remember { mutableStateOf<TopPosterItem?>(null) }
 //    var leftHero by remember { mutableStateOf<TopPosterItem?>(null) }
 
@@ -225,6 +227,13 @@ fun ViewTopContent(
     }
 
     var stepIndex by remember { mutableStateOf(0) }
+    val visibleCount = remember(stepIndex) {
+        (MAX_VISIBLE_ITEMS - stepIndex).coerceAtLeast(0)
+    }
+
+    val visibleItems = remember(items, visibleCount) {
+        items.take(minOf(visibleCount, items.size))
+    }
 
     val title = when (type) {
         "HOM" -> "Top 10 TV Shows and Movies"
@@ -267,6 +276,11 @@ fun ViewTopContent(
 //                            previousHero = heroItem
 //                            Log.d("heroItem::check", "heroItem DR -> $heroItem")
 //                            Log.d("leftHero::check", "LeftHero DR -> $leftHero")
+                            if (stepIndex >= 9) {
+                                // 🚫 already at start → block LEFT
+                                return@onPreviewKeyEvent true
+                            }
+
                             stepIndex += 1
 
 
@@ -426,10 +440,11 @@ fun ViewTopContent(
                 contentPadding = PaddingValues(0.dp)
             ) {
                 items(
-                    items = items,
+                    items = visibleItems,
                     key = { it.id }
                 ) { item ->
-                    val isFirst = item.id == items.first().id
+                    //val isFirst = item.id == items.first().id
+                    val isFirst = item.id == visibleItems.first().id
 
                     PosterCard(
                         item = item,
