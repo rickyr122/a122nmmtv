@@ -2,6 +2,8 @@ package com.projects.a122mmtv.auth
 
 import com.projects.a122mmtv.components.ContinueWatchingResponse
 import com.projects.a122mmtv.components.HomeMenuResponse
+import com.projects.a122mmtv.components.TopContentItem
+import com.projects.a122mmtv.components.TopContentResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.Field
@@ -252,5 +254,10 @@ interface AuthApiService {
         @Query("type") type: String,
         @Query("user_id") userId: Int
     ): List<ContinueWatchingResponse>
+
+    @GET("gettopcontent")
+    suspend fun getTopContent(
+        @Query("type") type: String
+    ): TopContentResponse  // ✅ API returns array
 
 }

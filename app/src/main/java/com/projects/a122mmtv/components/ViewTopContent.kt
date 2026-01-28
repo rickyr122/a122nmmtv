@@ -1,8 +1,6 @@
 package com.projects.a122mmtv.components
 
-import android.util.Log
 import android.view.KeyEvent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -16,9 +14,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -61,9 +57,7 @@ import com.projects.a122mmtv.auth.AuthApiService
 import com.projects.a122mmtv.auth.HomeSessionViewModel
 import com.projects.a122mmtv.dataclass.ApiClient
 import com.projects.a122mmtv.helper.Bullets
-import com.projects.a122mmtv.helper.BulletsContinue
 import com.projects.a122mmtv.helper.MetaText
-import com.projects.a122mmtv.helper.MetaTextContinue
 import com.projects.a122mmtv.helper.convertContentRating
 import com.projects.a122mmtv.helper.fixEncoding
 import com.projects.a122mmtv.pages.InteractionLayer
@@ -71,68 +65,59 @@ import com.projects.a122mmtv.utility.formatDurationFromMinutes
 
 // --- API MODELS (LOCAL) ---
 
-data class ContinueWatchingResponse(
+data class TopContentResponse(
+    val title: String,
+    val items: List<TopContentItem>
+)
+
+data class TopContentItem(
     val mId: String,
-    val mTitle: String,
+    val m_title: String,
+    val m_duration: String,
+    val m_release_date: String,
+    val m_year: String,
+    val m_content: String,
+    val mGenre: String,
+    val mDescription: String,
     val cvrUrl: String,
     val bdropUrl: String,
-    val logoUrl: String,
-    val cPercent: String,
-    val seasonNum: String,
-    val duration: Int,
-    val updateDate: String,
-    val hasRated: String,
-    val playId: String,
-    val playTitle: String,
-    val cProgress: Int,
-    val cFlareVid: String,
-    val cFlareSrt: String,
-    val vidId: String,
-    val srtId: String
+    val logoUrl: String
 )
 
-private data class ContinuePosterItem(
-    val id: Int,
-    val mId: String,
-    val mTitle: String,
-    val posterUrl: String,
-    val logoUrl: String,
-    val title: String,
-    val duration: Int,
-    val cProgress: Int,
-    val progressPercent: Float,
-    val playId: String,
-    val playTitle: String,
-    val vidId: String,
-    val srtId: String,
-    val seasonNum: String
-)
-
-private fun ContinueWatchingResponse.toPosterItem(index: Int): ContinuePosterItem {
-    return ContinuePosterItem(
-        id = index,
+private fun TopContentItem.toTopPosterItem(id: Int): TopPosterItem {
+    return TopPosterItem(
+        id = id,
         mId = mId,
-        mTitle = mTitle,
         posterUrl = bdropUrl.replace("/w1280","/w780").ifBlank { cvrUrl },
         logoUrl = logoUrl,
-        title = mTitle,
-        duration = duration,
-        cProgress = cProgress,
-        progressPercent = cPercent.toFloatOrNull() ?: 0f,
-        playId = playId,
-        playTitle = playTitle,
-        vidId = vidId,
-        srtId = srtId,
-        seasonNum = seasonNum
+        mGenre = mGenre,
+        mYear = m_year,
+        mDuration = m_duration,
+        mContent = m_content,
+        mDescription = mDescription
     )
 }
 
-private fun rotateLeft(list: List<ContinuePosterItem>): List<ContinuePosterItem> {
+private data class TopPosterItem(
+    val id: Int,
+    val mId: String,
+    val posterUrl: String,
+    val logoUrl: String,
+    val mGenre: String,
+    val mYear: String,
+    val mDuration: String,
+    val mContent: String,
+    val mDescription: String
+)
+
+
+
+private fun rotateLeft(list: List<TopPosterItem>): List<TopPosterItem> {
     if (list.isEmpty()) return list
     return list.drop(1) + list.first()
 }
 
-private fun rotateRight(list: List<ContinuePosterItem>): List<ContinuePosterItem> {
+private fun rotateRight(list: List<TopPosterItem>): List<TopPosterItem> {
     if (list.isEmpty()) return list
     return buildList {
         add(list.last())
@@ -141,7 +126,7 @@ private fun rotateRight(list: List<ContinuePosterItem>): List<ContinuePosterItem
 }
 
 @Composable
-fun ViewContinue(
+fun ViewTopContent(
     modifier: Modifier = Modifier,
     type: String,
     horizontalInset: Dp,
@@ -156,20 +141,19 @@ fun ViewContinue(
     heroFocusRequester: FocusRequester,
     interactionLayer: InteractionLayer
 ) {
-
-   //val title = "Fresh From Theater"
+    //val title = "Fresh From Theater"
 
     val context = LocalContext.current
     val api = ApiClient.create(AuthApiService::class.java)
 
     var title by remember { mutableStateOf("") }
-    var items by remember { mutableStateOf<List<ContinuePosterItem>>(emptyList()) }
+    var items by remember { mutableStateOf<List<TopPosterItem>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
 
     val heroHeight = 260.dp
     val heroWidth = heroHeight * (16f / 9f)
     //var heroItem by remember { mutableStateOf(items.first()) }
-    var heroItem by remember { mutableStateOf<ContinuePosterItem?>(null) }
+    var heroItem by remember { mutableStateOf<TopPosterItem?>(null) }
 
     val previewHeight = heroHeight
     val previewWidth = previewHeight * (6f / 19f)
@@ -180,19 +164,12 @@ fun ViewContinue(
     val listState = rememberLazyListState()
 
     var selectedItem by remember {
-        mutableStateOf<ContinuePosterItem?>(items.firstOrNull()) // 👈 id = 1 on first load
+        mutableStateOf<TopPosterItem?>(items.firstOrNull()) // 👈 id = 1 on first load
     }
 
-    var previousHero by remember { mutableStateOf<ContinuePosterItem?>(null) }
-//    var leftHero by remember { mutableStateOf<ContinuePosterItem?>(null) }
+    var previousHero by remember { mutableStateOf<TopPosterItem?>(null) }
+//    var leftHero by remember { mutableStateOf<TopPosterItem?>(null) }
 
-    //val firstItemFocusRequester = remember { FocusRequester() }
-//    LaunchedEffect(items) {
-//        if (heroItem == null && items.isNotEmpty()) {
-//            heroItem = items.first()
-//        }
-//    }
-//
     LaunchedEffect(items) {
         if (hasActivatedOnce) {
             listState.scrollToItem(0)
@@ -200,55 +177,26 @@ fun ViewContinue(
         }
     }
 
-//    LaunchedEffect(items, isActive) {
-//        // if (!isActive) return@LaunchedEffect
-//        if (hasActivatedOnce) return@LaunchedEffect
-//        if (items.isEmpty()) return@LaunchedEffect
-//
-//        // 🔥 EXACT old behavior
-//        heroItem = items.first()
-//        items = rotateLeft(items)
-//        hasActivatedOnce = true
-//    }
-
-
-//    LaunchedEffect(items) {
-//        if (hasActivatedOnce) return@LaunchedEffect
-//        if (items.isEmpty()) return@LaunchedEffect
-//
-//        val first = items.first()
-//        val rotated = rotateLeft(items)
-//
-//        // ✅ atomic state transition
-//        heroItem = first
-//        items = rotated
-//        selectedItem = first
-//        hasActivatedOnce = true
-//    }
-
-
     val userId = homeSession.userId ?: 0
-
-    LaunchedEffect(type, userId) {
-        if (userId == 0) return@LaunchedEffect
-
+    LaunchedEffect(code) {
         isLoading = true
 
         try {
-            val res = api.getContinueWatching(
-                type = type,
-                userId = userId
+            //val userId = homeSession.userId ?: 0
+
+            val res = api.getTopContent(
+                type = type
             )
 
-            title = "Continue Watching"
+            title = ""   // ✅ FIX #1
 
-            val mapped = res.mapIndexed { index, item ->
-                item.toPosterItem(index)
+            val mapped = res.items.mapIndexed { i, item ->
+                item.toTopPosterItem(i)
             }
 
             if (mapped.isNotEmpty()) {
                 heroItem = mapped.first()
-                items = mapped
+                items = mapped // if (isActive) rotateLeft(mapped) else mapped //rotateLeft(mapped)
                 selectedItem = heroItem
             } else {
                 items = emptyList()
@@ -263,7 +211,6 @@ fun ViewContinue(
         hasActivatedOnce = true
         isLoading = false
     }
-
 
     var wasActive by remember { mutableStateOf(false) }
 
@@ -403,6 +350,7 @@ fun ViewContinue(
             }
 
             val hero = heroItem
+
             // HERO (only when active)
             if (isActive) {
                 Box(
@@ -440,60 +388,26 @@ fun ViewContinue(
                             )
                     )
 
-                    Column(
+                    BoxWithConstraints(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.BottomStart)
+                            .align(BottomStart)
+                            .padding(
+                                start =  16.dp,
+                                bottom = 12.dp
+                            )
                     ) {
-                        // LOGO with padding
+                        val maxLogoWidth =
+                            maxWidth * 0.5f   // or whatever your normal size is
+
                         AsyncImage(
                             model = hero?.logoUrl,
                             contentDescription = null,
                             contentScale = ContentScale.Fit,
                             modifier = Modifier
-                                .padding(start = 16.dp, end = 16.dp)
-                                .widthIn(max = heroWidth * 0.5f)
+                                .widthIn(max = maxLogoWidth)
                                 .heightIn(max = 36.dp)
                         )
-
-                        // SPACE BETWEEN LOGO & BAR
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // PROGRESS BAR — FULL HERO WIDTH
-                        val progress = (hero?.progressPercent ?: 0f).coerceIn(0f, 1f)
-                        val gap = 1.dp
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // RED = watched
-                            Box(
-                                modifier = Modifier
-                                    .weight(progress)
-                                    .fillMaxHeight()
-                                    .background(Color.Red)
-                            )
-
-                            if (progress in 0f..0.999f) {
-                                Spacer(modifier = Modifier.width(gap))
-                            }
-
-                            // GRAY = remaining
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f - progress)
-                                    .fillMaxHeight()
-                                    .background(Color.LightGray.copy(alpha = 0.6f))
-                            )
-                        }
-
-
                     }
-
-
                 }
             }
 
@@ -531,26 +445,25 @@ fun ViewContinue(
                 Column(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    val sFirst = if (item.mId.startsWith("TVG")) item.seasonNum else item.playTitle.fixEncoding()
-                    val sSecond = if (item.mId.startsWith("TVG")) item.playTitle.fixEncoding() else ""
+                    val sType = if (item.mId.startsWith("MOV")) "Movie" else "Shows"
+                    val sDuration = if (item.mId.startsWith("MOV")) formatDurationFromMinutes(item.mDuration.toIntOrNull() ?: 0) else item.mDuration
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        MetaTextContinue(sFirst)
-
-                        if (sSecond.isNotBlank()) {
-                            BulletsContinue()
-                            MetaTextContinue(sSecond)
-                        }
+                        MetaText(sType)
+                        Bullets()
+                        MetaText(item.mGenre)
+                        Bullets()
+                        MetaText(item.mYear)
+                        Bullets()
+                        MetaText(sDuration)
+                        Bullets()
+                        MetaText(item.mContent.convertContentRating())
                     }
-
-                    val remainingSeconds = ((item.duration * 60) - item.cProgress).coerceAtLeast(0)
-                    val timeLeftText = if (item.cProgress > 10) "${formatDurationFromMinutes(remainingSeconds / 60)} left"
-                                        else "Start next episode"
 
                     Text(
                         modifier = Modifier.alpha(0.8f),
-                        text = timeLeftText,
+                        text = item.mDescription.fixEncoding(),
                         color = Color.White,
                         fontSize = 14.sp,
                         maxLines = 4
@@ -563,7 +476,7 @@ fun ViewContinue(
 
 @Composable
 private fun PosterCard(
-    item: ContinuePosterItem,
+    item: TopPosterItem,
     modifier: Modifier = Modifier,
     isFirst: Boolean,
     isFirstFocused: Boolean
@@ -576,7 +489,6 @@ private fun PosterCard(
             .aspectRatio(9.5f / 16f)
             .focusable()
     ) {
-
         AsyncImage(
             model = item.posterUrl,
             contentDescription = null,

@@ -88,7 +88,7 @@ private fun HomeMenuItem.toPosterItem(id: Int): PosterItem {
     return PosterItem(
         id = id,
         mId = m_id,
-        posterUrl = bdropUrl.ifBlank { cvrUrl },
+        posterUrl = bdropUrl.replace("/w1280","/w780").ifBlank { cvrUrl },
         logoUrl = logoUrl,
         mGenre = mGenre,
         mYear = m_year,
@@ -461,7 +461,7 @@ fun ViewContent(
                             .alpha(0.45f)
                     ) {
                         AsyncImage(
-                            model = previousHero?.posterUrl?.replace("/w1280", "/w780"),
+                            model = previousHero?.posterUrl,
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
@@ -486,7 +486,7 @@ fun ViewContent(
                         .alpha(0.8f)
                 ) {
                     AsyncImage(
-                        model = hero?.posterUrl?.replace("/w1280", "/w780"),
+                        model = hero?.posterUrl,
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
@@ -610,9 +610,8 @@ private fun PosterCard(
             .aspectRatio(9.5f / 16f)
             .focusable()
     ) {
-        val itemUrlResize = item.posterUrl.replace("/w1280", "/w780")
         AsyncImage(
-            model = itemUrlResize, //item.posterUrl.replace("/w1280", "/w780"),
+            model = item.posterUrl,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
