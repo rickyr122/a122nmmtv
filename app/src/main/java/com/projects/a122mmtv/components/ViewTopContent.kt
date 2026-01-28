@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,6 +26,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,18 +42,27 @@ import androidx.compose.ui.Alignment.Companion.BottomStart
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
 import com.projects.a122mmtv.auth.AuthApiService
 import com.projects.a122mmtv.auth.HomeSessionViewModel
@@ -260,7 +271,7 @@ fun ViewTopContent(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clipToBounds()
+                //.clipToBounds()
                 .focusRequester(focusRequester)
                 .focusable()
                 .onPreviewKeyEvent { event ->
@@ -372,62 +383,21 @@ fun ViewTopContent(
 
             // HERO (only when active)
             if (isActive) {
-                Box(
+                RankedPosterTV(
+                    rank = stepIndex + 1,
+                    posterUrl = heroItem!!.posterUrl,
+                    logoUrl = heroItem!!.logoUrl,
+                    cardHeight = heroHeight,
+                    cardWidth = heroWidth,
+                    numberSpace = 72.dp,
+                    overlap = 24.dp,
+                    showBorder = true,
                     modifier = Modifier
                         .offset(x = horizontalInset)
-                        .width(heroWidth)
-                        .height(heroHeight)
-                        //.padding(start = horizontalInset, end = 6.dp)
-                        .border(1.dp, Color.White)
                         .focusRequester(heroFocusRequester)
                         .focusable()
                         .alpha(0.8f)
-                ) {
-                    AsyncImage(
-                        model = hero?.posterUrl,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                        //.border(1.dp, Color.White)
-                    )
-
-                    // bottom gradient
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(72.dp)
-                            .align(BottomCenter)
-                            .background(
-                                Brush.verticalGradient(
-                                    listOf(
-                                        Color.Transparent,
-                                        Color.Black.copy(alpha = 0.8f)
-                                    )
-                                )
-                            )
-                    )
-
-                    BoxWithConstraints(
-                        modifier = Modifier
-                            .align(BottomStart)
-                            .padding(
-                                start =  16.dp,
-                                bottom = 12.dp
-                            )
-                    ) {
-                        val maxLogoWidth =
-                            maxWidth * 0.5f   // or whatever your normal size is
-
-                        AsyncImage(
-                            model = hero?.logoUrl,
-                            contentDescription = null,
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier
-                                .widthIn(max = maxLogoWidth)
-                                .heightIn(max = 36.dp)
-                        )
-                    }
-                }
+                )
             }
 
             LazyRow(
@@ -435,22 +405,35 @@ fun ViewTopContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .alpha(0.8f)
-                    .padding(start = if(!isActive) horizontalInset else horizontalInset + heroWidth + 6.dp),
+                    .padding(
+                        start = if (!isActive) {
+                            horizontalInset
+                        } else {
+                            horizontalInset +
+                                    72.dp +
+                                    heroWidth -
+                                    24.dp +
+                                    16.dp
+                        }
+                    ),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 contentPadding = PaddingValues(0.dp)
             ) {
-                items(
-                    items = visibleItems,
-                    key = { it.id }
-                ) { item ->
+                itemsIndexed(visibleItems)
+                { index, item ->
                     //val isFirst = item.id == items.first().id
                     val isFirst = item.id == visibleItems.first().id
 
-                    PosterCard(
-                        item = item,
-                        isFirst = isFirst,
-                        isFirstFocused = isFirstFocused
+                    RankedPosterTV(
+                        rank = index + 1,
+                        posterUrl = item.posterUrl,
+                        logoUrl = item.logoUrl,
+                        cardHeight = 260.dp,
+                        cardWidth = 260.dp * (9.5f / 16f),
+                        numberSpace = 56.dp,
+                        overlap = 20.dp
                     )
+
                 }
             }
         }
@@ -460,7 +443,12 @@ fun ViewTopContent(
                 modifier = Modifier
                     .fillMaxWidth(0.6f)
                     .background(Color.Black)
-                    .padding(horizontal = horizontalInset, vertical = 12.dp)
+                    .padding(
+                        start = horizontalInset + 48.dp, // 👈 MATCH hero numberSpace
+                        end = horizontalInset,
+                        top = 12.dp,
+                        bottom = 12.dp
+                    )
             ) {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -498,6 +486,7 @@ fun ViewTopContent(
 private fun PosterCard(
     item: TopPosterItem,
     modifier: Modifier = Modifier,
+    rank: Int,
     isFirst: Boolean,
     isFirstFocused: Boolean
 ) {
@@ -515,6 +504,14 @@ private fun PosterCard(
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
         )
+
+//        RankNumber(
+//            rank = rank,
+//            modifier = Modifier
+//                .align(Alignment.CenterStart)
+//                .width(56.dp)
+//                .zIndex(1f)
+//        )
 
         // bottom gradient
         Box(
@@ -555,4 +552,174 @@ private fun PosterCard(
     }
 }
 
+@Composable
+fun RankNumber(
+    rank: Int,
+    containerHeight: Dp, // 👈 ADD THIS
+    modifier: Modifier = Modifier
+) {
+    val text = rank.toString()
 
+    // Pre-measure glyphs (reuse your mobile logic)
+    val density = LocalDensity.current
+   // val fontSize = containerHeight * 0.4f // 72.sp
+    val fontSizeSp = with(density) {
+        (containerHeight * 0.6f).toSp()
+    }
+
+    val strokePx = with(density) { 8.dp.toPx() }
+    val trackingFactor = 0.92f
+
+    val measurer = rememberTextMeasurer()
+
+    val glyphs = remember(text) {
+        text.map { char ->
+            val outline = measurer.measure(
+                AnnotatedString(char.toString()),
+                style = TextStyle(fontSize = fontSizeSp)
+            )
+            val fill = measurer.measure(
+                AnnotatedString(char.toString()),
+                style = TextStyle(fontSize = fontSizeSp * 0.92f)
+            )
+            outline to fill
+        }
+    }
+
+    val combinedOutlineWidthPx =
+        glyphs.sumOf { it.first.size.width }.toFloat() * trackingFactor
+
+    Box(
+        modifier = modifier
+            .fillMaxHeight()
+            .drawBehind {
+                val maxGlyphHeight =
+                    glyphs.maxOfOrNull { it.first.size.height } ?: 0
+
+                val startX =
+                    (size.width - combinedOutlineWidthPx) / 2f
+                val startY =
+                    (size.height - maxGlyphHeight) / 2f
+
+                var cursorX = startX
+
+                glyphs.forEachIndexed { index, (outline, fill) ->
+                    // OUTLINE
+                    drawText(
+                        textLayoutResult = outline,
+                        topLeft = Offset(cursorX, startY),
+                        color = Color.White,
+                        drawStyle = Stroke(width = strokePx)
+                    )
+
+                    // FILL
+                    val fillX =
+                        cursorX + (outline.size.width - fill.size.width) / 2f
+                    val fillY =
+                        startY + (outline.size.height - fill.size.height) / 2f
+
+                    drawText(
+                        textLayoutResult = fill,
+                        topLeft = Offset(fillX, fillY),
+                        color = Color.Black
+                    )
+
+                    val advance =
+                        if (index < glyphs.lastIndex)
+                            outline.size.width * trackingFactor
+                        else
+                            outline.size.width.toFloat()
+
+                    cursorX += advance
+                }
+            }
+    )
+}
+
+@Composable
+private fun RankedPosterTV(
+    modifier: Modifier = Modifier,
+    rank: Int,
+    posterUrl: String,
+    logoUrl: String?,
+    cardHeight: Dp,
+    cardWidth: Dp,
+    numberSpace: Dp,
+    showBorder: Boolean = false, // 👈 ADD
+    overlap: Dp
+) {
+    val totalWidth = numberSpace + cardWidth
+
+    Box(
+        modifier = modifier
+            .height(cardHeight)
+            .width(totalWidth)
+    ) {
+
+        // LEFT: rank number (IDENTICAL to mobile)
+        RankNumber(
+            rank = rank,
+            containerHeight = cardHeight, // 👈 THIS IS THE KEY
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .width(numberSpace)
+                .fillMaxHeight(0.6f)
+        )
+
+        // RIGHT: poster overlaps number
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .offset(x = -overlap)
+                .width(cardWidth)
+                .height(cardHeight)
+                .then(
+                    if (showBorder)
+                        Modifier.border(1.dp, Color.White)
+                    else
+                        Modifier
+                )
+        ) {
+            AsyncImage(
+                model = posterUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+
+            // bottom gradient (same as your current code)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(72.dp)
+                    .align(Alignment.BottomCenter)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.8f)
+                            )
+                        )
+                    )
+            )
+
+            // logo (optional)
+            if (logoUrl != null) {
+                BoxWithConstraints(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(start = 16.dp, bottom = 12.dp)
+                ) {
+                    AsyncImage(
+                        model = logoUrl,
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier
+                            .widthIn(max = maxWidth * 0.6f)
+                            .heightIn(max = 36.dp)
+                    )
+                }
+            }
+        }
+    }
+}
