@@ -259,4 +259,32 @@ interface AuthApiService {
         @Query("type") type: String
     ): List<TopContentItem>  // ✅ API returns array
 
+    @GET("getmoviedetail")
+    suspend fun getMovieDetail(
+        @Query("code") code: String,
+        @Query("user_id") userId: Int
+    ): Response<MovieDetailDto>
+
+    data class MovieDetailDto(
+        val m_id: String,
+        val m_title: String?,
+        val m_year: String,
+        val m_rating: String,
+        val m_content: String,
+        val m_duration: Int,
+        val m_description: String,
+        val m_release_date: String,
+        val m_starring: String,
+        val m_director: String,
+        val bdropUrl: String,
+        val logoUrl: String,
+        val totalSeason: Int,
+        val totalEps: Int,
+        val activeSeason: Int,
+        val activeEps: Int,
+        val playId: String,
+        val pTitle: String
+    )
+
+
 }

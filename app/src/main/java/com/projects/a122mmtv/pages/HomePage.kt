@@ -393,6 +393,8 @@ fun HomePage(
             ViewMovieDetail(
                 mId = detailMovieId!!,
                 isActive = interactionLayer == InteractionLayer.DETAIL,
+                horizontalInset = horizontalInset,
+                homeSession = homeSession,
                 onClose = {
                     detailMovieId = null
                     interactionLayer = InteractionLayer.HOME
