@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
@@ -57,6 +58,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.projects.a122mmtv.R
 import com.projects.a122mmtv.auth.AuthApiService
 import com.projects.a122mmtv.auth.HomeSessionViewModel
 import com.projects.a122mmtv.dataclass.ApiClient
@@ -240,7 +242,6 @@ fun ViewContinue(
                 userId = userId
             )
 
-            title = "Continue Watching"
 
             val mapped = res.mapIndexed { index, item ->
                 item.toPosterItem(index)
@@ -266,6 +267,7 @@ fun ViewContinue(
 
 
     var wasActive by remember { mutableStateOf(false) }
+    title = "Continue Watching"
 
     LaunchedEffect(isActive) {
         if (isActive && !wasActive && items.isNotEmpty()) {
@@ -295,11 +297,26 @@ fun ViewContinue(
             color = Color.White,
             modifier = Modifier.padding(start = horizontalInset, bottom = 12.dp)
         )
+        val emptyBg = Brush.verticalGradient(
+            colors = listOf(
+                Color(0xFF1C1F26),
+                Color(0xFF49528C)
+            )
+        )
+
 
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .clipToBounds()
+                .then(
+                    if (items.isEmpty() && !isLoading)
+                        Modifier
+                            .padding(horizontal = horizontalInset) // 👈 MOVE INSET HERE
+                            .background(emptyBg)
+                    else
+                        Modifier
+                )
                 .focusRequester(focusRequester)
                 .focusable()
                 .onPreviewKeyEvent { event ->
@@ -376,147 +393,176 @@ fun ViewContinue(
                     }
                 }
         ) {
-            key(stepIndex) {
-                androidx.compose.animation.AnimatedVisibility(
-                    visible = stepIndex > 0 && previousHero != null,
-                    enter = fadeIn() + slideInHorizontally { it / 2 },
-                    exit = fadeOut() + slideOutHorizontally { it / 2 }
+
+            if (items.isEmpty() && !isLoading) {
+
+                // ✅ NO-DATA CONTENT (same slot, same padding, same size)
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = horizontalInset),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    AsyncImage(
+                        model = R.drawable.clock,
+                        contentDescription = null,
+                        modifier = Modifier.size(36.dp),
+                        alpha = 0.65f
+                    )
+
+                    Spacer(Modifier.height(10.dp))
+
+                    Text(
+                        text = "Jump back into what you've started.",
+                        fontSize = 14.sp,
+                        color = Color.White.copy(alpha = 0.75f)
+                    )
+                }
+
+            } else {
+                key(stepIndex) {
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = stepIndex > 0 && previousHero != null,
+                        enter = fadeIn() + slideInHorizontally { it / 2 },
+                        exit = fadeOut() + slideOutHorizontally { it / 2 }
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .offset(
+                                    x = horizontalInset - previewWidth - 6.dp
+                                )
+                                .width(previewWidth)
+                                .height(previewHeight)
+                                //.padding(end = horizontalInset - 6.dp)
+                                .alpha(0.45f)
+                        ) {
+                            AsyncImage(
+                                model = previousHero?.posterUrl,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                    }
+                }
+
+                val hero = heroItem
+                // HERO (only when active)
+                if (isActive) {
                     Box(
                         modifier = Modifier
-                            .offset(
-                                x = horizontalInset - previewWidth - 6.dp
-                            )
-                            .width(previewWidth)
-                            .height(previewHeight)
-                            //.padding(end = horizontalInset - 6.dp)
-                            .alpha(0.45f)
+                            .offset(x = horizontalInset)
+                            .width(heroWidth)
+                            .height(heroHeight)
+                            //.padding(start = horizontalInset, end = 6.dp)
+                            .border(1.dp, Color.White)
+                            .focusRequester(heroFocusRequester)
+                            .focusable()
+                            .alpha(0.8f)
                     ) {
                         AsyncImage(
-                            model = previousHero?.posterUrl,
+                            model = hero?.posterUrl,
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
-                        )
-                    }
-                }
-            }
-
-            val hero = heroItem
-            // HERO (only when active)
-            if (isActive) {
-                Box(
-                    modifier = Modifier
-                        .offset(x = horizontalInset)
-                        .width(heroWidth)
-                        .height(heroHeight)
-                        //.padding(start = horizontalInset, end = 6.dp)
-                        .border(1.dp, Color.White)
-                        .focusRequester(heroFocusRequester)
-                        .focusable()
-                        .alpha(0.8f)
-                ) {
-                    AsyncImage(
-                        model = hero?.posterUrl,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                        //.border(1.dp, Color.White)
-                    )
-
-                    // bottom gradient
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(72.dp)
-                            .align(BottomCenter)
-                            .background(
-                                Brush.verticalGradient(
-                                    listOf(
-                                        Color.Transparent,
-                                        Color.Black.copy(alpha = 0.8f)
-                                    )
-                                )
-                            )
-                    )
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.BottomStart)
-                    ) {
-                        // LOGO with padding
-                        AsyncImage(
-                            model = hero?.logoUrl,
-                            contentDescription = null,
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier
-                                .padding(start = 16.dp, end = 16.dp)
-                                .widthIn(max = heroWidth * 0.5f)
-                                .heightIn(max = 36.dp)
+                            //.border(1.dp, Color.White)
                         )
 
-                        // SPACE BETWEEN LOGO & BAR
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // PROGRESS BAR — FULL HERO WIDTH
-                        val progress = (hero?.progressPercent ?: 0f).coerceIn(0f, 1f)
-                        val gap = 1.dp
-
-                        Row(
+                        // bottom gradient
+                        Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                                .height(72.dp)
+                                .align(BottomCenter)
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(
+                                            Color.Transparent,
+                                            Color.Black.copy(alpha = 0.8f)
+                                        )
+                                    )
+                                )
+                        )
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.BottomStart)
                         ) {
-                            // RED = watched
-                            Box(
+                            // LOGO with padding
+                            AsyncImage(
+                                model = hero?.logoUrl,
+                                contentDescription = null,
+                                contentScale = ContentScale.Fit,
                                 modifier = Modifier
-                                    .weight(progress)
-                                    .fillMaxHeight()
-                                    .background(Color.Red)
+                                    .padding(start = 16.dp, end = 16.dp)
+                                    .widthIn(max = heroWidth * 0.5f)
+                                    .heightIn(max = 36.dp)
                             )
 
-                            if (progress in 0f..0.999f) {
-                                Spacer(modifier = Modifier.width(gap))
+                            // SPACE BETWEEN LOGO & BAR
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            // PROGRESS BAR — FULL HERO WIDTH
+                            val progress = (hero?.progressPercent ?: 0f).coerceIn(0f, 1f)
+                            val gap = 1.dp
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // RED = watched
+                                Box(
+                                    modifier = Modifier
+                                        .weight(progress)
+                                        .fillMaxHeight()
+                                        .background(Color.Red)
+                                )
+
+                                if (progress in 0f..0.999f) {
+                                    Spacer(modifier = Modifier.width(gap))
+                                }
+
+                                // GRAY = remaining
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f - progress)
+                                        .fillMaxHeight()
+                                        .background(Color.LightGray.copy(alpha = 0.6f))
+                                )
                             }
 
-                            // GRAY = remaining
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f - progress)
-                                    .fillMaxHeight()
-                                    .background(Color.LightGray.copy(alpha = 0.6f))
-                            )
+
                         }
 
 
                     }
-
-
                 }
-            }
 
-            LazyRow(
-                state = listState,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .alpha(0.8f)
-                    .padding(start = if(!isActive) horizontalInset else horizontalInset + heroWidth + 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                contentPadding = PaddingValues(0.dp)
-            ) {
-                items(
-                    items = items,
-                    key = { it.id }
-                ) { item ->
-                    val isFirst = item.id == items.first().id
+                LazyRow(
+                    state = listState,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .alpha(0.8f)
+                        .padding(start = if (!isActive) horizontalInset else horizontalInset + heroWidth + 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    contentPadding = PaddingValues(0.dp)
+                ) {
+                    items(
+                        items = items,
+                        key = { it.id }
+                    ) { item ->
+                        val isFirst = item.id == items.first().id
 
-                    PosterCard(
-                        item = item,
-                        isFirst = isFirst,
-                        isFirstFocused = isFirstFocused
-                    )
+                        PosterCard(
+                            item = item,
+                            isFirst = isFirst,
+                            isFirstFocused = isFirstFocused
+                        )
+                    }
                 }
             }
         }
