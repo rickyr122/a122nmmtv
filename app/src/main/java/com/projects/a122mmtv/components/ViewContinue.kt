@@ -313,7 +313,7 @@ fun ViewContinue(
                     if (items.isEmpty() && !isLoading)
                         Modifier
                             .padding(horizontal = horizontalInset) // 👈 MOVE INSET HERE
-                            .background(emptyBg)
+                            //.background(emptyBg)
                     else
                         Modifier
                 )
@@ -395,30 +395,44 @@ fun ViewContinue(
         ) {
 
             if (items.isEmpty() && !isLoading) {
-
-                // ✅ NO-DATA CONTENT (same slot, same padding, same size)
-                Column(
+                Box(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = horizontalInset),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .fillMaxWidth()
+                        .fillMaxHeight(),
+                    contentAlignment = if(isActive) Alignment.Center else Alignment.TopCenter
                 ) {
-                    AsyncImage(
-                        model = R.drawable.clock,
-                        contentDescription = null,
-                        modifier = Modifier.size(36.dp),
-                        alpha = 0.65f
-                    )
 
-                    Spacer(Modifier.height(10.dp))
+                    // 🔥 THIS is the colored slab
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(heroHeight)   // ✅ 260.dp
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(emptyBg),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            AsyncImage(
+                                model = R.drawable.clock,
+                                contentDescription = null,
+                                modifier = Modifier.size(36.dp),
+                                alpha = 0.65f
+                            )
 
-                    Text(
-                        text = "Jump back into what you've started.",
-                        fontSize = 14.sp,
-                        color = Color.White.copy(alpha = 0.75f)
-                    )
+                            Spacer(Modifier.height(10.dp))
+
+                            Text(
+                                text = "Jump back into what you've started.",
+                                fontSize = 14.sp,
+                                color = Color.White.copy(alpha = 0.75f)
+                            )
+                        }
+                    }
                 }
+
 
             } else {
                 key(stepIndex) {
@@ -488,7 +502,7 @@ fun ViewContinue(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .align(Alignment.BottomStart)
+                                .align(BottomStart)
                         ) {
                             // LOGO with padding
                             AsyncImage(
