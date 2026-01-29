@@ -15,10 +15,13 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -37,15 +40,22 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
+import com.projects.a122mmtv.R
 import com.projects.a122mmtv.auth.AuthApiService
 import com.projects.a122mmtv.auth.HomeSessionViewModel
 import com.projects.a122mmtv.dataclass.ApiClient
 import com.projects.a122mmtv.helper.Bullets
 import com.projects.a122mmtv.helper.MetaText
+import com.projects.a122mmtv.helper.convertContentRating
+import com.projects.a122mmtv.helper.fixEncoding
+import com.projects.a122mmtv.utility.formatDurationFromMinutes
 
 @Composable
 fun ViewMovieDetail(
@@ -96,133 +106,201 @@ fun ViewMovieDetail(
 
         val movie = detail!!
 
-        /* =========================
-         * TWO COLUMNS
-         * ========================= */
-        Row(
+        Box(
             modifier = Modifier.fillMaxSize()
         ) {
 
             /* =========================
-             * LEFT COLUMN (TEXT)
-             * uses horizontalInset
-             * ========================= */
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontalInset                    )
-            ) {
-
-                // LOGO
-                AsyncImage(
-                    model = movie.logoUrl,
-                    contentDescription = null,
-                    modifier = Modifier.height(72.dp)
-                )
-
-                Spacer(Modifier.height(24.dp))
-
-                // META
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    MetaText(movie.m_year)
-                    Bullets()
-                    MetaText(movie.m_rating)
-                    Bullets()
-                    MetaText("${movie.m_duration}h")
-                    Bullets()
-                    MetaText(movie.m_content)
-                }
-
-                Spacer(Modifier.height(16.dp))
-
-                // DESCRIPTION
-                Text(
-                    text = movie.m_description,
-                    color = Color.White,
-                    fontSize = 14.sp,
-                    lineHeight = 20.sp,
-                    maxLines = 5
-                )
-
-                Spacer(Modifier.height(32.dp))
-
-                // BUTTONS (VERTICAL)
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    PrimaryButton(
-                        text = "Play",
-                        modifier = Modifier.width(200.dp)
-                    )
-
-                    SecondaryTextButton("More Episode")
-                    SecondaryTextButton("Subtitles")
-                }
-            }
-
-            /* =========================
-             * RIGHT COLUMN (IMAGE)
-             * NO horizontalInset
+             * RIGHT IMAGE (BACKGROUND LAYER)
              * ========================= */
             Box(
                 modifier = Modifier
-                    .fillMaxHeight(0.5f)
+                    .align(Alignment.TopEnd)
+                    .fillMaxHeight(0.6f)
                     .aspectRatio(16f / 9f)
                     .drawWithCache {
-
-                        // Alpha mask: white = visible, black = transparent
+                        // (your existing mask code stays EXACTLY the same)
                         val edgeMask = Brush.radialGradient(
-                            colors = listOf(
-                                Color.White,
-                                Color.White,
-                                Color.Transparent
-                            ),
-                            center = Offset(
-                                x = size.width * 0.65f,
-                                y = size.height * 0.45f
-                            ),
+                            colors = listOf(Color.White, Color.White, Color.Transparent),
+                            center = Offset(size.width * 0.65f, size.height * 0.45f),
                             radius = size.maxDimension * 1.2f
                         )
 
                         val leftMask = Brush.horizontalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                Color.White
-                            ),
+                            colors = listOf(Color.Transparent, Color.White),
                             startX = 0f,
-                            endX = size.width * 0.8f
+                            endX = size.width * 0.6f
                         )
 
                         val bottomMask = Brush.verticalGradient(
-                            colors = listOf(
-                                Color.White,
-                                Color.Transparent
-                            ),
+                            colors = listOf(Color.White, Color.Transparent),
                             startY = size.height * 0.65f,
                             endY = size.height
                         )
 
                         onDrawWithContent {
                             drawContent()
-
-                            // Apply feathered alpha masks
                             drawRect(edgeMask, blendMode = BlendMode.DstIn)
                             drawRect(leftMask, blendMode = BlendMode.DstIn)
                             drawRect(bottomMask, blendMode = BlendMode.DstIn)
                         }
                     }
             ) {
-
                 AsyncImage(
                     model = movie.bdropUrl,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .matchParentSize()
-                        .alpha(0.6f) // base transparency
+                        .alpha(0.6f)
                 )
             }
 
+            /* =========================
+             * LEFT TEXT (FOREGROUND LAYER)
+             * ========================= */
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth(0.55f)   // 👈 THIS controls overlap amount
+                    .padding(horizontalInset)
+                    .zIndex(1f)             // 👈 explicit foreground
+            ) {
+
+                // LOGO
+                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                    AsyncImage(
+                        model = movie.logoUrl,
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit,
+                        alignment = Alignment.CenterStart,
+                        modifier = Modifier
+                            .width(maxWidth * 0.8f)
+                            .heightIn(max = 72.dp)
+                    )
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                // META
+                val displayDuration = if (movie.m_id.startsWith("MOV")) {
+                    formatDurationFromMinutes(movie.m_duration)
+                } else if (movie.m_id.startsWith("TV")) {
+                    if (movie.totalSeason == 1) {
+                        "${movie.totalEps} Episodes"
+                    } else {
+                        "${movie.totalSeason} Seasons"
+                    }
+                } else {
+                    "${movie.totalSeason} Seasons"
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    MetaText(movie.m_year)
+                    Spacer(Modifier.width(4.dp))
+                    Bullets()
+                    Spacer(Modifier.width(4.dp))
+                    MetaText(movie.mGenre)
+                    Spacer(Modifier.width(4.dp))
+                    Bullets()
+                    Spacer(Modifier.width(4.dp))
+                    MetaText(displayDuration)
+                    Spacer(Modifier.width(4.dp))
+                    Bullets()
+                    Spacer(Modifier.width(4.dp))
+                    Box(
+                        modifier = Modifier
+                            .background(Color(0xFF444444), shape = RoundedCornerShape(4.dp))
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                    MetaText(movie.m_content.convertContentRating())
+                        }
+                }
+
+                val rtState = movie.rt_state
+
+                val rtIconRes = when {
+                    rtState == "rotten" -> R.drawable.rotten
+                    rtState == "fresh" -> R.drawable.fresh
+                    else -> R.drawable.certifiedfresh
+                }
+
+                val rtAudience = movie.audience_state
+
+                val rtAudienceRes = when {
+                    rtAudience == "upright" -> R.drawable.upright
+                    else -> R.drawable.spill
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.imdb),
+                        contentDescription = "IMDb",
+                        modifier = Modifier.size(24.dp),
+                        tint = Color.Unspecified
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = movie.m_rating,
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+
+                    Spacer(Modifier.width(12.dp))
+
+                    Icon(
+                        painter = painterResource(id = rtIconRes),
+                        contentDescription = "Rotten Tomatoes",
+                        modifier = Modifier.size(22.dp),
+                        tint = Color.Unspecified
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = movie.rt_score.toString() + "%",
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+
+                    Spacer(Modifier.width(8.dp))
+
+                    if (rtAudienceRes != 0 && movie.audience_score != 0) {
+                        Icon(
+                            painter = painterResource(id = rtAudienceRes),
+                            contentDescription = "Audience Score",
+                            modifier = Modifier.size(22.dp),
+                            tint = Color.Unspecified
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            text = "${movie.audience_score}%",
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(10.dp))
+
+                // DESCRIPTION (this now overlaps image)
+                Text(
+                    text = movie.m_description.fixEncoding(),
+                    color = Color.White,
+                    fontSize = 14.sp,
+                    maxLines = 5
+                )
+
+                Spacer(Modifier.height(32.dp))
+
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    PrimaryButton("Play", Modifier.width(200.dp))
+                    SecondaryTextButton("More Episode")
+                    SecondaryTextButton("Subtitles")
+                }
+            }
         }
     }
 }
