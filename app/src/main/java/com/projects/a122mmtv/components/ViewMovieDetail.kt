@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -41,7 +42,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -195,18 +200,36 @@ fun ViewMovieDetail(
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (movie.hasRated != 0) {
+                        val ratIcon = when (movie.hasRated) {
+                            -5  -> painterResource(R.drawable.ic_thumb_down_filled)
+                            5  -> painterResource(R.drawable.ic_thumb_up_filled)
+                            10  -> painterResource(R.drawable.ic_thumb_up_double_filled)
+                            else -> painterResource(R.drawable.ic_thumb_up)
+                        }
+
+                        Icon(
+                            painter = ratIcon,
+                            contentDescription = "like status",
+                            tint = Color.White, // always white
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Spacer(Modifier.width(2.dp))
+                        Bullets()
+                        Spacer(Modifier.width(2.dp))
+                    }
                     MetaText(movie.m_year)
-                    Spacer(Modifier.width(4.dp))
+                    Spacer(Modifier.width(2.dp))
                     Bullets()
-                    Spacer(Modifier.width(4.dp))
+                    Spacer(Modifier.width(2.dp))
                     MetaText(movie.mGenre)
-                    Spacer(Modifier.width(4.dp))
+                    Spacer(Modifier.width(2.dp))
                     Bullets()
-                    Spacer(Modifier.width(4.dp))
+                    Spacer(Modifier.width(2.dp))
                     MetaText(displayDuration)
-                    Spacer(Modifier.width(4.dp))
+                    Spacer(Modifier.width(2.dp))
                     Bullets()
-                    Spacer(Modifier.width(4.dp))
+                    Spacer(Modifier.width(2.dp))
                     Box(
                         modifier = Modifier
                             .background(Color(0xFF444444), shape = RoundedCornerShape(4.dp))
@@ -231,20 +254,20 @@ fun ViewMovieDetail(
                     else -> R.drawable.spill
                 }
 
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(12.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         painter = painterResource(id = R.drawable.imdb),
                         contentDescription = "IMDb",
-                        modifier = Modifier.size(24.dp),
+                        modifier = Modifier.size(22.dp),
                         tint = Color.Unspecified
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
                         text = movie.m_rating,
                         color = Color.White,
-                        fontSize = 14.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Medium
                     )
 
@@ -253,14 +276,14 @@ fun ViewMovieDetail(
                     Icon(
                         painter = painterResource(id = rtIconRes),
                         contentDescription = "Rotten Tomatoes",
-                        modifier = Modifier.size(22.dp),
+                        modifier = Modifier.size(20.dp),
                         tint = Color.Unspecified
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
                         text = movie.rt_score.toString() + "%",
                         color = Color.White,
-                        fontSize = 14.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Medium
                     )
 
@@ -270,20 +293,32 @@ fun ViewMovieDetail(
                         Icon(
                             painter = painterResource(id = rtAudienceRes),
                             contentDescription = "Audience Score",
-                            modifier = Modifier.size(22.dp),
+                            modifier = Modifier.size(20.dp),
                             tint = Color.Unspecified
                         )
                         Spacer(Modifier.width(6.dp))
                         Text(
                             text = "${movie.audience_score}%",
                             color = Color.White,
-                            fontSize = 14.sp,
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Medium
                         )
                     }
                 }
 
                 Spacer(Modifier.height(10.dp))
+
+                if (movie.m_title != "") {
+                    Text(
+                        text = movie.m_title.fixEncoding(),
+                        color = Color(0xFF91A3B0),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(Modifier.height(10.dp))
+                }
 
                 // DESCRIPTION (this now overlaps image)
                 Text(
@@ -292,6 +327,46 @@ fun ViewMovieDetail(
                     fontSize = 14.sp,
                     maxLines = 5
                 )
+
+                Spacer(Modifier.height(8.dp))
+
+                Text(
+                    text = buildAnnotatedString {
+                        withStyle(
+                            style = SpanStyle(
+                                color = Color(0xFFB3B3B3),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        ) {
+                            append("Cast: ")
+                        }
+                        withStyle(style = SpanStyle(color = Color(0xFFB3B3B3), fontSize = 12.sp)) {
+                            append(movie.m_starring.fixEncoding())
+                        }
+                    },
+                    style = MaterialTheme.typography.bodySmall
+                )
+                if (movie.m_id.startsWith("MOV")) {
+                    //Log.d("MovieDetail", "Director: '${movie.m_director.fixEncoding()}'")
+                    Text(
+                        text = buildAnnotatedString {
+                            withStyle(
+                                style = SpanStyle(
+                                    color = Color(0xFFB3B3B3),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            ) {
+                                append("Director: ")
+                            }
+                            withStyle(style = SpanStyle(color = Color(0xFFB3B3B3), fontSize = 12.sp)) {
+                                append(movie.m_director.fixEncoding())
+                            }
+                        },
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
 
                 Spacer(Modifier.height(32.dp))
 
