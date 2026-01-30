@@ -1,8 +1,14 @@
 package com.projects.a122mmtv.components
 
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,6 +27,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -29,6 +38,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,6 +50,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
@@ -61,6 +73,9 @@ import com.projects.a122mmtv.helper.MetaText
 import com.projects.a122mmtv.helper.convertContentRating
 import com.projects.a122mmtv.helper.fixEncoding
 import com.projects.a122mmtv.utility.formatDurationFromMinutes
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun ViewMovieDetail(
@@ -371,8 +386,56 @@ fun ViewMovieDetail(
 
                 Spacer(Modifier.height(32.dp))
 
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    PrimaryButton("Play", Modifier.width(200.dp))
+                Column(
+                    Modifier
+                        .border(1.dp, Color.White),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .width(300.dp)
+                            .padding(horizontal = 2.dp)
+                    ) {
+                        val scope = rememberCoroutineScope()
+                        val sId = if (movie.m_id.startsWith("MOV")) movie.m_id else movie.gId
+
+                        var hasRated by remember { mutableStateOf(movie.hasRated) }
+
+                        // --- Not for me ---
+                        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                            MovieAction(
+                                icon = painterResource(id = if (hasRated == -5) R.drawable.ic_thumb_down_filled else R.drawable.ic_thumb_down),
+                                label = "",
+                                iconType = "down"
+                            ) {
+
+                            }
+                        }
+
+                        // --- I like this ---
+                        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                            MovieAction(
+                                icon = painterResource(id = if (hasRated == 5) R.drawable.ic_thumb_up_filled else R.drawable.ic_thumb_up),
+                                label = "",
+                                iconType = "up"
+                            ) {
+
+                            }
+                        }
+
+                        // --- Love this ---
+                        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                            MovieAction(
+                                icon = painterResource(id = if (hasRated == 10) R.drawable.ic_thumb_up_double_filled else R.drawable.ic_thumb_up_double),
+                                label = "",
+                                iconType = "up_double"
+                            ) {
+
+                            }
+                        }
+                    }
+
+                    PrimaryButton("Play", Modifier.width(300.dp))
                     SecondaryTextButton("More Episode")
                     SecondaryTextButton("Subtitles")
                 }
@@ -389,10 +452,11 @@ fun PrimaryButton(
 ) {
     Box(
         modifier = modifier
-            .height(48.dp)
+            .height(36.dp)
             .background(Color.White, RoundedCornerShape(24.dp))
-            .focusable(),
-        contentAlignment = Alignment.Center
+            .focusable()
+            .padding(horizontal = 16.dp),
+        contentAlignment = Alignment.CenterStart
     ) {
         Text(text, color = Color.Black, fontSize = 14.sp)
     }
@@ -408,4 +472,65 @@ fun SecondaryTextButton(text: String) {
             .focusable()
             .padding(vertical = 6.dp)
     )
+}
+
+@Composable
+fun MovieAction(
+    icon: Painter,
+    label: String,
+    iconType: String = "", // "up", "up_double", "down"
+    onClick: () -> Unit
+) {
+    var isTapped by remember { mutableStateOf(false) }
+
+    // Animate scale (bounce) on tap
+    val scale by animateFloatAsState(
+        targetValue = if (isTapped) 1.3f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        finishedListener = { isTapped = false } // reset when animation finishes
+    )
+
+    // Animate rotation (tilt) on tap
+    val tiltAngle by animateFloatAsState(
+        targetValue = if (isTapped) {
+            when (iconType) {
+                "up", "up_double", "down" -> -15f
+                else -> 0f
+            }
+        } else 0f, // default back to 0
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        )
+    )
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.clickable {
+//            isTapped = true
+//            onClick()
+        }
+    ) {
+        Icon(
+            painter = icon,
+            contentDescription = label,
+            tint = Color.White, // always white
+            modifier = Modifier
+                .size(18.dp)
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                    rotationZ = tiltAngle
+                }
+        )
+//        Spacer(modifier = Modifier.height(6.dp))
+//        Text(
+//            text = label,
+//            color = Color.White, // always white
+//            style = MaterialTheme.typography.labelSmall
+//        )
+    }
 }
