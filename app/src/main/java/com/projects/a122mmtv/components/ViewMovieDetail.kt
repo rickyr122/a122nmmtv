@@ -3,6 +3,7 @@ package com.projects.a122mmtv.components
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -26,6 +27,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -36,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -43,15 +48,22 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
@@ -76,6 +88,12 @@ import com.projects.a122mmtv.utility.formatDurationFromMinutes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+data class ActionButton(
+    val id: String,
+    val label: String,
+    val iconRes: Int
+)
 
 @Composable
 fun ViewMovieDetail(
@@ -115,16 +133,82 @@ fun ViewMovieDetail(
         isLoading = false
     }
 
+
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
-            .focusRequester(focusRequester)
-            .focusable()
+            //.focusRequester(focusRequester)
+            //.focusable()
     ) {
         if (isLoading || detail == null) return
 
         val movie = detail!!
+
+        val actionButtons = remember(movie) {
+            buildList {
+
+                add(
+                    ActionButton(
+                        id = "play",
+                        label = if (movie.c_remaining > 10) "Resume" else "Play",
+                        iconRes = R.drawable.play
+                    )
+                )
+
+                if (movie.c_remaining > 10) {
+                    add(
+                        ActionButton(
+                            id = "restart",
+                            label = "Start from beginning",
+                            iconRes = R.drawable.rollback
+                        )
+                    )
+                }
+
+                if (movie.gId.startsWith("TVG")) {
+                    add(
+                        ActionButton(
+                            id = "episodes",
+                            label = "More Episodes",
+                            iconRes = R.drawable.episodes
+                        )
+                    )
+                }
+
+                add(
+                    ActionButton(
+                        id = "similar",
+                        label = "More like this",
+                        iconRes = R.drawable.collage
+                    )
+                )
+
+                if (movie.c_remaining > 10) {
+                    add(
+                        ActionButton(
+                            id = "remove_continue",
+                            label = "Remove from Continue Watching",
+                            iconRes = R.drawable.close
+                        )
+                    )
+                }
+
+                add(
+                    ActionButton(
+                        id = "my_list",
+                        label = if (movie.inList.toInt() == 0) "Add to My List" else "Remove from My List",
+                        iconRes = if (movie.inList.toInt() == 0)
+                            R.drawable.plus
+                        else
+                            R.drawable.close
+                    )
+                )
+            }
+        }
+
+        val visibleButtons = actionButtons.take(3)
 
         Box(
             modifier = Modifier.fillMaxSize()
@@ -199,7 +283,7 @@ fun ViewMovieDetail(
                     )
                 }
 
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(8.dp))
 
                 // META
                 val displayDuration = if (movie.m_id.startsWith("MOV")) {
@@ -269,7 +353,7 @@ fun ViewMovieDetail(
                     else -> R.drawable.spill
                 }
 
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(8.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
@@ -321,24 +405,24 @@ fun ViewMovieDetail(
                     }
                 }
 
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(8.dp))
 
                 if (movie.m_title != "") {
                     Text(
                         text = movie.m_title.fixEncoding(),
-                        color = Color(0xFF91A3B0),
+                        color = Color.White,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
-                    Spacer(Modifier.height(10.dp))
+                    Spacer(Modifier.height(8.dp))
                 }
 
                 // DESCRIPTION (this now overlaps image)
                 Text(
                     text = movie.m_description.fixEncoding(),
-                    color = Color.White,
+                    color = Color(0xFF91A3B0),
                     fontSize = 14.sp,
                     maxLines = 5
                 )
@@ -384,61 +468,152 @@ fun ViewMovieDetail(
                 )
 
 
-                Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(10.dp))
+
+                // local state – ONLY for this block
+                var selectedIndex by remember { mutableStateOf(0) }
+                val collapseThumbs = selectedIndex >= 2
+
+                val listState = rememberLazyListState()
+
+                LaunchedEffect(selectedIndex) {
+                    listState.animateScrollToItem(
+                        index = maxOf(0, selectedIndex - 2)
+                    )
+                }
+                val menuFocusRequester = remember { FocusRequester() }
+
+                LaunchedEffect(Unit) {
+                    menuFocusRequester.requestFocus()
+                }
 
                 Column(
-                    Modifier
-                        .border(1.dp, Color.White),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier
+                        //.border(1.dp, Color.White)
+                        .focusRequester(menuFocusRequester)
+                        .focusable()
+                        .onPreviewKeyEvent { event ->
+                            if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+
+                            when (event.key) {
+                                Key.DirectionDown -> {
+                                    selectedIndex = (selectedIndex + 1).coerceAtMost(actionButtons.lastIndex)
+                                    true
+                                }
+                                Key.DirectionUp -> {
+                                    selectedIndex = (selectedIndex - 1).coerceAtLeast(0)
+                                    true
+                                }
+                                else -> false
+                            }
+                        },
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .width(300.dp)
-                            .padding(horizontal = 2.dp)
-                    ) {
-                        val scope = rememberCoroutineScope()
-                        val sId = if (movie.m_id.startsWith("MOV")) movie.m_id else movie.gId
 
-                        var hasRated by remember { mutableStateOf(movie.hasRated) }
+                    // ───────── THUMBS (same width as buttons) ─────────
+                    AnimatedVisibility(visible = !collapseThumbs) {
+                        Row(
+                            modifier = Modifier
+                                .width(300.dp)
+                                .padding(start = 12.dp), // aligns with menu icon start
+                            horizontalArrangement = Arrangement.spacedBy(32.dp), // 👈 fixed spacing
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
 
-                        // --- Not for me ---
-                        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                            MovieAction(
-                                icon = painterResource(id = if (hasRated == -5) R.drawable.ic_thumb_down_filled else R.drawable.ic_thumb_down),
-                                label = "",
-                                iconType = "down"
-                            ) {
+                            var hasRated by remember { mutableStateOf(movie.hasRated) }
 
+                            Box( contentAlignment = Alignment.Center) {
+                                MovieAction(
+                                    icon = painterResource(
+                                        if (hasRated == -5)
+                                            R.drawable.ic_thumb_down_filled
+                                        else
+                                            R.drawable.ic_thumb_down
+                                    ),
+                                    label = "",
+                                    iconType = "down"
+                                ) {}
                             }
-                        }
 
-                        // --- I like this ---
-                        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                            MovieAction(
-                                icon = painterResource(id = if (hasRated == 5) R.drawable.ic_thumb_up_filled else R.drawable.ic_thumb_up),
-                                label = "",
-                                iconType = "up"
-                            ) {
-
+                            Box(contentAlignment = Alignment.Center) {
+                                MovieAction(
+                                    icon = painterResource(
+                                        if (hasRated == 5)
+                                            R.drawable.ic_thumb_up_filled
+                                        else
+                                            R.drawable.ic_thumb_up
+                                    ),
+                                    label = "",
+                                    iconType = "up"
+                                ) {}
                             }
-                        }
 
-                        // --- Love this ---
-                        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                            MovieAction(
-                                icon = painterResource(id = if (hasRated == 10) R.drawable.ic_thumb_up_double_filled else R.drawable.ic_thumb_up_double),
-                                label = "",
-                                iconType = "up_double"
-                            ) {
-
+                            Box(contentAlignment = Alignment.Center) {
+                                MovieAction(
+                                    icon = painterResource(
+                                        if (hasRated == 10)
+                                            R.drawable.ic_thumb_up_double_filled
+                                        else
+                                            R.drawable.ic_thumb_up_double
+                                    ),
+                                    label = "",
+                                    iconType = "up_double"
+                                ) {}
                             }
                         }
                     }
 
-                    PrimaryButton("Play", Modifier.width(300.dp))
-                    SecondaryTextButton("More Episode")
-                    SecondaryTextButton("Subtitles")
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    //var selectedIndex by remember { mutableIntStateOf(0) }
+                    val buttonHeight = 44.dp
+                    val buttonSpacing = 8.dp
+                    val visibleCount = 3
+
+                    val menuHeight =
+                        buttonHeight * visibleCount +
+                                buttonSpacing * (visibleCount - 1)
+
+                    // ───────── SCROLLABLE MENU ─────────
+                    Box(
+                        modifier = Modifier
+                            .width(300.dp)
+                            .height(menuHeight - ((menuHeight / 4) + 4.dp))   // 👈 THIS IS THE KEY
+                            //.heightIn(max = 168.dp)
+                            .clipToBounds()
+                    ) {
+                        LazyColumn(
+                            state = listState,
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            itemsIndexed(actionButtons) { index, item ->
+                                SecondaryTextButton(
+                                    isActive = selectedIndex == index,
+                                    modifier = Modifier.width(300.dp)
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            painter = painterResource(item.iconRes),
+                                            contentDescription = item.label,
+                                            tint = if (selectedIndex == index)
+                                                Color.Black else Color.White,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(Modifier.width(12.dp))
+                                        Text(
+                                            text = item.label,
+                                            color = if (selectedIndex == index)
+                                                Color.Black else Color.White,
+                                            fontSize = 14.sp
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                 }
+
             }
         }
     }
@@ -448,30 +623,43 @@ fun ViewMovieDetail(
 @Composable
 fun PrimaryButton(
     text: String,
+    isActive: Boolean,
     modifier: Modifier = Modifier
 ) {
     Box(
         modifier = modifier
             .height(36.dp)
-            .background(Color.White, RoundedCornerShape(24.dp))
-            .focusable()
+            .background(
+                color = if (isActive) Color.White else Color.Black,
+                shape = RoundedCornerShape(24.dp)
+            )
             .padding(horizontal = 16.dp),
         contentAlignment = Alignment.CenterStart
     ) {
-        Text(text, color = Color.Black, fontSize = 14.sp)
+        Text(
+            text = text,
+            color = if (isActive) Color.Black else Color.White,
+            fontSize = 14.sp
+        )
     }
 }
 
 @Composable
-fun SecondaryTextButton(text: String) {
-    Text(
-        text = text,
-        color = Color.White,
-        fontSize = 14.sp,
-        modifier = Modifier
-            .focusable()
-            .padding(vertical = 6.dp)
-    )
+fun SecondaryTextButton(
+    isActive: Boolean,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    Box(
+        modifier = modifier
+            .background(
+                if (isActive) Color.White else Color.Transparent,
+                RoundedCornerShape(50)
+            )
+            .padding(vertical = 6.dp, horizontal = 12.dp)
+    ) {
+        content()
+    }
 }
 
 @Composable
@@ -519,7 +707,7 @@ fun MovieAction(
             contentDescription = label,
             tint = Color.White, // always white
             modifier = Modifier
-                .size(18.dp)
+                .size(20.dp)
                 .graphicsLayer {
                     scaleX = scale
                     scaleY = scale
