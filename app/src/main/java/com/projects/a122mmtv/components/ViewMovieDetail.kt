@@ -279,11 +279,11 @@ fun ViewMovieDetail(
                         alignment = Alignment.CenterStart,
                         modifier = Modifier
                             .width(maxWidth * 0.8f)
-                            .heightIn(max = 72.dp)
+                            .heightIn(max = 70.dp)
                     )
                 }
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(10.dp))
 
                 // META
                 val displayDuration = if (movie.m_id.startsWith("MOV")) {
@@ -427,48 +427,59 @@ fun ViewMovieDetail(
                     maxLines = 5
                 )
 
-                Spacer(Modifier.height(8.dp))
+                if (movie.c_remaining == 0) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = buildAnnotatedString {
+                            withStyle(
+                                style = SpanStyle(
+                                    color = Color(0xFFB3B3B3),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            ) {
+                                append("Cast: ")
+                            }
+                            withStyle(
+                                style = SpanStyle(
+                                    color = Color(0xFFB3B3B3),
+                                    fontSize = 12.sp
+                                )
+                            ) {
+                                append(movie.m_starring.fixEncoding())
+                            }
+                        },
+                        style = MaterialTheme.typography.bodySmall
+                    )
 
-                Text(
-                    text = buildAnnotatedString {
-                        withStyle(
-                            style = SpanStyle(
-                                color = Color(0xFFB3B3B3),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        ) {
-                            append("Cast: ")
-                        }
-                        withStyle(style = SpanStyle(color = Color(0xFFB3B3B3), fontSize = 12.sp)) {
-                            append(movie.m_starring.fixEncoding())
-                        }
-                    },
-                    style = MaterialTheme.typography.bodySmall
-                )
+                    //Log.d("MovieDetail", "Director: '${movie.m_director.fixEncoding()}'")
+                    val theMaster = if (movie.m_id.startsWith("MOV")) "Director: " else "Creator: "
+                    Text(
+                        text = buildAnnotatedString {
+                            withStyle(
+                                style = SpanStyle(
+                                    color = Color(0xFFB3B3B3),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            ) {
+                                append(theMaster)
+                            }
+                            withStyle(
+                                style = SpanStyle(
+                                    color = Color(0xFFB3B3B3),
+                                    fontSize = 12.sp
+                                )
+                            ) {
+                                append(movie.m_director.fixEncoding())
+                            }
+                        },
+                        style = MaterialTheme.typography.bodySmall
+                    )
 
-                //Log.d("MovieDetail", "Director: '${movie.m_director.fixEncoding()}'")
-                val theMaster = if (movie.m_id.startsWith("MOV")) "Director: " else "Creator: "
-                Text(
-                    text = buildAnnotatedString {
-                        withStyle(
-                            style = SpanStyle(
-                                color = Color(0xFFB3B3B3),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        ) {
-                            append(theMaster)
-                        }
-                        withStyle(style = SpanStyle(color = Color(0xFFB3B3B3), fontSize = 12.sp)) {
-                            append(movie.m_director.fixEncoding())
-                        }
-                    },
-                    style = MaterialTheme.typography.bodySmall
-                )
+                }
 
-
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(12.dp))
 
                 // local state – ONLY for this block
                 var selectedIndex by remember { mutableStateOf(0) }
@@ -574,6 +585,10 @@ fun ViewMovieDetail(
                         buttonHeight * visibleCount +
                                 buttonSpacing * (visibleCount - 1)
 
+                    val selectedTextColor = Color.Black
+                    val normalTextColor = Color.White.copy(alpha = 0.6f)
+                    val fadedTextColor = Color.White.copy(alpha = 0.4f)
+
                     // ───────── SCROLLABLE MENU ─────────
                     Box(
                         modifier = Modifier
@@ -587,6 +602,17 @@ fun ViewMovieDetail(
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             itemsIndexed(actionButtons) { index, item ->
+                                val textColor = when {
+                                    // selected item
+                                    selectedIndex == index -> selectedTextColor
+                                    // initial state: fade the 3rd item
+                                    selectedIndex == 0 && index == 2 -> fadedTextColor
+                                    // when scrolling: fade the item two above the selected one
+                                    selectedIndex >= 2 && index == selectedIndex - 2 -> fadedTextColor
+                                    // normal unselected
+                                    else -> normalTextColor
+                                }
+
                                 SecondaryTextButton(
                                     isActive = selectedIndex == index,
                                     modifier = Modifier.width(300.dp)
@@ -595,15 +621,17 @@ fun ViewMovieDetail(
                                         Icon(
                                             painter = painterResource(item.iconRes),
                                             contentDescription = item.label,
-                                            tint = if (selectedIndex == index)
-                                                Color.Black else Color.White,
+//                                            tint = if (selectedIndex == index)
+//                                                Color.Black else Color.White,
+                                            tint = textColor,
                                             modifier = Modifier.size(18.dp)
                                         )
                                         Spacer(Modifier.width(12.dp))
                                         Text(
                                             text = item.label,
-                                            color = if (selectedIndex == index)
-                                                Color.Black else Color.White,
+//                                            color = if (selectedIndex == index)
+//                                                Color.Black else Color.White,
+                                            color = textColor,
                                             fontSize = 14.sp
                                         )
                                     }
