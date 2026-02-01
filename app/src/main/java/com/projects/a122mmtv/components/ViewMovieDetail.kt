@@ -146,18 +146,40 @@ fun ViewMovieDetail(
 
         val movie = detail!!
 
+        val getTitle = if (movie.m_title.isBlank()) movie.pTitle else movie.m_title
+
+        val titleStarted = getTitle.replace(
+            Regex("""S(\d+):E(\d+).*"""),
+            "S$1: Ep.$2"
+        )
+
+        val titleNotStarted = getTitle.replace(
+            Regex("""S(\d+):E(\d+).*"""),
+            "Season $1: Episode $2"
+        )
+
+        val playCaption =
+            if (movie.m_id.startsWith("MOV")) {
+                if (movie.cProgress > 10) "Resume Playing" else "Play"
+            } else {
+                val title = if (movie.cProgress > 10) titleStarted else titleNotStarted
+                "${if (movie.cProgress > 10) "Resume" else "Play"} $title"
+            }
+
+
+
         val actionButtons = remember(movie) {
             buildList {
 
                 add(
                     ActionButton(
                         id = "play",
-                        label = if (movie.c_remaining > 10) "Resume" else "Play",
+                        label =  playCaption, //if (movie.c_remaining > 10) "Resume" else "Play",
                         iconRes = R.drawable.play
                     )
                 )
 
-                if (movie.c_remaining > 10) {
+                if (movie.cProgress > 10) {
                     add(
                         ActionButton(
                             id = "restart",
