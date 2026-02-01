@@ -207,7 +207,7 @@ fun ViewMovieDetail(
                     )
                 )
 
-                if (movie.c_remaining > 10) {
+                if (movie.cProgress > 10) {
                     add(
                         ActionButton(
                             id = "remove_continue",
@@ -612,10 +612,18 @@ fun ViewMovieDetail(
                     val fadedTextColor = Color.White.copy(alpha = 0.4f)
 
                     // ───────── SCROLLABLE MENU ─────────
+                    val collapsedHeight =
+                        menuHeight - ((menuHeight / 4) + 4.dp)
+
+                    val expandedHeight = menuHeight - 8.dp
+
+                    val currentMenuHeight =
+                        if (selectedIndex >= 2) expandedHeight else collapsedHeight
+
                     Box(
                         modifier = Modifier
                             .width(300.dp)
-                            .height(menuHeight - ((menuHeight / 4) + 4.dp))   // 👈 THIS IS THE KEY
+                            .height(currentMenuHeight)   // 👈 THIS IS THE KEY
                             //.heightIn(max = 168.dp)
                             .clipToBounds()
                     ) {
@@ -646,7 +654,7 @@ fun ViewMovieDetail(
 //                                            tint = if (selectedIndex == index)
 //                                                Color.Black else Color.White,
                                             tint = textColor,
-                                            modifier = Modifier.size(18.dp)
+                                            modifier = Modifier.size(14.dp)
                                         )
                                         Spacer(Modifier.width(12.dp))
                                         Text(
