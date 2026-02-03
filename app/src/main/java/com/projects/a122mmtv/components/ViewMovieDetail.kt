@@ -207,7 +207,7 @@ fun ViewMovieDetail(
                     )
                 )
 
-                if (movie.cProgress > 10) {
+                if (movie.cProgress > 0) {
                     add(
                         ActionButton(
                             id = "remove_continue",
@@ -335,9 +335,9 @@ fun ViewMovieDetail(
                             tint = Color.White, // always white
                             modifier = Modifier.size(12.dp)
                         )
-                        Spacer(Modifier.width(2.dp))
-                        Bullets()
-                        Spacer(Modifier.width(2.dp))
+                        Spacer(Modifier.width(4.dp))
+                        //Bullets()
+                        //Spacer(Modifier.width(2.dp))
                     }
                     MetaText(movie.m_year)
                     Spacer(Modifier.width(2.dp))
@@ -608,8 +608,8 @@ fun ViewMovieDetail(
                                 buttonSpacing * (visibleCount - 1)
 
                     val selectedTextColor = Color.Black
-                    val normalTextColor = Color.White.copy(alpha = 0.6f)
-                    val fadedTextColor = Color.White.copy(alpha = 0.4f)
+                    val normalTextColor = Color.White.copy(alpha = 0.4f)
+                    val fadedTextColor = Color.White.copy(alpha = 0.2f)
 
                     // ───────── SCROLLABLE MENU ─────────
                     val collapsedHeight =
@@ -632,15 +632,36 @@ fun ViewMovieDetail(
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             itemsIndexed(actionButtons) { index, item ->
+                                val lastIndex = actionButtons.lastIndex
+
                                 val textColor = when {
-                                    // selected item
-                                    selectedIndex == index -> selectedTextColor
-                                    // initial state: fade the 3rd item
-                                    selectedIndex == 0 && index == 2 -> fadedTextColor
-                                    // when scrolling: fade the item two above the selected one
-                                    selectedIndex >= 2 && index == selectedIndex - 2 -> fadedTextColor
-                                    // normal unselected
-                                    else -> normalTextColor
+                                    // 1. Selected item: always solid
+                                    selectedIndex == index ->
+                                        selectedTextColor
+
+                                    // 2. Initial state: fade the 3rd item
+                                    selectedIndex == 0 && index == 2 ->
+                                        fadedTextColor
+
+                                    // 3. Reached bottom: fade topmost visible item
+                                    selectedIndex >= 2 &&
+                                            selectedIndex == lastIndex &&
+                                            index == selectedIndex - 3 ->
+                                        fadedTextColor
+
+                                    // 4. Normal scrolling: fade item two above selection
+                                    selectedIndex >= 2 &&
+                                            selectedIndex != lastIndex &&
+                                            index == selectedIndex - 2 ->
+                                        fadedTextColor
+
+//                                    selectedIndex >= 1 &&
+//                                            index == selectedIndex + 1 ->
+//                                        fadedTextColor
+
+                                    // 5. Normal unselected
+                                    else ->
+                                        normalTextColor
                                 }
 
                                 SecondaryTextButton(
