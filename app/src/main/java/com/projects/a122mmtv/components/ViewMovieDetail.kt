@@ -48,6 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.focus.FocusRequester
@@ -620,6 +621,15 @@ fun ViewMovieDetail(
                     val currentMenuHeight =
                         if (selectedIndex >= 2) expandedHeight else collapsedHeight
 
+//                    val progress = remember(movie.cProgress, movie.m_duration) {
+//                        if (movie.m_duration > 0)
+//                            (movie.cProgress / movie.m_duration.toFloat()).coerceIn(0f, 1f)
+//                        else 0f
+//                    }
+
+                    val progress = (movie.c_percent?.toFloat() ?: 0f).coerceIn(0f, 1f)
+                    val gap = 1.dp
+
                     Box(
                         modifier = Modifier
                             .width(300.dp)
@@ -668,24 +678,53 @@ fun ViewMovieDetail(
                                     isActive = selectedIndex == index,
                                     modifier = Modifier.width(300.dp)
                                 ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+
+                                        // ICON
                                         Icon(
                                             painter = painterResource(item.iconRes),
                                             contentDescription = item.label,
-//                                            tint = if (selectedIndex == index)
-//                                                Color.Black else Color.White,
                                             tint = textColor,
                                             modifier = Modifier.size(14.dp)
                                         )
+
                                         Spacer(Modifier.width(12.dp))
+
+                                        // TEXT
                                         Text(
                                             text = item.label,
-//                                            color = if (selectedIndex == index)
-//                                                Color.Black else Color.White,
                                             color = textColor,
-                                            fontSize = 14.sp
+                                            fontSize = 14.sp,
+                                            maxLines = 1
                                         )
+
+                                        // PUSH EVERYTHING ELSE TO THE RIGHT
+                                        Spacer(Modifier.weight(0.5f))
+
+                                        // ───── PROGRESS BAR (ONLY FIRST BUTTON & cProgress >= 10) ─────
+                                        if (index == 0 && selectedIndex == 0 && movie.cProgress >= 10) {
+
+                                            Box(
+                                                modifier = Modifier
+                                                    .width(56.dp)        // 👈 small, subtle
+                                                    .height(4.dp)
+                                                    //.clip(RoundedCornerShape(2.dp))
+                                                    .background(Color.Gray.copy(alpha = 0.25f))
+                                            ) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .fillMaxHeight()
+                                                        .fillMaxWidth(progress)
+                                                        .background(Color.Red)
+                                                )
+                                            }
+
+                                        }
                                     }
+
                                 }
                             }
                         }
