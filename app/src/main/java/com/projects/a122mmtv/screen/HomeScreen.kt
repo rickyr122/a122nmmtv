@@ -614,18 +614,38 @@ fun ContentScreen(
             2 -> SeriesPage(
                 navController = navController,
                 bannerFocusRequester = bannerFocusRequester,
-                upMenuFocusRequester = menuBarFocusRequester,
+                menuBarFocusRequester = menuBarFocusRequester,
                 onBannerFocused = onBannerFocused,
-                homeSession = homeSession
+                homeSession = homeSession,
+                horizontalInset = horizontalInset,
+                scrollState = scrollState,
+                onDisableMenuFocus = onDisableMenuFocus,
+                onEnableMenuFocus = onEnableMenuFocus,
+                onRequestMenuFocus = onRequestMenuFocus,
+                isMenuFocused = isMenuFocused,
+                onReturnedToMenuFromContent = onReturnedToMenuFromContent,
+                isDetailOpen = isDetailOpen,              // 👈 PASS DOWN
+                onDetailVisibilityChanged = onDetailVisibilityChanged,
+                type = "TVS"
             )
 
             // MOVIES
             3 -> MoviePage(
                 navController = navController,
                 bannerFocusRequester = bannerFocusRequester,
-                upMenuFocusRequester = menuBarFocusRequester,
+                menuBarFocusRequester = menuBarFocusRequester,
                 onBannerFocused = onBannerFocused,
-                homeSession = homeSession
+                homeSession = homeSession,
+                horizontalInset = horizontalInset,
+                scrollState = scrollState,
+                onDisableMenuFocus = onDisableMenuFocus,
+                onEnableMenuFocus = onEnableMenuFocus,
+                onRequestMenuFocus = onRequestMenuFocus,
+                isMenuFocused = isMenuFocused,
+                onReturnedToMenuFromContent = onReturnedToMenuFromContent,
+                isDetailOpen = isDetailOpen,              // 👈 PASS DOWN
+                onDetailVisibilityChanged = onDetailVisibilityChanged,
+                type = "MOV"
             )
 
             // PROFILE
