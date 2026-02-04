@@ -96,6 +96,11 @@ data class ActionButton(
     val iconRes: Int
 )
 
+enum class FocusArea {
+    MENU,
+    THUMBS
+}
+
 @Composable
 fun ViewMovieDetail(
     mId: String,
@@ -114,6 +119,10 @@ fun ViewMovieDetail(
 
     var detail by remember { mutableStateOf<AuthApiService.MovieDetailDto?>(null) }
     var isLoading by remember { mutableStateOf(false) }
+
+    // 0 = down, 1 = up, 2 = up_double
+    var thumbIndex by remember { mutableStateOf(0) }
+    var focusArea by remember { mutableStateOf(FocusArea.MENU) }
 
     val focusRequester = remember { FocusRequester() }
 
@@ -504,18 +513,43 @@ fun ViewMovieDetail(
 
                 Spacer(Modifier.height(12.dp))
 
+                val menuFocusRequester = remember { FocusRequester() }
+                val thumbsFocusRequester = remember { FocusRequester() }
+
                 // local state – ONLY for this block
                 var selectedIndex by remember { mutableStateOf(0) }
                 val collapseThumbs = selectedIndex >= 2
 
+                LaunchedEffect(collapseThumbs) {
+                    if (collapseThumbs && focusArea == FocusArea.MENU) {
+                        menuFocusRequester.requestFocus()
+                    }
+                }
+
+
                 val listState = rememberLazyListState()
 
+//                LaunchedEffect(selectedIndex) {
+//                    listState.animateScrollToItem(
+//                        index = maxOf(0, selectedIndex - 2)
+//                    )
+//                }
+
                 LaunchedEffect(selectedIndex) {
-                    listState.animateScrollToItem(
-                        index = maxOf(0, selectedIndex - 2)
-                    )
+                    if (selectedIndex >= 0) {
+                        listState.animateScrollToItem(
+                            index = maxOf(0, selectedIndex - 2)
+                        )
+                    }
                 }
-                val menuFocusRequester = remember { FocusRequester() }
+
+                //var hasRated by remember { mutableStateOf(movie.hasRated) }
+
+                var hasRated by remember(movie.hasRated) {
+                    mutableStateOf(movie.hasRated)
+                }
+
+
 
                 LaunchedEffect(Unit) {
                     menuFocusRequester.requestFocus()
@@ -530,14 +564,34 @@ fun ViewMovieDetail(
                             if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
 
                             when (event.key) {
-                                Key.DirectionDown -> {
-                                    selectedIndex = (selectedIndex + 1).coerceAtMost(actionButtons.lastIndex)
-                                    true
-                                }
                                 Key.DirectionUp -> {
-                                    selectedIndex = (selectedIndex - 1).coerceAtLeast(0)
-                                    true
+                                    if (selectedIndex == 0) {
+                                        focusArea = FocusArea.THUMBS
+                                        selectedIndex = -1          // 👈 menu is now inactive
+                                        thumbIndex = 0              // 👈 ALWAYS thumb_down
+                                        thumbsFocusRequester.requestFocus()
+                                        true
+                                    } else if (selectedIndex > 0) {
+                                        selectedIndex -= 1
+                                        true
+                                    } else {
+                                        false
+                                    }
                                 }
+
+
+                                Key.DirectionDown -> {
+                                    if (focusArea == FocusArea.THUMBS) {
+                                        focusArea = FocusArea.MENU
+                                        selectedIndex = 0
+                                        true
+                                    } else {
+                                        selectedIndex =
+                                            (selectedIndex + 1).coerceAtMost(actionButtons.lastIndex)
+                                        true
+                                    }
+                                }
+
                                 else -> false
                             }
                         },
@@ -549,55 +603,123 @@ fun ViewMovieDetail(
                         Row(
                             modifier = Modifier
                                 .width(300.dp)
-                                .padding(start = 12.dp), // aligns with menu icon start
-                            horizontalArrangement = Arrangement.spacedBy(32.dp), // 👈 fixed spacing
+                                //.padding(start = 12.dp)
+                                .focusRequester(thumbsFocusRequester)
+                                .focusable()
+                                .onPreviewKeyEvent { event ->
+                                    if (focusArea != FocusArea.THUMBS) return@onPreviewKeyEvent false
+                                    if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+
+                                    when (event.key) {
+                                        Key.DirectionRight -> {
+                                            thumbIndex = (thumbIndex + 1).coerceAtMost(2)
+                                            true
+                                        }
+                                        Key.DirectionLeft -> {
+                                            thumbIndex = (thumbIndex - 1).coerceAtLeast(0)
+                                            true
+                                        }
+                                        Key.DirectionDown -> {
+                                            focusArea = FocusArea.MENU
+                                            selectedIndex = 0
+                                            menuFocusRequester.requestFocus()
+                                            true
+                                        }
+                                        else -> false
+                                    }
+                                },
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            // thumb down (0)
+                            val isDownFocused =
+                                focusArea == FocusArea.THUMBS && thumbIndex == 0
 
-                            var hasRated by remember { mutableStateOf(movie.hasRated) }
+                            // thumb up (1)
+                            val isUpFocused =
+                                focusArea == FocusArea.THUMBS && thumbIndex == 1
 
-                            Box( contentAlignment = Alignment.Center) {
+                            // thumb up double (2)
+                            val isDoubleFocused =
+                                focusArea == FocusArea.THUMBS && thumbIndex == 2
+
+
+                            Box(
+                                modifier = Modifier.padding(top = 6.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
                                 MovieAction(
+//                                    icon = painterResource(
+//                                        if (hasRated == -5)
+//                                            R.drawable.ic_thumb_down_filled
+//                                        else
+//                                            R.drawable.ic_thumb_down
+//                                    ),
                                     icon = painterResource(
-                                        if (hasRated == -5)
-                                            R.drawable.ic_thumb_down_filled
-                                        else
-                                            R.drawable.ic_thumb_down
+                                        resolveThumbIcon(
+                                            base = R.drawable.ic_thumb_down,
+                                            filled = R.drawable.ic_thumb_down_filled,
+                                            apiState = hasRated == -5,
+                                            isFocused = isDownFocused
+                                        )
                                     ),
                                     label = "",
-                                    iconType = "down"
+                                    iconType = "down",
+                                    isSelected = isDownFocused
                                 ) {}
                             }
 
-                            Box(contentAlignment = Alignment.Center) {
+                            Box(
+                                contentAlignment = Alignment.Center
+                            ) {
                                 MovieAction(
+//                                    icon = painterResource(
+//                                        if (hasRated == 5)
+//                                            R.drawable.ic_thumb_up_filled
+//                                        else
+//                                            R.drawable.ic_thumb_up
+//                                    ),
                                     icon = painterResource(
-                                        if (hasRated == 5)
-                                            R.drawable.ic_thumb_up_filled
-                                        else
-                                            R.drawable.ic_thumb_up
+                                        resolveThumbIcon(
+                                            base = R.drawable.ic_thumb_up,
+                                            filled = R.drawable.ic_thumb_up_filled,
+                                            apiState = hasRated == 5,
+                                            isFocused = isUpFocused
+                                        )
                                     ),
                                     label = "",
-                                    iconType = "up"
+                                    iconType = "up",
+                                    isSelected = isUpFocused
                                 ) {}
                             }
 
-                            Box(contentAlignment = Alignment.Center) {
+                            Box(
+                                contentAlignment = Alignment.Center
+                            ) {
                                 MovieAction(
+//                                    icon = painterResource(
+//                                        if (hasRated == 10)
+//                                            R.drawable.ic_thumb_up_double_filled
+//                                        else
+//                                            R.drawable.ic_thumb_up_double
+//                                    ),
                                     icon = painterResource(
-                                        if (hasRated == 10)
-                                            R.drawable.ic_thumb_up_double_filled
-                                        else
-                                            R.drawable.ic_thumb_up_double
+                                        resolveThumbIcon(
+                                            base = R.drawable.ic_thumb_up_double,
+                                            filled = R.drawable.ic_thumb_up_double_filled,
+                                            apiState = hasRated == 10,
+                                            isFocused = isDoubleFocused
+                                        )
                                     ),
                                     label = "",
-                                    iconType = "up_double"
+                                    iconType = "up_double",
+                                    isSelected = isDoubleFocused
                                 ) {}
                             }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(6.dp))
+                    //Spacer(modifier = Modifier.height(6.dp))
 
                     //var selectedIndex by remember { mutableIntStateOf(0) }
                     val buttonHeight = 44.dp
@@ -675,7 +797,7 @@ fun ViewMovieDetail(
                                 }
 
                                 SecondaryTextButton(
-                                    isActive = selectedIndex == index,
+                                    isActive = focusArea == FocusArea.MENU && selectedIndex == index,
                                     modifier = Modifier.width(300.dp)
                                 ) {
                                     Row(
@@ -762,6 +884,25 @@ fun PrimaryButton(
     }
 }
 
+fun resolveThumbIcon(
+    base: Int,
+    filled: Int,
+    apiState: Boolean,
+    isFocused: Boolean
+): Int {
+    return when {
+        isFocused -> filled
+        apiState -> filled
+        else -> base
+    }
+}
+
+fun thumbIcon(
+    base: Int,
+    filled: Int,
+    isSelected: Boolean
+) = if (isSelected) filled else base
+
 @Composable
 fun SecondaryTextButton(
     isActive: Boolean,
@@ -785,6 +926,7 @@ fun MovieAction(
     icon: Painter,
     label: String,
     iconType: String = "", // "up", "up_double", "down"
+    isSelected: Boolean = false,
     onClick: () -> Unit
 ) {
     var isTapped by remember { mutableStateOf(false) }
@@ -813,17 +955,19 @@ fun MovieAction(
         )
     )
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable {
-//            isTapped = true
-//            onClick()
-        }
+    Box(
+        modifier = Modifier
+            .size(36.dp)
+            .background(
+                if (isSelected) Color.White else Color.Transparent,
+                shape = RoundedCornerShape(50)
+            ),
+        contentAlignment = Alignment.Center
     ) {
         Icon(
             painter = icon,
             contentDescription = label,
-            tint = Color.White, // always white
+            tint = if (isSelected) Color.Black else Color.White,
             modifier = Modifier
                 .size(20.dp)
                 .graphicsLayer {
