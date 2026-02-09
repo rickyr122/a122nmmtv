@@ -73,6 +73,7 @@ fun HomeScreen(
     var hasHomeAutoFocused by remember { mutableStateOf(false) }
     val capsuleShape = RoundedCornerShape(999.dp)
     var isMenuFocused by remember { mutableStateOf(true) }
+    var isBannerCollapsed by remember { mutableStateOf(false) }
 
     var freezeSelection by remember { mutableStateOf(false) }
     val menuBarFocusRequester = remember { FocusRequester() }
@@ -130,6 +131,11 @@ fun HomeScreen(
             activePageIndex = selectedIndex
         }
 
+        LaunchedEffect(activePageIndex) {
+            // Reset banner state when switching menu pages
+            isBannerCollapsed = false
+        }
+
         val bannerFocusRequester = remember { FocusRequester() }
         val scrollState = rememberScrollState()
 
@@ -175,7 +181,6 @@ fun HomeScreen(
         val profileFocusRequester = remember { FocusRequester() }
         var isProfileFocused by remember { mutableStateOf(false) }
 
-        var isBannerCollapsed by remember { mutableStateOf(false) }
         val iconSz = 40
 
         var requestContentFocusToken by remember { mutableStateOf(0) }

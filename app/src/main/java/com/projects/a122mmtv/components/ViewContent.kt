@@ -407,9 +407,7 @@ fun ViewContent(
                             if (isHeroActive) {
                                 Modifier.border(
                                     1.dp,
-                                    Brush.horizontalGradient(
-                                        listOf(Color.White, Color.LightGray)
-                                    ),
+                                    Color.White,
                                     RoundedCornerShape(0.dp)
                                 )
                             } else Modifier

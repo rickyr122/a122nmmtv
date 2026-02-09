@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -47,6 +48,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.KeyEventType
@@ -175,6 +177,7 @@ fun ViewContinue(
 
     val previewHeight = heroHeight
     val previewWidth = previewHeight * (6f / 19f)
+    var isHeroActive by remember { mutableStateOf(false) }
 
     var hasActivatedOnce by remember { mutableStateOf(false) }
 
@@ -318,6 +321,9 @@ fun ViewContinue(
                         Modifier
                 )
                 .focusRequester(focusRequester)
+                .onFocusChanged {
+                    isHeroActive = it.hasFocus
+                }
                 .focusable()
                 .onPreviewKeyEvent { event ->
                     if (!isActive) return@onPreviewKeyEvent false
@@ -470,10 +476,19 @@ fun ViewContinue(
                             .width(heroWidth)
                             .height(heroHeight)
                             //.padding(start = horizontalInset, end = 6.dp)
-                            .border(1.dp, Color.White)
+                            //.border(1.dp, Color.White)
                             .focusRequester(heroFocusRequester)
                             .focusable()
                             .alpha(0.8f)
+                            .then(
+                                if (isHeroActive) {
+                                    Modifier.border(
+                                        1.dp,
+                                        Color.White,
+                                        RoundedCornerShape(0.dp)
+                                    )
+                                } else Modifier
+                            )
                     ) {
                         AsyncImage(
                             model = hero?.posterUrl,
