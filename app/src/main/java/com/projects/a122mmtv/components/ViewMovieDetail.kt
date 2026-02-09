@@ -111,7 +111,12 @@ fun ViewMovieDetail(
 ) {
     if (!isActive) return
 
-    BackHandler { onClose() }
+//    BackHandler { onClose() }
+
+    BackHandler(enabled = isActive) {
+        onClose()
+    }
+
 
     val api = remember {
         ApiClient.create(AuthApiService::class.java)

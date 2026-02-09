@@ -165,10 +165,17 @@ fun HomePage(
                     return@onPreviewKeyEvent false
                 }
 
-
                 // 🔥 Banner owns ALL DPAD when active
                 if (activeRowIndex == -1) {
                     return@onPreviewKeyEvent false
+                }
+
+                if (interactionLayer == InteractionLayer.DETAIL &&
+                    event.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_BACK
+                ) {
+                    true // consume, let ViewMovieDetail BackHandler handle it
+                } else {
+                    false
                 }
 
                 when (event.nativeKeyEvent.keyCode) {
