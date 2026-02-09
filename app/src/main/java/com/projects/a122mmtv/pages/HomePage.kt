@@ -75,6 +75,8 @@ fun HomePage(
     onReturnedToMenuFromContent: () -> Unit,
     onDetailVisibilityChanged: (Boolean) -> Unit,
     isDetailOpen: Boolean,
+    onBannerCollapsedChanged: (Boolean) -> Unit,
+    requestContentFocusToken: Int,
     type: String = "HOM"
 ) {
     // -1 = banner
@@ -97,6 +99,7 @@ fun HomePage(
     LaunchedEffect(detailMovieId) {
         onDetailVisibilityChanged(detailMovieId != null)
     }
+
 
 //    LaunchedEffect(Unit) {
 //        awaitFrame()
@@ -130,6 +133,12 @@ fun HomePage(
 
     val rowFocusRequesters = remember(categorySections.size) {
         List(categorySections.size) { FocusRequester() }
+    }
+
+    LaunchedEffect(requestContentFocusToken) {
+        if (requestContentFocusToken > 0 && activeRowIndex >= 0) {
+            rowFocusRequesters[activeRowIndex].requestFocus()
+        }
     }
 
     LaunchedEffect(activeRowIndex) {
@@ -179,16 +188,31 @@ fun HomePage(
                 }
 
                 when (event.nativeKeyEvent.keyCode) {
+//                    KeyEvent.KEYCODE_DPAD_DOWN -> {
+//                        val next = activeRowIndex + 1
+//                        if (activeRowIndex >= categorySections.lastIndex) {
+//                            true   // consume, but no movement
+//                        } else {
+//                            if (next in categorySections.indices) {
+//                                activeRowIndex = next
+//                                rowFocusRequesters[next].requestFocus()
+//                                true
+//                            } else false
+//                        }
+//                    }
+
                     KeyEvent.KEYCODE_DPAD_DOWN -> {
-                        val next = activeRowIndex + 1
-                        if (activeRowIndex >= categorySections.lastIndex) {
-                            true   // consume, but no movement
-                        } else {
-                            if (next in categorySections.indices) {
-                                activeRowIndex = next
-                                rowFocusRequesters[next].requestFocus()
-                                true
-                            } else false
+                        // 🔥 BANNER COLLAPSED → go straight to content
+                        if (activeRowIndex >= 0) {
+                            val next = (activeRowIndex + 1)
+                                .coerceAtMost(categorySections.lastIndex)
+                            activeRowIndex = next
+                            rowFocusRequesters[next].requestFocus()
+                            true
+                        }
+                        // 🔥 BANNER EXPANDED → banner owns DPAD
+                        else {
+                            false
                         }
                     }
 
@@ -201,6 +225,7 @@ fun HomePage(
                         } else if (activeRowIndex == 0) {
                             activeRowIndex = -1
                             bannerFocusRequester.requestFocus()
+                            onBannerCollapsedChanged(false)
                             true
                         } else false
                     }
@@ -238,6 +263,7 @@ fun HomePage(
                 onRequestMenuFocus = onRequestMenuFocus,
                 onRequestContentFocus = {
                     activeRowIndex = 0    // 🔥 first content row becomes active
+                    onBannerCollapsedChanged(true)
                 },
                 isMenuFocused = isMenuFocused,
                 onExitToMenu = onReturnedToMenuFromContent,

@@ -76,6 +76,8 @@ fun MoviePage(
     onReturnedToMenuFromContent: () -> Unit,
     onDetailVisibilityChanged: (Boolean) -> Unit,
     isDetailOpen: Boolean,
+    onBannerCollapsedChanged: (Boolean) -> Unit,
+    requestContentFocusToken: Int,
     type: String = "MOV"
 ) {
     // -1 = banner
@@ -131,6 +133,12 @@ fun MoviePage(
 
     val rowFocusRequesters = remember(categorySections.size) {
         List(categorySections.size) { FocusRequester() }
+    }
+
+    LaunchedEffect(requestContentFocusToken) {
+        if (requestContentFocusToken > 0 && activeRowIndex >= 0) {
+            rowFocusRequesters[activeRowIndex].requestFocus()
+        }
     }
 
     LaunchedEffect(activeRowIndex) {
@@ -195,6 +203,7 @@ fun MoviePage(
                         } else if (activeRowIndex == 0) {
                             activeRowIndex = -1
                             bannerFocusRequester.requestFocus()
+                            onBannerCollapsedChanged(false)
                             true
                         } else false
                     }
@@ -232,6 +241,7 @@ fun MoviePage(
                 onRequestMenuFocus = onRequestMenuFocus,
                 onRequestContentFocus = {
                     activeRowIndex = 0    // 🔥 first content row becomes active
+                    onBannerCollapsedChanged(true)
                 },
                 isMenuFocused = isMenuFocused,
                 onExitToMenu = onReturnedToMenuFromContent,

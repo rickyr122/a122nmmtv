@@ -76,6 +76,8 @@ fun SeriesPage(
     onReturnedToMenuFromContent: () -> Unit,
     onDetailVisibilityChanged: (Boolean) -> Unit,
     isDetailOpen: Boolean,
+    onBannerCollapsedChanged: (Boolean) -> Unit,
+    requestContentFocusToken: Int,
     type: String = "TVS"
 ) {
     // -1 = banner
@@ -131,6 +133,12 @@ fun SeriesPage(
 
     val rowFocusRequesters = remember(categorySections.size) {
         List(categorySections.size) { FocusRequester() }
+    }
+
+    LaunchedEffect(requestContentFocusToken) {
+        if (requestContentFocusToken > 0 && activeRowIndex >= 0) {
+            rowFocusRequesters[activeRowIndex].requestFocus()
+        }
     }
 
     LaunchedEffect(activeRowIndex) {
@@ -195,6 +203,7 @@ fun SeriesPage(
                         } else if (activeRowIndex == 0) {
                             activeRowIndex = -1
                             bannerFocusRequester.requestFocus()
+                            onBannerCollapsedChanged(false)
                             true
                         } else false
                     }
@@ -232,6 +241,7 @@ fun SeriesPage(
                 onRequestMenuFocus = onRequestMenuFocus,
                 onRequestContentFocus = {
                     activeRowIndex = 0    // 🔥 first content row becomes active
+                    onBannerCollapsedChanged(true)
                 },
                 isMenuFocused = isMenuFocused,
                 onExitToMenu = onReturnedToMenuFromContent,

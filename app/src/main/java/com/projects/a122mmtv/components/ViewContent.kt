@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,6 +43,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.KeyEventType
@@ -140,93 +142,6 @@ fun ViewContent(
     heroFocusRequester: FocusRequester,
     interactionLayer: InteractionLayer
 ) {
-
-    // 🔥 MOCK DATA LIVES HERE
-//    var items by remember {
-//        mutableStateOf(
-//            listOf(
-//                PosterItem(
-//                    1,
-//                    "https://image.tmdb.org/t/p/w1280/34jW8LvjRplM8Pv06cBFDpLlenR.jpg",
-//                    "https://image.tmdb.org/t/p/w500/lAEaCmWwqkZSp8lAw6F7CfPkA9N.png",
-//                    "Movie",
-//                    "Action",
-//                    "2019",
-//                    "2h 9m",
-//                    "13+",
-//                    "Peter Parker and his friends go on a summer trip to Europe. However, they will hardly be able to rest" +
-//                            " - Peter will have to agree to help Nick Fury uncover the mystery of creatures that cause " +
-//                            "natural disasters and destruction throughout the continent."
-//                ),
-//                PosterItem(
-//                    2,
-//                    "https://image.tmdb.org/t/p/w1280/xPNDRM50a58uvv1il2GVZrtWjkZ.jpg",
-//                    "https://image.tmdb.org/t/p/w500/7yXEfWFDGpqIfq9wdpMOHcHbi8g.png",
-//                    "Movie",
-//                    "Action",
-//                    "2025",
-//                    "2h 50m",
-//                    "18+",
-//                    "Ethan Hunt and team continue their search for the terrifying AI known as the Entity — " +
-//                            "which has infiltrated intelligence networks all over the globe — with the world's governments " +
-//                            "and a mysterious ghost from Hunt's past on their trail."
-//                ),
-//                PosterItem(
-//                    3,
-//                    "https://image.tmdb.org/t/p/w1280/cKvDv2LpwVEqbdXWoQl4XgGN6le.jpg",
-//                    "https://image.tmdb.org/t/p/w500/f1EpI3C6wd1iv7dCxNi3vU5DAX7.png",
-//                    "Movie",
-//                    "Action",
-//                    "2008",
-//                    "2h 6m",
-//                    "13+",
-//                    "After being held captive in an Afghan cave, billionaire engineer Tony Stark creates a unique " +
-//                            "weaponized suit of armor to fight evil."
-//                ),
-//                PosterItem(
-//                    4,
-//                    "https://image.tmdb.org/t/p/w1280/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg",
-//                    "https://image.tmdb.org/t/p/w500/b07VisHvZb0WzUpA8VB77wfMXwg.png",
-//                    "Movie",
-//                    "Drama",
-//                    "2023",
-//                    "3h 1m",
-//                    "18+",
-//                    "The story of J. Robert Oppenheimer's role in the development of the atomic bomb during World War II."
-//                ),
-//                PosterItem(
-//                    5,
-//                    "https://image.tmdb.org/t/p/w1280/ufpeVEM64uZHPpzzeiDNIAdaeOD.jpg",
-//                    "https://image.tmdb.org/t/p/w500/xJMMxfKD9WJQLxq03p7T0c2AWb4.png",
-//                    "Movie",
-//                    "Action",
-//                    "2024",
-//                    "2h 8m",
-//                    "18+",
-//                    "A listless Wade Wilson toils away in civilian life with his days as the morally flexible mercenary, Deadpool, behind him. " +
-//                            "But when his homeworld faces an existential threat, Wade must reluctantly suit-up again " +
-//                            "with an even more reluctant Wolverine."
-//                ),
-//                PosterItem(
-//                    6,
-//                    "https://image.tmdb.org/t/p/w1280/9tOkjBEiiGcaClgJFtwocStZvIT.jpg",
-//                    "https://image.tmdb.org/t/p/w500/gNkaNY2Cg2BvYunWVgMVcbmQgc5.png",
-//                    "Movie",
-//                    "Animation",
-//                    "2016",
-//                    "1h 49m",
-//                    "7+",
-//                    "Determined to prove herself, Officer Judy Hopps, the first bunny on Zootopia's police force, " +
-//                            "jumps at the chance to crack her first case - even if it means partnering " +
-//                            "with scam-artist fox Nick Wilde to solve the mystery."
-//                )
-//
-//            )
-//        )
-//    }
-
-    //val title = "Fresh From Theater"
-
     val context = LocalContext.current
     val api = ApiClient.create(AuthApiService::class.java)
 
@@ -241,6 +156,7 @@ fun ViewContent(
 
     val previewHeight = heroHeight
     val previewWidth = previewHeight * (6f / 19f)
+    var isHeroActive by remember { mutableStateOf(false) }
 
     var hasActivatedOnce by remember { mutableStateOf(false) }
 
@@ -369,6 +285,9 @@ fun ViewContent(
                 .fillMaxWidth()
                 .clipToBounds()
                 .focusRequester(focusRequester)
+                .onFocusChanged {
+                    isHeroActive = it.hasFocus
+                }
                 .focusable()
                 .onPreviewKeyEvent { event ->
                     if (!isActive) return@onPreviewKeyEvent false
@@ -480,10 +399,21 @@ fun ViewContent(
                         .width(heroWidth)
                         .height(heroHeight)
                         //.padding(start = horizontalInset, end = 6.dp)
-                        .border(1.dp, Color.White)
+                        //.border(1.dp, Color.White)
                         .focusRequester(heroFocusRequester)
                         .focusable()
                         .alpha(0.8f)
+                        .then(
+                            if (isHeroActive) {
+                                Modifier.border(
+                                    1.dp,
+                                    Brush.horizontalGradient(
+                                        listOf(Color.White, Color.LightGray)
+                                    ),
+                                    RoundedCornerShape(0.dp)
+                                )
+                            } else Modifier
+                        )
                 ) {
                     AsyncImage(
                         model = hero?.posterUrl,

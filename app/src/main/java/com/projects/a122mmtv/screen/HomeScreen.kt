@@ -103,8 +103,6 @@ fun HomeScreen(
             menuBarFocusRequester.requestFocus()
         }
 
-
-
         LaunchedEffect(showBackMenu) {
             if (!showBackMenu) {
                 // wait one frame so focus events finish
@@ -118,8 +116,6 @@ fun HomeScreen(
         LaunchedEffect(Unit) {
             menuBarFocusRequester.requestFocus()
         }
-
-
 
         var activePageIndex by remember { mutableStateOf(selectedIndex) }
 
@@ -178,24 +174,36 @@ fun HomeScreen(
         val horizontalInset = (48 * scale).dp
         val profileFocusRequester = remember { FocusRequester() }
         var isProfileFocused by remember { mutableStateOf(false) }
+
+        var isBannerCollapsed by remember { mutableStateOf(false) }
         val iconSz = 40
+
+        var requestContentFocusToken by remember { mutableStateOf(0) }
 
         // 🔥 ADD THIS
         val onRequestContentFocus: () -> Unit = {
             // Only make sense when Home is active
-            if (activePageIndex == 1) {
-                // Disable menu state
-                isMenuFocused = false
-                // Let HomePageNoScroll decide WHERE to focus
+            //if (activePageIndex == 1) {
+            // Disable menu state
+            isMenuFocused = false
+
+            if (isBannerCollapsed) {
+                // 🔥 banner already collapsed → jump straight to content
+                requestContentFocusToken++
+            } else {
+                // 🎬 banner still visible → normal flow
                 bannerFocusRequester.requestFocus()
             }
+            //}
         }
+
 
         val onReturnedToMenuFromContent: () -> Unit = {
             backJustClosedMenu = true
             isMenuFocused = true
             menuBarFocusRequester.requestFocus()
         }
+
 
 
         Box(
@@ -231,7 +239,11 @@ fun HomeScreen(
                     onRequestContentFocus = onRequestContentFocus,
                     onReturnedToMenuFromContent = onReturnedToMenuFromContent,
                     isDetailOpen = isDetailOpen,
-                    onDetailVisibilityChanged = onDetailVisibilityChanged
+                    onDetailVisibilityChanged = onDetailVisibilityChanged,
+                    onBannerCollapsedChanged = { collapsed ->
+                        isBannerCollapsed = collapsed
+                    },
+                    requestContentFocusToken = requestContentFocusToken
                 )
             }
             if (!isDetailOpen) {
@@ -248,6 +260,9 @@ fun HomeScreen(
                             //if (isDetailOpen) return@onPreviewKeyEvent true
 
                             when (event.nativeKeyEvent.keyCode) {
+                                KeyEvent.KEYCODE_DPAD_UP -> {
+                                    true // 🔒 disable UP when menu is focused
+                                }
 
                                 KeyEvent.KEYCODE_DPAD_LEFT -> {
                                     if (focusedIndex > 0) {
@@ -285,21 +300,49 @@ fun HomeScreen(
     //                                } else false
     //                            }
 
+//                                KeyEvent.KEYCODE_DPAD_DOWN -> {
+//                                    if (!isMenuFocused) return@onPreviewKeyEvent false
+//
+//                                    if (backJustClosedMenu) {
+//                                        // 🔁 Return to previous content state
+//                                        backJustClosedMenu = false
+//                                        onRequestContentFocus()   // content decides (row or banner)
+//                                    } else {
+//                                        // ⬇ Normal flow: enter via banner
+//                                        bannerFocusRequester.requestFocus()
+//                                    }
+//
+//                                    isMenuFocused = false
+//                                    true
+//                                }
+
                                 KeyEvent.KEYCODE_DPAD_DOWN -> {
                                     if (!isMenuFocused) return@onPreviewKeyEvent false
 
-                                    if (backJustClosedMenu) {
-                                        // 🔁 Return to previous content state
-                                        backJustClosedMenu = false
-                                        onRequestContentFocus()   // content decides (row or banner)
-                                    } else {
-                                        // ⬇ Normal flow: enter via banner
-                                        bannerFocusRequester.requestFocus()
+                                    when {
+                                        // 🔁 Highest priority: returning from BACK
+                                        backJustClosedMenu -> {
+                                            backJustClosedMenu = false
+                                            onRequestContentFocus()
+                                        }
+
+                                        // 🔥 Banner already collapsed → skip banner
+                                        isBannerCollapsed -> {
+                                            onRequestContentFocus()
+                                        }
+
+                                        // 🎬 Normal flow: go to banner
+                                        else -> {
+                                            bannerFocusRequester.requestFocus()
+                                        }
                                     }
 
                                     isMenuFocused = false
                                     true
                                 }
+
+
+
 
                                 KeyEvent.KEYCODE_DPAD_UP -> true // lock UP
 
@@ -545,7 +588,9 @@ fun ContentScreen(
     onRequestContentFocus: () -> Unit,
     onReturnedToMenuFromContent: () -> Unit,
     isDetailOpen: Boolean,
-    onDetailVisibilityChanged: (Boolean) -> Unit
+    onDetailVisibilityChanged: (Boolean) -> Unit,
+    onBannerCollapsedChanged: (Boolean) -> Unit,
+    requestContentFocusToken: Int
 ) {
 
     var requestMenuFocus by remember { mutableStateOf(false) }
@@ -600,6 +645,8 @@ fun ContentScreen(
                 onReturnedToMenuFromContent = onReturnedToMenuFromContent,
                 isDetailOpen = isDetailOpen,              // 👈 PASS DOWN
                 onDetailVisibilityChanged = onDetailVisibilityChanged,
+                onBannerCollapsedChanged = onBannerCollapsedChanged,
+                requestContentFocusToken = requestContentFocusToken,
                 type = "HOM"
             )
 
@@ -626,6 +673,8 @@ fun ContentScreen(
                 onReturnedToMenuFromContent = onReturnedToMenuFromContent,
                 isDetailOpen = isDetailOpen,              // 👈 PASS DOWN
                 onDetailVisibilityChanged = onDetailVisibilityChanged,
+                onBannerCollapsedChanged = onBannerCollapsedChanged,
+                requestContentFocusToken = requestContentFocusToken,
                 type = "TVS"
             )
 
@@ -645,6 +694,8 @@ fun ContentScreen(
                 onReturnedToMenuFromContent = onReturnedToMenuFromContent,
                 isDetailOpen = isDetailOpen,              // 👈 PASS DOWN
                 onDetailVisibilityChanged = onDetailVisibilityChanged,
+                onBannerCollapsedChanged = onBannerCollapsedChanged,
+                requestContentFocusToken = requestContentFocusToken,
                 type = "MOV"
             )
 

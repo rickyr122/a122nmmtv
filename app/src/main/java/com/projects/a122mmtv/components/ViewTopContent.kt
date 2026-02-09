@@ -45,6 +45,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -169,6 +170,7 @@ fun ViewTopContent(
 
     val previewHeight = heroHeight
     val previewWidth = previewHeight * (6f / 19f)
+    var isHeroActive by remember { mutableStateOf(false) }
 
     var hasActivatedOnce by remember { mutableStateOf(false) }
 
@@ -275,6 +277,9 @@ fun ViewTopContent(
                 .fillMaxWidth()
                 //.clipToBounds()
                 .focusRequester(focusRequester)
+                .onFocusChanged {
+                    isHeroActive = it.hasFocus
+                }
                 .focusable()
                 .onPreviewKeyEvent { event ->
                     if (!isActive) return@onPreviewKeyEvent false
@@ -393,7 +398,7 @@ fun ViewTopContent(
                     cardWidth = heroWidth,
                     numberSpace = 72.dp,
                     overlap = 24.dp,
-                    showBorder = true,
+                    showBorder = if (isHeroActive) true else false,
                     centerLogo = false,
                     modifier = Modifier
                         .offset(x = horizontalInset)
