@@ -117,7 +117,6 @@ fun ViewMovieDetail(
         onClose()
     }
 
-
     val api = remember {
         ApiClient.create(AuthApiService::class.java)
     }
@@ -147,8 +146,6 @@ fun ViewMovieDetail(
 
         isLoading = false
     }
-
-
 
     Box(
         modifier = Modifier
@@ -248,7 +245,8 @@ fun ViewMovieDetail(
         val visibleButtons = actionButtons.take(3)
 
         Box(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
         ) {
 
             /* =========================
@@ -630,6 +628,12 @@ fun ViewMovieDetail(
                                             menuFocusRequester.requestFocus()
                                             true
                                         }
+//                                        Key.Back -> {
+//                                            focusArea = FocusArea.MENU
+//                                            selectedIndex = 0
+//                                            menuFocusRequester.requestFocus()
+//                                            true
+//                                        }
                                         else -> false
                                     }
                                 },
