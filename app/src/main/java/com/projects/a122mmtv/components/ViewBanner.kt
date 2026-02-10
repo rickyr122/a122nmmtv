@@ -105,6 +105,7 @@ fun ViewBanner(
     onRequestContentFocus: () -> Unit,
     isMenuFocused: Boolean,
     onExitToMenu: () -> Unit,
+    onPlay: (String) -> Unit,
     onOpenDetail: (String) -> Unit,
     restoreInfoFocus: Boolean,
     interactionLayer: InteractionLayer
@@ -241,8 +242,12 @@ fun ViewBanner(
 
                     KeyEvent.KEYCODE_DPAD_CENTER,
                     KeyEvent.KEYCODE_ENTER -> {
+                        val banner = (uiState as? BannerUiState.Success)?.data
+                        banner ?: return@onPreviewKeyEvent true
+
                         if (isOnPlay) {
-                            Toast.makeText(context, "Play pressed", Toast.LENGTH_SHORT).show()
+//                            Toast.makeText(context, "Play pressed", Toast.LENGTH_SHORT).show()
+                            onPlay(banner.playId)   // 🔥 OPEN PLAYER
                         } else {
 //                            Toast.makeText(context, "More Info pressed", Toast.LENGTH_SHORT).show()
                             val banner = (uiState as? BannerUiState.Success)?.data

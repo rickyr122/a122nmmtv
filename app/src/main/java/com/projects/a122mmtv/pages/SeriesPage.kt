@@ -46,6 +46,7 @@ import com.projects.a122mmtv.components.ViewContinue
 import com.projects.a122mmtv.components.ViewMovieDetail
 import com.projects.a122mmtv.components.ViewTopContent
 import com.projects.a122mmtv.dataclass.Section
+import com.projects.a122mmtv.screen.MainPlayerScreen
 import com.projects.a122mmtv.viewmodels.HomeViewModel
 import com.projects.a122mmtv.viewmodels.SeriesViewModel
 
@@ -91,14 +92,30 @@ fun SeriesPage(
         mutableStateOf<String?>(null)
     }
 
+    var playerMovieId by rememberSaveable {
+        mutableStateOf<String?>(null)
+    }
+
+    var playerSource by rememberSaveable {
+        mutableStateOf<PlayerSource?>(null)
+    }
+
     var detailSource by rememberSaveable {
         mutableStateOf<DetailSource?>(null)
     }
 
     val heroFocusRequester = remember { FocusRequester() }
+    var interactionLayer by remember { mutableStateOf(InteractionLayer.HOME) }
 
-    LaunchedEffect(detailMovieId) {
-        onDetailVisibilityChanged(detailMovieId != null)
+//    LaunchedEffect(detailMovieId) {
+//        onDetailVisibilityChanged(detailMovieId != null)
+//    }
+
+    LaunchedEffect(interactionLayer) {
+        onDetailVisibilityChanged(
+            interactionLayer == InteractionLayer.DETAIL ||
+                    interactionLayer == InteractionLayer.PLAYER
+        )
     }
 
 //    LaunchedEffect(Unit) {
@@ -152,8 +169,6 @@ fun SeriesPage(
     }
 
     var restoreBannerInfo by remember { mutableStateOf(false) }
-
-    var interactionLayer by remember { mutableStateOf(InteractionLayer.HOME) }
 
 //    val requestMenuFocus: () -> Unit = {
 //        menuBarFocusRequester.requestFocus()
@@ -245,6 +260,11 @@ fun SeriesPage(
                 },
                 isMenuFocused = isMenuFocused,
                 onExitToMenu = onReturnedToMenuFromContent,
+                onPlay = { mId ->
+                    playerSource = PlayerSource.BANNER
+                    playerMovieId = mId
+                    interactionLayer = InteractionLayer.PLAYER
+                },
                 onOpenDetail = { mId ->
                     detailSource = DetailSource.BANNER
                     detailMovieId = mId
@@ -428,6 +448,29 @@ fun SeriesPage(
             )
         }
 
+        if (playerMovieId != null) {
+            MainPlayerScreen(
+                mId = playerMovieId!!,
+                isActive = interactionLayer == InteractionLayer.PLAYER,
+                onClose = {
+                    playerMovieId = null
+                    interactionLayer = InteractionLayer.HOME
 
+                    // 🔥 restore focus properly
+                    when (playerSource) {
+                        PlayerSource.BANNER -> {
+                            activeRowIndex = -1
+                            bannerFocusRequester.requestFocus()
+                        }
+                        PlayerSource.CONTENT -> {
+                            heroFocusRequester.requestFocus()
+                        }
+                        else -> {}
+                    }
+
+                    playerSource = null
+                }
+            )
+        }
     }
 }
