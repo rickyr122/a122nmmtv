@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -233,6 +234,7 @@ fun ViewContinue(
 
 
     val userId = homeSession.userId ?: 0
+    var totalCount by remember { mutableStateOf(0) }
 
     LaunchedEffect(type, userId) {
         if (userId == 0) return@LaunchedEffect
@@ -244,7 +246,6 @@ fun ViewContinue(
                 type = type,
                 userId = userId
             )
-
 
             val mapped = res.mapIndexed { index, item ->
                 item.toPosterItem(index)
@@ -259,6 +260,7 @@ fun ViewContinue(
                 heroItem = null
             }
 
+            totalCount = res.size
         } catch (e: Exception) {
             items = emptyList()
             heroItem = null
@@ -267,7 +269,6 @@ fun ViewContinue(
         hasActivatedOnce = true
         isLoading = false
     }
-
 
     var wasActive by remember { mutableStateOf(false) }
     title = "Continue Watching"
@@ -286,6 +287,17 @@ fun ViewContinue(
     }
 
     var stepIndex by remember { mutableStateOf(0) }
+    val shouldShowLazyRow = totalCount > 1
+    val visibleCount = remember(stepIndex, totalCount) {
+        if (!shouldShowLazyRow) 0
+        else (totalCount - stepIndex - 1).coerceAtLeast(0)
+    }
+
+    val visibleItems = remember(items, visibleCount) {
+        items.take(minOf(visibleCount, items.size))
+    }
+
+    Log.d("totalCount::check", "totalCount -> $totalCount")
 
     Column(
         modifier = Modifier
@@ -338,6 +350,10 @@ fun ViewContinue(
 //                            previousHero = heroItem
 //                            Log.d("heroItem::check", "heroItem DR -> $heroItem")
 //                            Log.d("leftHero::check", "LeftHero DR -> $leftHero")
+                            if (stepIndex == totalCount - 1) {
+                                // 🚫 already at start → block LEFT
+                                return@onPreviewKeyEvent true
+                            }
                             stepIndex += 1
 
 
@@ -571,26 +587,28 @@ fun ViewContinue(
                     }
                 }
 
-                LazyRow(
-                    state = listState,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .alpha(0.8f)
-                        .padding(start = if (!isActive) horizontalInset else horizontalInset + heroWidth + 6.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    contentPadding = PaddingValues(0.dp)
-                ) {
-                    items(
-                        items = items,
-                        key = { it.id }
-                    ) { item ->
-                        val isFirst = item.id == items.first().id
+                if (shouldShowLazyRow) {
+                    LazyRow(
+                        state = listState,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .alpha(0.8f)
+                            .padding(start = if (!isActive) horizontalInset else horizontalInset + heroWidth + 6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        itemsIndexed(visibleItems)
+//                        items = items,
+//                        key = { it.id }
+                        { _, item ->
+                            val isFirst = item.id == items.first().id
 
-                        PosterCard(
-                            item = item,
-                            isFirst = isFirst,
-                            isFirstFocused = isFirstFocused
-                        )
+                            PosterCard(
+                                item = item,
+                                isFirst = false,
+                                isFirstFocused = false
+                            )
+                        }
                     }
                 }
             }
