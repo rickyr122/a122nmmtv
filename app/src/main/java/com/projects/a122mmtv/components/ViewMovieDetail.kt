@@ -107,7 +107,8 @@ fun ViewMovieDetail(
     isActive: Boolean,
     homeSession: HomeSessionViewModel,
     horizontalInset: Dp,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    onPlay: (String) -> Unit
 ) {
     if (!isActive) return
 
@@ -592,6 +593,16 @@ fun ViewMovieDetail(
                                         selectedIndex =
                                             (selectedIndex + 1).coerceAtMost(actionButtons.lastIndex)
                                         true
+                                    }
+                                }
+
+                                Key.Enter, Key.NumPadEnter, Key.DirectionCenter -> {
+                                    val action = actionButtons.getOrNull(selectedIndex)
+                                    if (action?.id == "play") {
+                                        onPlay(movie.playId)   // 🔥 THIS OPENS PLAYER
+                                        true
+                                    } else {
+                                        false
                                     }
                                 }
 

@@ -293,9 +293,15 @@ fun ViewContinue(
         else (totalCount - stepIndex - 1).coerceAtLeast(0)
     }
 
-    val visibleItems = remember(items, visibleCount) {
-        items.take(minOf(visibleCount, items.size))
+//    val visibleItems = remember(items, visibleCount) {
+//        items.take(minOf(visibleCount, items.size))
+//    }
+
+    val visibleItems = remember(items, visibleCount, totalCount) {
+        if (totalCount == 1) items
+        else items.take(minOf(visibleCount, items.size))
     }
+
 
     //Log.d("totalCount::check", "totalCount -> $totalCount")
 
@@ -587,7 +593,11 @@ fun ViewContinue(
                     }
                 }
 
-                if (shouldShowLazyRow) {
+                Log.d("show LazyRow::check", "shouldShowLazyRow -> $shouldShowLazyRow, isActive -> $isActive, totalCount -> $totalCount")
+                if (
+                    (!isActive && totalCount >= 1) ||
+                    (isActive && totalCount > 1)
+                ) {
                     LazyRow(
                         state = listState,
                         modifier = Modifier

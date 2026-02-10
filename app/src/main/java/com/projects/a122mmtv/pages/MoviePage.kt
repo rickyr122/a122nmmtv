@@ -443,6 +443,11 @@ fun MoviePage(
                     }
 
                     detailSource = null
+                },
+                onPlay = { mId ->
+                    playerSource = PlayerSource.DETAIL
+                    playerMovieId = mId
+                    interactionLayer = InteractionLayer.PLAYER
                 }
             )
         }
@@ -453,18 +458,28 @@ fun MoviePage(
                 isActive = interactionLayer == InteractionLayer.PLAYER,
                 onClose = {
                     playerMovieId = null
-                    interactionLayer = InteractionLayer.HOME
 
-                    // 🔥 restore focus properly
                     when (playerSource) {
                         PlayerSource.BANNER -> {
+                            interactionLayer = InteractionLayer.HOME
                             activeRowIndex = -1
                             bannerFocusRequester.requestFocus()
                         }
+
                         PlayerSource.CONTENT -> {
+                            interactionLayer = InteractionLayer.HOME
                             heroFocusRequester.requestFocus()
                         }
-                        else -> {}
+
+                        PlayerSource.DETAIL -> {
+                            interactionLayer = InteractionLayer.DETAIL
+                            // ⛔ do NOT touch detailMovieId
+                            // Detail overlay resumes exactly as before
+                        }
+
+                        else -> {
+                            interactionLayer = InteractionLayer.HOME
+                        }
                     }
 
                     playerSource = null
