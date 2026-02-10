@@ -104,6 +104,14 @@ fun SeriesPage(
         mutableStateOf<DetailSource?>(null)
     }
 
+    var episodeSourceMovieId by rememberSaveable {
+        mutableStateOf<String?>(null)
+    }
+
+    var moreLikeSourceMovieId by rememberSaveable {
+        mutableStateOf<String?>(null)
+    }
+
     val heroFocusRequester = remember { FocusRequester() }
     var interactionLayer by remember { mutableStateOf(InteractionLayer.HOME) }
 
@@ -114,7 +122,9 @@ fun SeriesPage(
     LaunchedEffect(interactionLayer) {
         onDetailVisibilityChanged(
             interactionLayer == InteractionLayer.DETAIL ||
-                    interactionLayer == InteractionLayer.PLAYER
+                    interactionLayer == InteractionLayer.PLAYER ||
+                    interactionLayer == InteractionLayer.EPISODES ||
+                    interactionLayer == InteractionLayer.MORE_LIKE_THIS
         )
     }
 
@@ -449,6 +459,14 @@ fun SeriesPage(
                     playerSource = PlayerSource.DETAIL
                     playerMovieId = mId
                     interactionLayer = InteractionLayer.PLAYER
+                },
+                onOpenEpisodes = { mId ->
+                    episodeSourceMovieId = mId
+                    interactionLayer = InteractionLayer.EPISODES
+                },
+                onOpenMoreLikeThis = { mId ->
+                    moreLikeSourceMovieId = mId
+                    interactionLayer = InteractionLayer.MORE_LIKE_THIS
                 }
             )
         }

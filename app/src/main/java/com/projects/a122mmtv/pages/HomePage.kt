@@ -47,6 +47,8 @@ import com.projects.a122mmtv.components.ViewMovieDetail
 import com.projects.a122mmtv.components.ViewTopContent
 import com.projects.a122mmtv.dataclass.Section
 import com.projects.a122mmtv.screen.MainPlayerScreen
+import com.projects.a122mmtv.screen.MoreLikeThisScreen
+import com.projects.a122mmtv.screen.TvEpisodeScreen
 import com.projects.a122mmtv.viewmodels.HomeViewModel
 
 enum class DetailSource {
@@ -57,7 +59,9 @@ enum class DetailSource {
 enum class InteractionLayer {
     HOME,
     DETAIL,
-    PLAYER
+    PLAYER,
+    EPISODES,
+    MORE_LIKE_THIS
 }
 
 enum class PlayerSource {
@@ -110,6 +114,14 @@ fun HomePage(
         mutableStateOf<DetailSource?>(null)
     }
 
+    var episodeSourceMovieId by rememberSaveable {
+        mutableStateOf<String?>(null)
+    }
+
+    var moreLikeSourceMovieId by rememberSaveable {
+        mutableStateOf<String?>(null)
+    }
+
     val heroFocusRequester = remember { FocusRequester() }
     var interactionLayer by remember { mutableStateOf(InteractionLayer.HOME) }
 //    LaunchedEffect(detailMovieId) {
@@ -119,11 +131,11 @@ fun HomePage(
     LaunchedEffect(interactionLayer) {
         onDetailVisibilityChanged(
             interactionLayer == InteractionLayer.DETAIL ||
-                    interactionLayer == InteractionLayer.PLAYER
+                    interactionLayer == InteractionLayer.PLAYER ||
+                    interactionLayer == InteractionLayer.EPISODES ||
+                    interactionLayer == InteractionLayer.MORE_LIKE_THIS
         )
     }
-
-
 
 //    LaunchedEffect(Unit) {
 //        awaitFrame()
@@ -480,6 +492,36 @@ fun HomePage(
                     playerSource = PlayerSource.DETAIL
                     playerMovieId = mId
                     interactionLayer = InteractionLayer.PLAYER
+                },
+                onOpenEpisodes = { mId ->
+                    episodeSourceMovieId = mId
+                    interactionLayer = InteractionLayer.EPISODES
+                },
+                onOpenMoreLikeThis = { mId ->
+                    moreLikeSourceMovieId = mId
+                    interactionLayer = InteractionLayer.MORE_LIKE_THIS
+                }
+            )
+        }
+
+        episodeSourceMovieId?.let { mId ->
+            TvEpisodeScreen(
+                mId = mId,
+                isActive = interactionLayer == InteractionLayer.EPISODES,
+                onClose = {
+                    episodeSourceMovieId = null
+                    interactionLayer = InteractionLayer.DETAIL
+                }
+            )
+        }
+
+        moreLikeSourceMovieId?.let { mId ->
+            MoreLikeThisScreen(
+                mId = mId,
+                isActive = interactionLayer == InteractionLayer.MORE_LIKE_THIS,
+                onClose = {
+                    moreLikeSourceMovieId = null
+                    interactionLayer = InteractionLayer.DETAIL
                 }
             )
         }

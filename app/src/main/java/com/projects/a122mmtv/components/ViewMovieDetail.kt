@@ -108,7 +108,9 @@ fun ViewMovieDetail(
     homeSession: HomeSessionViewModel,
     horizontalInset: Dp,
     onClose: () -> Unit,
-    onPlay: (String) -> Unit
+    onPlay: (String) -> Unit,
+    onOpenEpisodes: (String) -> Unit,
+    onOpenMoreLikeThis: (String) -> Unit
 ) {
     if (!isActive) return
 
@@ -597,14 +599,27 @@ fun ViewMovieDetail(
                                 }
 
                                 Key.Enter, Key.NumPadEnter, Key.DirectionCenter -> {
-                                    val action = actionButtons.getOrNull(selectedIndex)
-                                    if (action?.id == "play") {
-                                        onPlay(movie.playId)   // 🔥 THIS OPENS PLAYER
-                                        true
-                                    } else {
-                                        false
+                                    when (actionButtons.getOrNull(selectedIndex)?.id) {
+
+                                        "play" -> {
+                                            onPlay(movie.playId)
+                                            true
+                                        }
+
+                                        "episodes" -> {
+                                            onOpenEpisodes(movie.m_id)
+                                            true
+                                        }
+
+                                        "similar" -> {
+                                            onOpenMoreLikeThis(movie.m_id)
+                                            true
+                                        }
+
+                                        else -> false
                                     }
                                 }
+
 
                                 else -> false
                             }

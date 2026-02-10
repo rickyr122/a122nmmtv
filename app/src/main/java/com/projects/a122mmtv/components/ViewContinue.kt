@@ -593,7 +593,7 @@ fun ViewContinue(
                     }
                 }
 
-                Log.d("show LazyRow::check", "shouldShowLazyRow -> $shouldShowLazyRow, isActive -> $isActive, totalCount -> $totalCount")
+                //Log.d("show LazyRow::check", "shouldShowLazyRow -> $shouldShowLazyRow, isActive -> $isActive, totalCount -> $totalCount")
                 if (
                     (!isActive && totalCount >= 1) ||
                     (isActive && totalCount > 1)
