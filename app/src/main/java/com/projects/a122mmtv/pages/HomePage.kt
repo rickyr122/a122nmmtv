@@ -35,6 +35,7 @@ import androidx.navigation.NavController
 import android.view.KeyEvent
 import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.updateTransition
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.times
 import com.projects.a122mmtv.auth.BannerViewModel
@@ -122,6 +123,8 @@ fun HomePage(
         mutableStateOf<String?>(null)
     }
 
+    var detailInitialIndex by remember { mutableStateOf<Int?>(null) }
+
     val heroFocusRequester = remember { FocusRequester() }
     var interactionLayer by remember { mutableStateOf(InteractionLayer.HOME) }
 //    LaunchedEffect(detailMovieId) {
@@ -188,6 +191,9 @@ fun HomePage(
     }
 
     var restoreBannerInfo by remember { mutableStateOf(false) }
+    var detailSelectedIndex by rememberSaveable {
+        mutableIntStateOf(0)
+    }
 
 
 
@@ -310,6 +316,7 @@ fun HomePage(
                 },
                 onOpenDetail = { mId ->
                     detailSource = DetailSource.BANNER
+                    detailSelectedIndex = 0
                     detailMovieId = mId
                     interactionLayer = InteractionLayer.DETAIL
                 },
@@ -392,6 +399,7 @@ fun HomePage(
                         onExitToMenu = onReturnedToMenuFromContent,
                         onOpenDetail = { mId ->
                             detailSource = DetailSource.CONTENT
+                            detailSelectedIndex = 0
                             detailMovieId = mId
                             interactionLayer = InteractionLayer.DETAIL
                         },
@@ -421,6 +429,7 @@ fun HomePage(
                         onExitToMenu = onReturnedToMenuFromContent,
                         onOpenDetail = { mId ->
                             detailSource = DetailSource.CONTENT
+                            detailSelectedIndex = 0
                             detailMovieId = mId
                             interactionLayer = InteractionLayer.DETAIL
                         },
@@ -451,6 +460,7 @@ fun HomePage(
                         onExitToMenu = onReturnedToMenuFromContent,
                         onOpenDetail = { mId ->
                             detailSource = DetailSource.CONTENT
+                            detailSelectedIndex = 0
                             detailMovieId = mId
                             interactionLayer = InteractionLayer.DETAIL
                         },
@@ -469,7 +479,10 @@ fun HomePage(
                 isActive = interactionLayer == InteractionLayer.DETAIL,
                 horizontalInset = horizontalInset,
                 homeSession = homeSession,
+                initialSelectedIndex = detailSelectedIndex,
+                onSelectedIndexSnapshot = { detailSelectedIndex = it },
                 onClose = {
+                    detailSelectedIndex = 0
                     detailMovieId = null
                     interactionLayer = InteractionLayer.HOME
 

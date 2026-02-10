@@ -35,6 +35,7 @@ import androidx.navigation.NavController
 import android.view.KeyEvent
 import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.updateTransition
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.times
 import com.projects.a122mmtv.auth.BannerViewModel
@@ -47,6 +48,8 @@ import com.projects.a122mmtv.components.ViewMovieDetail
 import com.projects.a122mmtv.components.ViewTopContent
 import com.projects.a122mmtv.dataclass.Section
 import com.projects.a122mmtv.screen.MainPlayerScreen
+import com.projects.a122mmtv.screen.MoreLikeThisScreen
+import com.projects.a122mmtv.screen.TvEpisodeScreen
 import com.projects.a122mmtv.viewmodels.HomeViewModel
 import com.projects.a122mmtv.viewmodels.MovieViewModel
 
@@ -179,6 +182,10 @@ fun MoviePage(
     }
 
     var restoreBannerInfo by remember { mutableStateOf(false) }
+    var detailSelectedIndex by rememberSaveable {
+        mutableIntStateOf(0)
+    }
+
 
 //    val requestMenuFocus: () -> Unit = {
 //        menuBarFocusRequester.requestFocus()
@@ -277,6 +284,7 @@ fun MoviePage(
                 },
                 onOpenDetail = { mId ->
                     detailSource = DetailSource.BANNER
+                    detailSelectedIndex = 0
                     detailMovieId = mId
                     interactionLayer = InteractionLayer.DETAIL
                 },
@@ -359,6 +367,7 @@ fun MoviePage(
                         onExitToMenu = onReturnedToMenuFromContent,
                         onOpenDetail = { mId ->
                             detailSource = DetailSource.CONTENT
+                            detailSelectedIndex = 0
                             detailMovieId = mId
                             interactionLayer = InteractionLayer.DETAIL
                         },
@@ -388,6 +397,7 @@ fun MoviePage(
                         onExitToMenu = onReturnedToMenuFromContent,
                         onOpenDetail = { mId ->
                             detailSource = DetailSource.CONTENT
+                            detailSelectedIndex = 0
                             detailMovieId = mId
                             interactionLayer = InteractionLayer.DETAIL
                         },
@@ -418,6 +428,7 @@ fun MoviePage(
                         onExitToMenu = onReturnedToMenuFromContent,
                         onOpenDetail = { mId ->
                             detailSource = DetailSource.CONTENT
+                            detailSelectedIndex = 0
                             detailMovieId = mId
                             interactionLayer = InteractionLayer.DETAIL
                         },
@@ -436,7 +447,10 @@ fun MoviePage(
                 isActive = interactionLayer == InteractionLayer.DETAIL,
                 horizontalInset = horizontalInset,
                 homeSession = homeSession,
+                initialSelectedIndex = detailSelectedIndex,
+                onSelectedIndexSnapshot = { detailSelectedIndex = it },
                 onClose = {
+                    detailSelectedIndex = 0
                     detailMovieId = null
                     interactionLayer = InteractionLayer.HOME
 
@@ -467,6 +481,28 @@ fun MoviePage(
                 onOpenMoreLikeThis = { mId ->
                     moreLikeSourceMovieId = mId
                     interactionLayer = InteractionLayer.MORE_LIKE_THIS
+                }
+            )
+        }
+
+        episodeSourceMovieId?.let { mId ->
+            TvEpisodeScreen(
+                mId = mId,
+                isActive = interactionLayer == InteractionLayer.EPISODES,
+                onClose = {
+                    episodeSourceMovieId = null
+                    interactionLayer = InteractionLayer.DETAIL
+                }
+            )
+        }
+
+        moreLikeSourceMovieId?.let { mId ->
+            MoreLikeThisScreen(
+                mId = mId,
+                isActive = interactionLayer == InteractionLayer.MORE_LIKE_THIS,
+                onClose = {
+                    moreLikeSourceMovieId = null
+                    interactionLayer = InteractionLayer.DETAIL
                 }
             )
         }

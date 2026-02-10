@@ -107,6 +107,8 @@ fun ViewMovieDetail(
     isActive: Boolean,
     homeSession: HomeSessionViewModel,
     horizontalInset: Dp,
+    initialSelectedIndex: Int? = null,
+    onSelectedIndexSnapshot: (Int) -> Unit,
     onClose: () -> Unit,
     onPlay: (String) -> Unit,
     onOpenEpisodes: (String) -> Unit,
@@ -132,6 +134,7 @@ fun ViewMovieDetail(
     var focusArea by remember { mutableStateOf(FocusArea.MENU) }
 
     val focusRequester = remember { FocusRequester() }
+
 
     LaunchedEffect(isActive, mId) {
         if (!isActive) return@LaunchedEffect
@@ -524,6 +527,21 @@ fun ViewMovieDetail(
 
                 // local state – ONLY for this block
                 var selectedIndex by remember { mutableStateOf(0) }
+//                LaunchedEffect(isActive) {
+//                    if (isActive) {
+//                        selectedIndex = initialSelectedIndex
+//                        onSelectedIndexSnapshot(selectedIndex)
+//                    }
+//                }
+
+                LaunchedEffect(isActive) {
+                    if (isActive) {
+                        selectedIndex = initialSelectedIndex ?: 0
+                        onSelectedIndexSnapshot(selectedIndex)
+                    }
+                }
+
+
                 val collapseThumbs = selectedIndex >= 2
 
                 LaunchedEffect(collapseThumbs) {
@@ -574,11 +592,13 @@ fun ViewMovieDetail(
                                     if (selectedIndex == 0) {
                                         focusArea = FocusArea.THUMBS
                                         selectedIndex = -1          // 👈 menu is now inactive
+                                        onSelectedIndexSnapshot(selectedIndex)
                                         thumbIndex = 0              // 👈 ALWAYS thumb_down
                                         thumbsFocusRequester.requestFocus()
                                         true
                                     } else if (selectedIndex > 0) {
                                         selectedIndex -= 1
+                                        onSelectedIndexSnapshot(selectedIndex)
                                         true
                                     } else {
                                         false
@@ -590,10 +610,12 @@ fun ViewMovieDetail(
                                     if (focusArea == FocusArea.THUMBS) {
                                         focusArea = FocusArea.MENU
                                         selectedIndex = 0
+                                        onSelectedIndexSnapshot(selectedIndex)
                                         true
                                     } else {
                                         selectedIndex =
                                             (selectedIndex + 1).coerceAtMost(actionButtons.lastIndex)
+                                        onSelectedIndexSnapshot(selectedIndex)
                                         true
                                     }
                                 }
@@ -607,11 +629,13 @@ fun ViewMovieDetail(
                                         }
 
                                         "episodes" -> {
+                                            onSelectedIndexSnapshot(selectedIndex)
                                             onOpenEpisodes(movie.m_id)
                                             true
                                         }
 
                                         "similar" -> {
+                                            onSelectedIndexSnapshot(selectedIndex)
                                             onOpenMoreLikeThis(movie.m_id)
                                             true
                                         }
@@ -651,6 +675,7 @@ fun ViewMovieDetail(
                                         Key.DirectionDown -> {
                                             focusArea = FocusArea.MENU
                                             selectedIndex = 0
+                                            onSelectedIndexSnapshot(selectedIndex)
                                             menuFocusRequester.requestFocus()
                                             true
                                         }
