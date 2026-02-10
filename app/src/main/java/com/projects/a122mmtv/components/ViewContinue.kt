@@ -297,7 +297,7 @@ fun ViewContinue(
         items.take(minOf(visibleCount, items.size))
     }
 
-    Log.d("totalCount::check", "totalCount -> $totalCount")
+    //Log.d("totalCount::check", "totalCount -> $totalCount")
 
     Column(
         modifier = Modifier

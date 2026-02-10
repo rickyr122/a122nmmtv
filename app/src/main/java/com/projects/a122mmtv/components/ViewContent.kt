@@ -212,6 +212,8 @@ fun ViewContent(
 
 
     val userId = homeSession.userId ?: 0
+    var totalCount by remember { mutableStateOf(0) }
+
     LaunchedEffect(code) {
         isLoading = true
 
@@ -240,6 +242,7 @@ fun ViewContent(
                 heroItem = null
             }
 
+            totalCount = res.items.size
         } catch (e: Exception) {
             items = emptyList()
             heroItem = null
@@ -302,8 +305,12 @@ fun ViewContent(
 //                            previousHero = heroItem
 //                            Log.d("heroItem::check", "heroItem DR -> $heroItem")
 //                            Log.d("leftHero::check", "LeftHero DR -> $leftHero")
-                            stepIndex += 1
-
+                            if (stepIndex == totalCount - 1) {
+                                // 🚫 already at start → block LEFT
+                                stepIndex = 0
+                            } else {
+                                stepIndex += 1
+                            }
 
                             items = rotateLeft(items)
                             heroItem = items.last()
