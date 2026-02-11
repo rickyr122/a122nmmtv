@@ -5,6 +5,7 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
@@ -28,12 +29,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -117,10 +120,12 @@ fun ViewMovieDetail(
     if (!isActive) return
 
 //    BackHandler { onClose() }
+    var isBottomExpanded by remember { mutableStateOf(false) }
 
-    BackHandler(enabled = isActive) {
+    BackHandler(enabled = isActive && !isBottomExpanded) {
         onClose()
     }
+
 
     val api = remember {
         ApiClient.create(AuthApiService::class.java)
@@ -134,7 +139,8 @@ fun ViewMovieDetail(
     var focusArea by remember { mutableStateOf(FocusArea.MENU) }
 
     val focusRequester = remember { FocusRequester() }
-
+    val menuFocusRequester = remember { FocusRequester() }
+    val thumbsFocusRequester = remember { FocusRequester() }
 
     LaunchedEffect(isActive, mId) {
         if (!isActive) return@LaunchedEffect
@@ -152,15 +158,31 @@ fun ViewMovieDetail(
 
         isLoading = false
     }
-
-    Box(
+    //if (isLoading || detail == null) return
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
             //.focusRequester(focusRequester)
             //.focusable()
     ) {
-        if (isLoading || detail == null) return
+//        if (isLoading || detail == null) return
+
+        if (isLoading || detail == null) {
+
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    color = Color.Red,
+                    strokeWidth = 3.dp
+                )
+            }
+
+            return@BoxWithConstraints
+        }
+
 
         val movie = detail!!
 
@@ -184,9 +206,7 @@ fun ViewMovieDetail(
                 "${if (movie.cProgress > 10) "Resume" else "Play"} $title"
             }
 
-
-
-        val actionButtons = remember(movie) {
+                val actionButtons = remember(movie) {
             buildList {
 
                 add(
@@ -248,11 +268,15 @@ fun ViewMovieDetail(
             }
         }
 
+        var selectedIndex by remember { mutableStateOf(0) }
+        val bottomFocusRequester = remember { FocusRequester() }
+
         val visibleButtons = actionButtons.take(3)
 
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                //.border(1.dp, Color.White)
         ) {
 
             /* =========================
@@ -522,11 +546,13 @@ fun ViewMovieDetail(
 
                 Spacer(Modifier.height(12.dp))
 
-                val menuFocusRequester = remember { FocusRequester() }
-                val thumbsFocusRequester = remember { FocusRequester() }
+//                val menuFocusRequester = remember { FocusRequester() }
+//                val thumbsFocusRequester = remember { FocusRequester() }
 
                 // local state – ONLY for this block
-                var selectedIndex by remember { mutableStateOf(0) }
+//                var selectedIndex by remember { mutableStateOf(0) }
+//                var isBottomExpanded by remember { mutableStateOf(false) }
+//                val bottomFocusRequester = remember { FocusRequester() }
 //                LaunchedEffect(isActive) {
 //                    if (isActive) {
 //                        selectedIndex = initialSelectedIndex
@@ -549,6 +575,7 @@ fun ViewMovieDetail(
                         menuFocusRequester.requestFocus()
                     }
                 }
+
 
 
                 val listState = rememberLazyListState()
@@ -613,10 +640,17 @@ fun ViewMovieDetail(
                                         onSelectedIndexSnapshot(selectedIndex)
                                         true
                                     } else {
-                                        selectedIndex =
-                                            (selectedIndex + 1).coerceAtMost(actionButtons.lastIndex)
-                                        onSelectedIndexSnapshot(selectedIndex)
-                                        true
+                                        if (selectedIndex == actionButtons.lastIndex) {
+                                            // 🔥 Expand bottom panel
+                                            isBottomExpanded = true
+                                            bottomFocusRequester.requestFocus()
+                                            true
+                                        } else {
+                                            selectedIndex =
+                                                (selectedIndex + 1).coerceAtMost(actionButtons.lastIndex)
+                                            onSelectedIndexSnapshot(selectedIndex)
+                                            true
+                                        }
                                     }
                                 }
 
@@ -679,12 +713,12 @@ fun ViewMovieDetail(
                                             menuFocusRequester.requestFocus()
                                             true
                                         }
-//                                        Key.Back -> {
-//                                            focusArea = FocusArea.MENU
-//                                            selectedIndex = 0
-//                                            menuFocusRequester.requestFocus()
-//                                            true
-//                                        }
+                                        Key.Back -> {
+                                            focusArea = FocusArea.MENU
+                                            selectedIndex = 0
+                                            menuFocusRequester.requestFocus()
+                                            true
+                                        }
                                         else -> false
                                     }
                                 },
@@ -916,6 +950,119 @@ fun ViewMovieDetail(
 
             }
         }
+
+        val collapsedHeight = maxHeight * 0.06f
+        val expandedHeight = maxHeight * 0.35f
+
+        val animatedHeight by animateDpAsState(
+            targetValue = if (isBottomExpanded) expandedHeight else collapsedHeight,
+            label = "bottomPanelHeight"
+        )
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .fillMaxWidth()
+                .height(animatedHeight)
+                .background(Color(0xFF000000))
+                //.clipToBounds()
+                .focusRequester(bottomFocusRequester)
+                .focusable()
+                .onPreviewKeyEvent { event ->
+                    if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+
+                    when (event.key) {
+
+                        Key.DirectionUp -> {
+                            isBottomExpanded = false
+                            selectedIndex = 0   // 👈 Play button
+                            onSelectedIndexSnapshot(selectedIndex)
+                            menuFocusRequester.requestFocus()
+                            true
+                        }
+
+                        Key.Back -> {
+                            isBottomExpanded = false
+                            selectedIndex = actionButtons.lastIndex  // 👈 last button
+                            onSelectedIndexSnapshot(selectedIndex)
+                            menuFocusRequester.requestFocus()
+                            true
+                        }
+
+                        else -> false
+                    }
+
+                }
+        ) {
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = horizontalInset)
+            ) {
+
+                // 🔴 TEXT (always first)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(top = 8.dp, bottom = 10.dp)
+                ) {
+
+                    Icon(
+                        painter = painterResource(R.drawable.library),
+                        contentDescription = "Library",
+                        tint = Color.White.copy(alpha = 0.6f),
+                        modifier = Modifier.size(14.dp)
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Text(
+                        text = "Recommended For You",
+                        color = Color.White.copy(alpha = 0.6f),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                // 🔵 IMAGES (only when expanded)
+                //if (isBottomExpanded) {
+
+                    //Spacer(modifier = Modifier.height(24.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .clipToBounds()   // 👈 clip ONLY images area
+                ) {
+                    LazyRow(
+                        modifier = Modifier
+                            .fillMaxWidth(), // 👈 lock the row height
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        items(2) { index ->
+
+                            val imageUrl = when (index) {
+                                0 -> "https://image.tmdb.org/t/p/w500/8UlWHLMpgZm9bx6QYh0NFoq67TZ.jpg"
+                                else -> "https://image.tmdb.org/t/p/w500/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg"
+                            }
+
+                            AsyncImage(
+                                model = imageUrl,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .width(120.dp)
+                                    .aspectRatio(3f / 4f)
+                                    //.clip(RoundedCornerShape(8.dp))
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+
+
     }
 }
 
