@@ -24,10 +24,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -951,19 +953,28 @@ fun ViewMovieDetail(
             }
         }
 
-        val collapsedHeight = maxHeight * 0.06f
-        val expandedHeight = maxHeight * 0.35f
+        val collapsedHeight = 64.dp //maxHeight * 0.06f
+        val expandedHeight = maxHeight * 0.38f
 
         val animatedHeight by animateDpAsState(
             targetValue = if (isBottomExpanded) expandedHeight else collapsedHeight,
             label = "bottomPanelHeight"
         )
 
+        val collapsedOffset = expandedHeight - 64.dp
+
+        val animatedOffset by animateDpAsState(
+            targetValue = if (isBottomExpanded) 0.dp else collapsedOffset,
+            label = "bottomOffset"
+        )
+
+
         Box(
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .fillMaxWidth()
-                .height(animatedHeight)
+                .height(expandedHeight)
+                .offset(y = animatedOffset)
                 .background(Color(0xFF000000))
                 //.clipToBounds()
                 .focusRequester(bottomFocusRequester)
@@ -1004,14 +1015,14 @@ fun ViewMovieDetail(
                 // 🔴 TEXT (always first)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(top = 8.dp, bottom = 10.dp)
+                    modifier = Modifier.padding(top = 8.dp, bottom = 12.dp)
                 ) {
 
                     Icon(
                         painter = painterResource(R.drawable.library),
                         contentDescription = "Library",
                         tint = Color.White.copy(alpha = 0.6f),
-                        modifier = Modifier.size(14.dp)
+                        modifier = Modifier.size(16.dp)
                     )
 
                     Spacer(modifier = Modifier.width(8.dp))
@@ -1029,40 +1040,42 @@ fun ViewMovieDetail(
 
                     //Spacer(modifier = Modifier.height(24.dp))
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .clipToBounds()   // 👈 clip ONLY images area
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.TopStart   // 👈 top + left
                 ) {
                     LazyRow(
-                        modifier = Modifier
-                            .fillMaxWidth(), // 👈 lock the row height
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        modifier = Modifier.wrapContentWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         items(2) { index ->
+                            val isHighlighted = index == 1
 
                             val imageUrl = when (index) {
-                                0 -> "https://image.tmdb.org/t/p/w500/8UlWHLMpgZm9bx6QYh0NFoq67TZ.jpg"
-                                else -> "https://image.tmdb.org/t/p/w500/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg"
+                                0 -> "https://image.tmdb.org/t/p/w780/9QwGRwmXHZK6yfBwpgMSHf35h3B.jpg"
+                                else -> "https://image.tmdb.org/t/p/w780/iiZZdoQBEYBv6id8su7ImL0oCbD.jpg"
                             }
 
                             AsyncImage(
                                 model = imageUrl,
                                 contentDescription = null,
-                                contentScale = ContentScale.Crop,
+                                contentScale = ContentScale.FillBounds,
                                 modifier = Modifier
-                                    .width(120.dp)
+                                    .width(if (isHighlighted) 120.dp else 110.dp)
                                     .aspectRatio(3f / 4f)
-                                    //.clip(RoundedCornerShape(8.dp))
+                                    .then(
+                                        if (isHighlighted) {
+                                            Modifier.border(1.dp, Color.White)
+                                        } else {
+                                            Modifier
+                                        }
+                                    )
                             )
                         }
                     }
                 }
             }
         }
-
-
-
     }
 }
 
