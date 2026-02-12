@@ -180,21 +180,30 @@ fun ViewMovieDetail(
     val franchiseCount = franchise?.items?.size ?: 0
     val franchiseItems = franchise?.items.orEmpty()
 
-    var largeThumbIndex by remember { mutableStateOf(1) }   // controls size
-    var selectedThumbIndex by remember { mutableStateOf(1) } // controls border
+    var largeThumbIndex by remember(mId) { mutableStateOf(0) }
+    var selectedThumbIndex by remember(mId) { mutableStateOf(0) }
+
     val rowState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(franchiseItems) {
+
+        if (franchiseItems.isEmpty()) return@LaunchedEffect
+
         val matchIndex = franchiseItems.indexOfFirst { it.mId == mId }
+        val finalIndex = if (matchIndex >= 0) matchIndex else 0
 
-        if (matchIndex >= 0) {
-            largeThumbIndex = matchIndex
-            selectedThumbIndex = matchIndex
+        largeThumbIndex = finalIndex
+        selectedThumbIndex = finalIndex
 
-            rowState.scrollToItem(matchIndex)
+        val visibleItems = rowState.layoutInfo.visibleItemsInfo
+        val isVisible = visibleItems.any { it.index == finalIndex }
+
+        if (!isVisible) {
+            rowState.scrollToItem(finalIndex)
         }
     }
+
 
     //if (isLoading || detail == null) return
     BoxWithConstraints(
