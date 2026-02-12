@@ -137,6 +137,10 @@ fun ViewMovieDetail(
         ApiClient.create(AuthApiService::class.java)
     }
 
+    var franchise by remember {
+        mutableStateOf<AuthApiService.FranchiseDto?>(null)
+    }
+
     var detail by remember { mutableStateOf<AuthApiService.MovieDetailDto?>(null) }
     var isLoading by remember { mutableStateOf(false) }
 
@@ -158,12 +162,40 @@ fun ViewMovieDetail(
             val userId = homeSession.userId ?: 0
             val resp = api.getMovieDetail(mId, userId)
             detail = if (resp.isSuccessful) resp.body() else null
+
+            // 🔥 Fetch franchise after detail loaded
+            val franchiseResp = api.getFranchise(mId)
+            franchise = if (franchiseResp.isSuccessful)
+                franchiseResp.body()
+            else
+                null
         } catch (_: Exception) {
             detail = null
         }
 
+
         isLoading = false
     }
+
+    val franchiseCount = franchise?.items?.size ?: 0
+    val franchiseItems = franchise?.items.orEmpty()
+
+    var largeThumbIndex by remember { mutableStateOf(1) }   // controls size
+    var selectedThumbIndex by remember { mutableStateOf(1) } // controls border
+    val rowState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(franchiseItems) {
+        val matchIndex = franchiseItems.indexOfFirst { it.mId == mId }
+
+        if (matchIndex >= 0) {
+            largeThumbIndex = matchIndex
+            selectedThumbIndex = matchIndex
+
+            rowState.scrollToItem(matchIndex)
+        }
+    }
+
     //if (isLoading || detail == null) return
     BoxWithConstraints(
         modifier = Modifier
@@ -277,8 +309,6 @@ fun ViewMovieDetail(
         var selectedIndex by remember { mutableStateOf(0) }
         val bottomFocusRequester = remember { FocusRequester() }
 
-        var largeThumbIndex by remember { mutableStateOf(1) }   // controls size
-        var selectedThumbIndex by remember { mutableStateOf(1) } // controls border
 
 
         Box(
@@ -657,7 +687,7 @@ fun ViewMovieDetail(
                                         onSelectedIndexSnapshot(selectedIndex)
                                         true
                                     } else {
-                                        if (selectedIndex == actionButtons.lastIndex) {
+                                        if (selectedIndex == actionButtons.lastIndex  && franchiseCount > 0) {
                                             // 🔥 Expand bottom panel
                                             isBottomExpanded = true
                                             selectedIndex = 99
@@ -985,123 +1015,140 @@ fun ViewMovieDetail(
         )
 
 
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .fillMaxWidth()
-                .height(expandedHeight)
-                .offset(y = animatedOffset)
-                .background(Color(0xFF000000))
-                //.clipToBounds()
-                .focusRequester(bottomFocusRequester)
-                .focusable()
-                .onPreviewKeyEvent { event ->
-                    if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
 
-                    when (event.key) {
 
-                        Key.DirectionUp -> {
-                            isBottomExpanded = false
-                            selectedIndex = 0   // 👈 Play button
-                            onSelectedIndexSnapshot(selectedIndex)
-                            btnFocusRequester.requestFocus()
-                            true
-                        }
 
-                        Key.Back -> {
-                            isBottomExpanded = false
-                            selectedIndex = actionButtons.lastIndex  // 👈 last button
-                            onSelectedIndexSnapshot(selectedIndex)
-                            btnFocusRequester.requestFocus()
-                            true
-                        }
-
-                        Key.DirectionLeft -> {
-                            selectedThumbIndex =
-                                (selectedThumbIndex - 1).coerceAtLeast(0)
-                            true
-                        }
-
-                        Key.DirectionRight -> {
-                            selectedThumbIndex =
-                                (selectedThumbIndex + 1).coerceAtMost(2) // or lastIndex
-                            true
-                        }
-
-                        Key.DirectionDown -> true
-
-                        else -> false
-                    }
-
-                }
-        ) {
-
-            Column(
+        if (franchiseCount > 0) {
+            Box(
                 modifier = Modifier
+                    .align(Alignment.BottomStart)
                     .fillMaxWidth()
-                    .padding(horizontal = horizontalInset)
-            ) {
+                    .height(expandedHeight)
+                    .offset(y = animatedOffset)
+                    .background(Color(0xFF000000))
+                    //.clipToBounds()
+                    .focusRequester(bottomFocusRequester)
+                    .focusable()
+                    .onPreviewKeyEvent { event ->
+                        if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
 
-                // 🔴 TEXT (always first)
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(top = 8.dp, bottom = 12.dp)
-                ) {
+                        when (event.key) {
 
-                    Icon(
-                        painter = painterResource(R.drawable.library),
-                        contentDescription = "Library",
-                        tint = Color.White.copy(alpha = 0.6f),
-                        modifier = Modifier.size(16.dp)
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Text(
-                        text = "Recommended For You",
-                        color = Color.White.copy(alpha = 0.6f),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                // 🔵 IMAGES (only when expanded)
-                //if (isBottomExpanded) {
-
-                    //Spacer(modifier = Modifier.height(24.dp))
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.TopStart   // 👈 top + left
-                ) {
-                    LazyRow(
-                        modifier = Modifier.wrapContentWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        items(3) { index ->
-                            val isSelected = index == selectedThumbIndex
-                            val showBorder  = isSelected && isBottomExpanded
-
-                            val imageUrl = when (index) {
-                                0 -> "https://image.tmdb.org/t/p/w780/9QwGRwmXHZK6yfBwpgMSHf35h3B.jpg"
-                                1 -> "https://image.tmdb.org/t/p/w780/iiZZdoQBEYBv6id8su7ImL0oCbD.jpg"
-                                else -> "https://image.tmdb.org/t/p/w780/ug47WJ60alvRQWJFOkjmYsmmrhh.jpg"
+                            Key.DirectionUp -> {
+                                isBottomExpanded = false
+                                selectedIndex = 0   // 👈 Play button
+                                onSelectedIndexSnapshot(selectedIndex)
+                                btnFocusRequester.requestFocus()
+                                true
                             }
 
-                            //val showBorder = isHighlighted && isBottomExpanded
+                            Key.Back -> {
+                                isBottomExpanded = false
+                                selectedIndex = actionButtons.lastIndex  // 👈 last button
+                                onSelectedIndexSnapshot(selectedIndex)
+                                btnFocusRequester.requestFocus()
+                                true
+                            }
 
-                            AsyncImage(
-                                model = imageUrl,
-                                contentDescription = null,
-                                contentScale = ContentScale.FillBounds,
-                                modifier = Modifier
-                                    .width(if (index == largeThumbIndex) 130.dp else 110.dp)
-                                    .aspectRatio(2f / 3f)
-                                    .then(
-                                        if (showBorder) Modifier.border(1.dp, Color.White)
-                                        else Modifier
-                                    )
-                            )
+                            Key.DirectionLeft -> {
+                                if (selectedThumbIndex > 0) {
+                                    selectedThumbIndex--
+                                    coroutineScope.launch {
+                                        rowState.animateScrollToItem(selectedThumbIndex)
+                                    }
+                                }
+                                true
+                            }
+
+                            Key.DirectionRight -> {
+                                if (selectedThumbIndex < franchiseItems.lastIndex) {
+                                    selectedThumbIndex++
+                                    coroutineScope.launch {
+                                        rowState.animateScrollToItem(selectedThumbIndex)
+                                    }
+                                }
+                                true
+                            }
+
+                            Key.DirectionDown -> true
+
+                            else -> false
+                        }
+
+                    }
+            ) {
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = horizontalInset)
+                ) {
+
+                    // 🔴 TEXT (always first)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 8.dp, bottom = 12.dp)
+                    ) {
+
+                        Icon(
+                            painter = painterResource(R.drawable.library),
+                            contentDescription = "Library",
+                            tint = Color.White.copy(alpha = 0.6f),
+                            modifier = Modifier.size(16.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Text(
+                            text = franchise?.gName?.fixEncoding() ?: "",
+                            color = Color.White.copy(alpha = 0.6f),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    // 🔵 IMAGES (only when expanded)
+                    //if (isBottomExpanded) {
+
+                    //Spacer(modifier = Modifier.height(24.dp))
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.TopStart   // 👈 top + left
+                    ) {
+                        LazyRow(
+                            state = rowState,
+                            modifier = Modifier.wrapContentWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(
+                                4.dp,
+                                Alignment.CenterHorizontally
+                            ),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+//                        val franchiseItems = franchise?.items.orEmpty()
+
+                            items(franchiseItems.size) { index ->
+
+                                val isSelected = index == selectedThumbIndex
+                                val showBorder = isSelected && isBottomExpanded
+
+                                val item = franchiseItems[index]
+                                val imageUrl = item.cvrUrl
+
+                                //val showBorder = isHighlighted && isBottomExpanded
+
+                                AsyncImage(
+                                    model = imageUrl,
+                                    contentDescription = null,
+                                    contentScale = ContentScale.FillBounds,
+                                    modifier = Modifier
+                                        .width(if (index == largeThumbIndex) 130.dp else 110.dp)
+                                        .aspectRatio(2f / 3f)
+                                        .then(
+                                            if (showBorder) Modifier.border(1.dp, Color.White)
+                                            else Modifier
+                                        )
+                                )
+                            }
                         }
                     }
                 }

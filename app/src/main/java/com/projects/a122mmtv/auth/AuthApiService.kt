@@ -304,5 +304,21 @@ interface AuthApiService {
         val gDriveSrt: String
     )
 
+    @GET("getFranchise")
+    suspend fun getFranchise(
+        @Query("code") code: String
+    ): Response<FranchiseDto>
+
+    data class FranchiseDto(
+        val gId: String,
+        val gName: String,
+        val items: List<FranchiseItemDto>
+    )
+
+    data class FranchiseItemDto(
+        val mId: String,
+        val cvrUrl: String,
+        val gOrder: Int
+    )
 
 }
