@@ -8,6 +8,10 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -494,55 +498,64 @@ fun ViewMovieDetail(
                     maxLines = 5
                 )
 
-                if (movie.c_remaining == 0) {
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = buildAnnotatedString {
-                            withStyle(
-                                style = SpanStyle(
-                                    color = Color(0xFFB3B3B3),
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            ) {
-                                append("Cast: ")
-                            }
-                            withStyle(
-                                style = SpanStyle(
-                                    color = Color(0xFFB3B3B3),
-                                    fontSize = 12.sp
-                                )
-                            ) {
-                                append(movie.m_starring.fixEncoding())
-                            }
-                        },
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                val showExtraInfo = movie.c_remaining == 0 && !isBottomExpanded
 
-                    //Log.d("MovieDetail", "Director: '${movie.m_director.fixEncoding()}'")
-                    val theMaster = if (movie.m_id.startsWith("MOV")) "Director: " else "Creator: "
-                    Text(
-                        text = buildAnnotatedString {
-                            withStyle(
-                                style = SpanStyle(
-                                    color = Color(0xFFB3B3B3),
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            ) {
-                                append(theMaster)
-                            }
-                            withStyle(
-                                style = SpanStyle(
-                                    color = Color(0xFFB3B3B3),
-                                    fontSize = 12.sp
-                                )
-                            ) {
-                                append(movie.m_director.fixEncoding())
-                            }
-                        },
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                AnimatedVisibility(
+                    visible = showExtraInfo,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    Column {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = buildAnnotatedString {
+                                withStyle(
+                                    style = SpanStyle(
+                                        color = Color(0xFFB3B3B3),
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                ) {
+                                    append("Cast: ")
+                                }
+                                withStyle(
+                                    style = SpanStyle(
+                                        color = Color(0xFFB3B3B3),
+                                        fontSize = 12.sp
+                                    )
+                                ) {
+                                    append(movie.m_starring.fixEncoding())
+                                }
+                            },
+                            style = MaterialTheme.typography.bodySmall
+                        )
+
+
+                        val theMaster =
+                            if (movie.m_id.startsWith("MOV")) "Director: " else "Creator: "
+                        Text(
+                            text = buildAnnotatedString {
+                                withStyle(
+                                    style = SpanStyle(
+                                        color = Color(0xFFB3B3B3),
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                ) {
+                                    append(theMaster)
+                                }
+                                withStyle(
+                                    style = SpanStyle(
+                                        color = Color(0xFFB3B3B3),
+                                        fontSize = 12.sp
+                                    )
+                                ) {
+                                    append(movie.m_director.fixEncoding())
+                                }
+                            },
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
 
                 }
 
@@ -645,7 +658,7 @@ fun ViewMovieDetail(
                                         if (selectedIndex == actionButtons.lastIndex) {
                                             // 🔥 Expand bottom panel
                                             isBottomExpanded = true
-                                            //selectedIndex = 99
+                                            selectedIndex = 99
                                             bottomFocusRequester.requestFocus()
                                             true
                                         } else {
@@ -955,7 +968,7 @@ fun ViewMovieDetail(
         }
 
         val collapsedHeight = 64.dp //maxHeight * 0.06f
-        val expandedHeight = maxHeight * 0.38f
+        val expandedHeight = maxHeight * 0.45f
 
         val animatedHeight by animateDpAsState(
             targetValue = if (isBottomExpanded) expandedHeight else collapsedHeight,
@@ -1055,27 +1068,27 @@ fun ViewMovieDetail(
                         horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        items(2) { index ->
-                            val isHighlighted = index == 1
+                        items(3) { index ->
+                            val isHighlighted = index == 0
 
                             val imageUrl = when (index) {
                                 0 -> "https://image.tmdb.org/t/p/w780/9QwGRwmXHZK6yfBwpgMSHf35h3B.jpg"
-                                else -> "https://image.tmdb.org/t/p/w780/iiZZdoQBEYBv6id8su7ImL0oCbD.jpg"
+                                1 -> "https://image.tmdb.org/t/p/w780/iiZZdoQBEYBv6id8su7ImL0oCbD.jpg"
+                                else -> "https://image.tmdb.org/t/p/w780/ug47WJ60alvRQWJFOkjmYsmmrhh.jpg"
                             }
+
+                            val showBorder = isHighlighted && isBottomExpanded
 
                             AsyncImage(
                                 model = imageUrl,
                                 contentDescription = null,
                                 contentScale = ContentScale.FillBounds,
                                 modifier = Modifier
-                                    .width(if (isHighlighted) 120.dp else 110.dp)
-                                    .aspectRatio(3f / 4f)
+                                    .width(if (isHighlighted) 130.dp else 110.dp)
+                                    .aspectRatio(2f / 3f)
                                     .then(
-                                        if (isHighlighted) {
-                                            Modifier.border(1.dp, Color.White)
-                                        } else {
-                                            Modifier
-                                        }
+                                        if (showBorder) Modifier.border(1.dp, Color.White)
+                                        else Modifier
                                     )
                             )
                         }
