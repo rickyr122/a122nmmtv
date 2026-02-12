@@ -141,7 +141,7 @@ fun ViewMovieDetail(
     var focusArea by remember { mutableStateOf(FocusArea.MENU) }
 
     val focusRequester = remember { FocusRequester() }
-    val menuFocusRequester = remember { FocusRequester() }
+    val btnFocusRequester = remember { FocusRequester() }
     val thumbsFocusRequester = remember { FocusRequester() }
 
     LaunchedEffect(isActive, mId) {
@@ -548,7 +548,7 @@ fun ViewMovieDetail(
 
                 Spacer(Modifier.height(12.dp))
 
-//                val menuFocusRequester = remember { FocusRequester() }
+//                val btnFocusRequester = remember { FocusRequester() }
 //                val thumbsFocusRequester = remember { FocusRequester() }
 
                 // local state – ONLY for this block
@@ -574,7 +574,7 @@ fun ViewMovieDetail(
 
                 LaunchedEffect(collapseThumbs) {
                     if (collapseThumbs && focusArea == FocusArea.MENU) {
-                        menuFocusRequester.requestFocus()
+                        btnFocusRequester.requestFocus()
                     }
                 }
 
@@ -605,13 +605,13 @@ fun ViewMovieDetail(
 
 
                 LaunchedEffect(Unit) {
-                    menuFocusRequester.requestFocus()
+                    btnFocusRequester.requestFocus()
                 }
 
                 Column(
                     modifier = Modifier
                         //.border(1.dp, Color.White)
-                        .focusRequester(menuFocusRequester)
+                        .focusRequester(btnFocusRequester)
                         .focusable()
                         .onPreviewKeyEvent { event ->
                             if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
@@ -645,6 +645,7 @@ fun ViewMovieDetail(
                                         if (selectedIndex == actionButtons.lastIndex) {
                                             // 🔥 Expand bottom panel
                                             isBottomExpanded = true
+                                            //selectedIndex = 99
                                             bottomFocusRequester.requestFocus()
                                             true
                                         } else {
@@ -712,13 +713,13 @@ fun ViewMovieDetail(
                                             focusArea = FocusArea.MENU
                                             selectedIndex = 0
                                             onSelectedIndexSnapshot(selectedIndex)
-                                            menuFocusRequester.requestFocus()
+                                            btnFocusRequester.requestFocus()
                                             true
                                         }
                                         Key.Back -> {
                                             focusArea = FocusArea.MENU
                                             selectedIndex = 0
-                                            menuFocusRequester.requestFocus()
+                                            btnFocusRequester.requestFocus()
                                             true
                                         }
                                         else -> false
@@ -988,7 +989,7 @@ fun ViewMovieDetail(
                             isBottomExpanded = false
                             selectedIndex = 0   // 👈 Play button
                             onSelectedIndexSnapshot(selectedIndex)
-                            menuFocusRequester.requestFocus()
+                            btnFocusRequester.requestFocus()
                             true
                         }
 
@@ -996,8 +997,14 @@ fun ViewMovieDetail(
                             isBottomExpanded = false
                             selectedIndex = actionButtons.lastIndex  // 👈 last button
                             onSelectedIndexSnapshot(selectedIndex)
-                            menuFocusRequester.requestFocus()
+                            btnFocusRequester.requestFocus()
                             true
+                        }
+
+                        Key.DirectionDown,
+                        Key.DirectionLeft,
+                        Key.DirectionRight -> {
+                            true   // 👈 consume, do nothing
                         }
 
                         else -> false

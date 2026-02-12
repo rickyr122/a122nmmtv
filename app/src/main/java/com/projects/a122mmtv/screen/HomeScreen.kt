@@ -94,7 +94,9 @@ fun HomeScreen(
 
         // 2️⃣ BACK opens popup (only when popup is NOT visible)
         BackHandler(enabled = !showBackMenu && isMenuFocused) {
-            showBackMenu = true
+            if (!isDetailOpen) {
+                showBackMenu = true
+            }
         }
 
         // 3️⃣ Optional: consume BACK everywhere else (prevents nav pop)
