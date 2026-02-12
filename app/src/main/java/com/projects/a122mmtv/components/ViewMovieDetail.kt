@@ -277,7 +277,9 @@ fun ViewMovieDetail(
         var selectedIndex by remember { mutableStateOf(0) }
         val bottomFocusRequester = remember { FocusRequester() }
 
-        val visibleButtons = actionButtons.take(3)
+        var largeThumbIndex by remember { mutableStateOf(1) }   // controls size
+        var selectedThumbIndex by remember { mutableStateOf(1) } // controls border
+
 
         Box(
             modifier = Modifier
@@ -1014,11 +1016,19 @@ fun ViewMovieDetail(
                             true
                         }
 
-                        Key.DirectionDown,
-                        Key.DirectionLeft,
-                        Key.DirectionRight -> {
-                            true   // 👈 consume, do nothing
+                        Key.DirectionLeft -> {
+                            selectedThumbIndex =
+                                (selectedThumbIndex - 1).coerceAtLeast(0)
+                            true
                         }
+
+                        Key.DirectionRight -> {
+                            selectedThumbIndex =
+                                (selectedThumbIndex + 1).coerceAtMost(2) // or lastIndex
+                            true
+                        }
+
+                        Key.DirectionDown -> true
 
                         else -> false
                     }
@@ -1069,7 +1079,8 @@ fun ViewMovieDetail(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         items(3) { index ->
-                            val isHighlighted = index == 0
+                            val isSelected = index == selectedThumbIndex
+                            val showBorder  = isSelected && isBottomExpanded
 
                             val imageUrl = when (index) {
                                 0 -> "https://image.tmdb.org/t/p/w780/9QwGRwmXHZK6yfBwpgMSHf35h3B.jpg"
@@ -1077,14 +1088,14 @@ fun ViewMovieDetail(
                                 else -> "https://image.tmdb.org/t/p/w780/ug47WJ60alvRQWJFOkjmYsmmrhh.jpg"
                             }
 
-                            val showBorder = isHighlighted && isBottomExpanded
+                            //val showBorder = isHighlighted && isBottomExpanded
 
                             AsyncImage(
                                 model = imageUrl,
                                 contentDescription = null,
                                 contentScale = ContentScale.FillBounds,
                                 modifier = Modifier
-                                    .width(if (isHighlighted) 130.dp else 110.dp)
+                                    .width(if (index == largeThumbIndex) 130.dp else 110.dp)
                                     .aspectRatio(2f / 3f)
                                     .then(
                                         if (showBorder) Modifier.border(1.dp, Color.White)
