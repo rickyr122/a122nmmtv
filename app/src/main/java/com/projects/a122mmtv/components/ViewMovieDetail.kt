@@ -132,7 +132,7 @@ fun ViewMovieDetail(
     onOpenEpisodes: (String) -> Unit,
     onOpenMoreLikeThis: (String) -> Unit
 ) {
-    if (!isActive) return
+    //if (!isActive) return
 
 //    BackHandler { onClose() }
     var isBottomExpanded by remember { mutableStateOf(false) }
@@ -140,7 +140,6 @@ fun ViewMovieDetail(
     BackHandler(enabled = isActive && !isBottomExpanded) {
         onClose()
     }
-
 
     val api = remember {
         ApiClient.create(AuthApiService::class.java)
@@ -152,7 +151,8 @@ fun ViewMovieDetail(
 
     var detail by remember { mutableStateOf<AuthApiService.MovieDetailDto?>(null) }
     var isLoading by remember { mutableStateOf(false) }
-    var selectedMovieId by remember { mutableStateOf(mId) }
+//    var selectedMovieId by remember { mutableStateOf(mId) }
+    var selectedMovieId by remember(mId) { mutableStateOf(mId) }
 
     // 0 = down, 1 = up, 2 = up_double
     var thumbIndex by remember { mutableStateOf(0) }
@@ -1151,6 +1151,7 @@ fun ViewMovieDetail(
                                     }
 
                                     selectedMovieId = newItem.mId
+                                    //onMovieChange(newItem.mId)
                                 }
                                 true
                             }
@@ -1165,6 +1166,7 @@ fun ViewMovieDetail(
                                     }
 
                                     selectedMovieId = newItem.mId
+                                    //onMovieChange(newItem.mId)
                                 }
                                 true
                             }
