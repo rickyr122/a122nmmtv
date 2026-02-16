@@ -96,6 +96,7 @@ import com.projects.a122mmtv.helper.convertContentRating
 import com.projects.a122mmtv.helper.fixEncoding
 import com.projects.a122mmtv.utility.formatDurationFromMinutes
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -143,6 +144,7 @@ fun ViewMovieDetail(
 
     var detail by remember { mutableStateOf<AuthApiService.MovieDetailDto?>(null) }
     var isLoading by remember { mutableStateOf(false) }
+    var selectedMovieId by remember { mutableStateOf(mId) }
 
     // 0 = down, 1 = up, 2 = up_double
     var thumbIndex by remember { mutableStateOf(0) }
@@ -152,29 +154,34 @@ fun ViewMovieDetail(
     val btnFocusRequester = remember { FocusRequester() }
     val thumbsFocusRequester = remember { FocusRequester() }
 
-    LaunchedEffect(isActive, mId) {
+    LaunchedEffect(selectedMovieId) {
         if (!isActive) return@LaunchedEffect
 
-        focusRequester.requestFocus()
+        //focusRequester.requestFocus()
         isLoading = true
 
         try {
+            delay(500)   // 👈 wait settle
             val userId = homeSession.userId ?: 0
-            val resp = api.getMovieDetail(mId, userId)
+            val resp = api.getMovieDetail(selectedMovieId, userId)
             detail = if (resp.isSuccessful) resp.body() else null
-
-            // 🔥 Fetch franchise after detail loaded
-            val franchiseResp = api.getFranchise(mId)
-            franchise = if (franchiseResp.isSuccessful)
-                franchiseResp.body()
-            else
-                null
         } catch (_: Exception) {
             detail = null
         }
 
-
         isLoading = false
+    }
+
+    LaunchedEffect(detail?.gId) {
+
+        val groupCode = detail?.gId ?: return@LaunchedEffect
+
+        try {
+            val resp = api.getFranchise(groupCode)
+            franchise = if (resp.isSuccessful) resp.body() else null
+        } catch (_: Exception) {
+            franchise = null
+        }
     }
 
     val franchiseCount = franchise?.items?.size ?: 0
@@ -215,8 +222,7 @@ fun ViewMovieDetail(
     ) {
 //        if (isLoading || detail == null) return
 
-        if (isLoading || detail == null) {
-
+        if (isLoading && detail == null) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -226,13 +232,9 @@ fun ViewMovieDetail(
                     strokeWidth = 3.dp
                 )
             }
-
-            return@BoxWithConstraints
         }
 
-
-        val movie = detail!!
-
+        val movie = detail ?: return@BoxWithConstraints
         val getTitle = if (movie.m_title.isBlank()) movie.pTitle else movie.m_title
 
         val titleStarted = getTitle.replace(
@@ -317,8 +319,6 @@ fun ViewMovieDetail(
 
         var selectedIndex by remember { mutableStateOf(0) }
         val bottomFocusRequester = remember { FocusRequester() }
-
-
 
         Box(
             modifier = Modifier
@@ -1016,16 +1016,12 @@ fun ViewMovieDetail(
             label = "bottomPanelHeight"
         )
 
-        val collapsedOffset = expandedHeight - 64.dp
+        val collapsedOffset = expandedHeight - 60.dp
 
         val animatedOffset by animateDpAsState(
             targetValue = if (isBottomExpanded) 0.dp else collapsedOffset,
             label = "bottomOffset"
         )
-
-
-
-
 
         if (franchiseCount > 0) {
             Box(
@@ -1062,9 +1058,13 @@ fun ViewMovieDetail(
                             Key.DirectionLeft -> {
                                 if (selectedThumbIndex > 0) {
                                     selectedThumbIndex--
+                                    val newItem = franchiseItems[selectedThumbIndex]
+
                                     coroutineScope.launch {
                                         rowState.animateScrollToItem(selectedThumbIndex)
                                     }
+
+                                    selectedMovieId = newItem.mId
                                 }
                                 true
                             }
@@ -1072,9 +1072,13 @@ fun ViewMovieDetail(
                             Key.DirectionRight -> {
                                 if (selectedThumbIndex < franchiseItems.lastIndex) {
                                     selectedThumbIndex++
+                                    val newItem = franchiseItems[selectedThumbIndex]
+
                                     coroutineScope.launch {
                                         rowState.animateScrollToItem(selectedThumbIndex)
                                     }
+
+                                    selectedMovieId = newItem.mId
                                 }
                                 true
                             }
@@ -1148,7 +1152,7 @@ fun ViewMovieDetail(
                                 AsyncImage(
                                     model = imageUrl,
                                     contentDescription = null,
-                                    contentScale = ContentScale.FillBounds,
+                                    contentScale = ContentScale.Crop,
                                     modifier = Modifier
                                         .width(if (index == largeThumbIndex) 130.dp else 110.dp)
                                         .aspectRatio(2f / 3f)
