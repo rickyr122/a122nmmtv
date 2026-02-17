@@ -82,6 +82,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -101,6 +102,7 @@ import com.projects.a122mmtv.helper.Bullets
 import com.projects.a122mmtv.helper.MetaText
 import com.projects.a122mmtv.helper.convertContentRating
 import com.projects.a122mmtv.helper.fixEncoding
+import com.projects.a122mmtv.screen.MainPlayerScreen
 import com.projects.a122mmtv.utility.formatDurationFromMinutes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -228,6 +230,9 @@ fun ViewMovieDetail(
     var selectedIndex by remember { mutableStateOf(0) }
     val bottomFocusRequester = remember { FocusRequester() }
 
+    var showPlayer by remember { mutableStateOf(false) }
+    var currentPlayId by remember { mutableStateOf<String?>(null) }
+
     //if (isLoading || detail == null) return
     BoxWithConstraints(
         modifier = Modifier
@@ -348,332 +353,351 @@ fun ViewMovieDetail(
             }
         }
 
-        movie?.let { safeMovie ->
-            AnimatedContent(
-                modifier = Modifier.focusProperties {
-                    canFocus = !isBottomExpanded
-                },
-                targetState = movie,
-                transitionSpec = {
-                    slideInHorizontally(
-                        initialOffsetX = { fullWidth -> fullWidth },
-                        animationSpec = tween(350)
-                    ) + fadeIn(animationSpec = tween(350)) with
-                            slideOutHorizontally(
-                                targetOffsetX = { fullWidth -> -fullWidth / 4 },
-                                animationSpec = tween(300)
-                            ) + fadeOut(animationSpec = tween(300))
-                },
-                label = "movieTransition"
-            ) { animatedMovie ->
-                val getTitle =
-                    if (animatedMovie.m_title.isBlank()) animatedMovie.pTitle else animatedMovie.m_title
+        val contentAlpha by animateFloatAsState(
+            targetValue = if (showPlayer) 0f else 1f,
+            label = "detailAlpha"
+        )
 
-                val titleStarted = getTitle.replace(
-                    Regex("""S(\d+):E(\d+).*"""),
-                    "S$1: Ep.$2"
-                )
+        val screenHeight = LocalConfiguration.current.screenHeightDp.dp
 
-                val titleNotStarted = getTitle.replace(
-                    Regex("""S(\d+):E(\d+).*"""),
-                    "Season $1: Episode $2"
-                )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .alpha(contentAlpha)
+        ) {
+            movie?.let { safeMovie ->
+                AnimatedContent(
+                    modifier = Modifier.focusProperties {
+                        canFocus = !isBottomExpanded
+                    },
+                    targetState = movie,
+                    transitionSpec = {
+                        slideInHorizontally(
+                            initialOffsetX = { fullWidth -> fullWidth },
+                            animationSpec = tween(350)
+                        ) + fadeIn(animationSpec = tween(350)) with
+                                slideOutHorizontally(
+                                    targetOffsetX = { fullWidth -> -fullWidth / 4 },
+                                    animationSpec = tween(300)
+                                ) + fadeOut(animationSpec = tween(300))
+                    },
+                    label = "movieTransition"
+                ) { animatedMovie ->
+                    val getTitle =
+                        if (animatedMovie.m_title.isBlank()) animatedMovie.pTitle else animatedMovie.m_title
 
-                val playCaption =
-                    if (animatedMovie.m_id.startsWith("MOV")) {
-                        if (animatedMovie.cProgress > 10) "Resume Playing" else "Play"
-                    } else {
-                        val title =
-                            if (animatedMovie.cProgress > 10) titleStarted else titleNotStarted
-                        "${if (animatedMovie.cProgress > 10) "Resume" else "Play"} $title"
-                    }
+                    val titleStarted = getTitle.replace(
+                        Regex("""S(\d+):E(\d+).*"""),
+                        "S$1: Ep.$2"
+                    )
 
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                    //.border(1.dp, Color.White)
-                ) {
+                    val titleNotStarted = getTitle.replace(
+                        Regex("""S(\d+):E(\d+).*"""),
+                        "Season $1: Episode $2"
+                    )
 
-                    /* =========================
-             * RIGHT IMAGE (BACKGROUND LAYER)
-             * ========================= */
+                    val playCaption =
+                        if (animatedMovie.m_id.startsWith("MOV")) {
+                            if (animatedMovie.cProgress > 10) "Resume Playing" else "Play"
+                        } else {
+                            val title =
+                                if (animatedMovie.cProgress > 10) titleStarted else titleNotStarted
+                            "${if (animatedMovie.cProgress > 10) "Resume" else "Play"} $title"
+                        }
+
                     Box(
                         modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .fillMaxHeight(0.6f)
-                            .aspectRatio(16f / 9f)
-                            .drawWithCache {
-                                // (your existing mask code stays EXACTLY the same)
-                                val edgeMask = Brush.radialGradient(
-                                    colors = listOf(Color.White, Color.White, Color.Transparent),
-                                    center = Offset(size.width * 0.65f, size.height * 0.45f),
-                                    radius = size.maxDimension * 1.2f
-                                )
-
-                                val leftMask = Brush.horizontalGradient(
-                                    colors = listOf(Color.Transparent, Color.White),
-                                    startX = 0f,
-                                    endX = size.width * 0.6f
-                                )
-
-                                val bottomMask = Brush.verticalGradient(
-                                    colors = listOf(Color.White, Color.Transparent),
-                                    startY = size.height * 0.65f,
-                                    endY = size.height
-                                )
-
-                                onDrawWithContent {
-                                    drawContent()
-                                    drawRect(edgeMask, blendMode = BlendMode.DstIn)
-                                    drawRect(leftMask, blendMode = BlendMode.DstIn)
-                                    drawRect(bottomMask, blendMode = BlendMode.DstIn)
-                                }
-                            }
+                            .fillMaxSize()
+                        //.border(1.dp, Color.White)
                     ) {
-                        AsyncImage(
-                            model = animatedMovie.bdropUrl,
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .matchParentSize()
-                                .alpha(0.6f)
-                        )
-                    }
 
-                    /* =========================
-             * LEFT TEXT (FOREGROUND LAYER)
+                        /* =========================
+             * RIGHT IMAGE (BACKGROUND LAYER)
              * ========================= */
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth(0.55f)   // 👈 THIS controls overlap amount
-                            .padding(horizontalInset)
-                            .zIndex(1f)             // 👈 explicit foreground
-                    ) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .fillMaxHeight(0.6f)
+                                .aspectRatio(16f / 9f)
+                                .drawWithCache {
+                                    // (your existing mask code stays EXACTLY the same)
+                                    val edgeMask = Brush.radialGradient(
+                                        colors = listOf(
+                                            Color.White,
+                                            Color.White,
+                                            Color.Transparent
+                                        ),
+                                        center = Offset(size.width * 0.65f, size.height * 0.45f),
+                                        radius = size.maxDimension * 1.2f
+                                    )
 
-                        // LOGO
-                        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                                    val leftMask = Brush.horizontalGradient(
+                                        colors = listOf(Color.Transparent, Color.White),
+                                        startX = 0f,
+                                        endX = size.width * 0.6f
+                                    )
+
+                                    val bottomMask = Brush.verticalGradient(
+                                        colors = listOf(Color.White, Color.Transparent),
+                                        startY = size.height * 0.65f,
+                                        endY = size.height
+                                    )
+
+                                    onDrawWithContent {
+                                        drawContent()
+                                        drawRect(edgeMask, blendMode = BlendMode.DstIn)
+                                        drawRect(leftMask, blendMode = BlendMode.DstIn)
+                                        drawRect(bottomMask, blendMode = BlendMode.DstIn)
+                                    }
+                                }
+                        ) {
                             AsyncImage(
-                                model = animatedMovie.logoUrl,
+                                model = animatedMovie.bdropUrl,
                                 contentDescription = null,
-                                contentScale = ContentScale.Fit,
-                                alignment = Alignment.CenterStart,
+                                contentScale = ContentScale.Crop,
                                 modifier = Modifier
-                                    .width(maxWidth * 0.8f)
-                                    .heightIn(max = 70.dp)
+                                    .matchParentSize()
+                                    .alpha(0.6f)
                             )
                         }
 
-                        Spacer(Modifier.height(10.dp))
+                        /* =========================
+             * LEFT TEXT (FOREGROUND LAYER)
+             * ========================= */
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth(0.55f)   // 👈 THIS controls overlap amount
+                                .padding(horizontalInset)
+                                .zIndex(1f)             // 👈 explicit foreground
+                        ) {
 
-                        // META
-                        val displayDuration = if (animatedMovie.m_id.startsWith("MOV")) {
-                            formatDurationFromMinutes(animatedMovie.m_duration)
-                        } else if (animatedMovie.m_id.startsWith("TV")) {
-                            if (animatedMovie.totalSeason == 1) {
-                                "${animatedMovie.totalEps} Episodes"
+                            // LOGO
+                            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                                AsyncImage(
+                                    model = animatedMovie.logoUrl,
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Fit,
+                                    alignment = Alignment.CenterStart,
+                                    modifier = Modifier
+                                        .width(maxWidth * 0.8f)
+                                        .heightIn(max = 70.dp)
+                                )
+                            }
+
+                            Spacer(Modifier.height(10.dp))
+
+                            // META
+                            val displayDuration = if (animatedMovie.m_id.startsWith("MOV")) {
+                                formatDurationFromMinutes(animatedMovie.m_duration)
+                            } else if (animatedMovie.m_id.startsWith("TV")) {
+                                if (animatedMovie.totalSeason == 1) {
+                                    "${animatedMovie.totalEps} Episodes"
+                                } else {
+                                    "${animatedMovie.totalSeason} Seasons"
+                                }
                             } else {
                                 "${animatedMovie.totalSeason} Seasons"
                             }
-                        } else {
-                            "${animatedMovie.totalSeason} Seasons"
-                        }
 
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            if (animatedMovie.hasRated != 0) {
-                                val ratIcon = when (animatedMovie.hasRated) {
-                                    -5 -> painterResource(R.drawable.ic_thumb_down_filled)
-                                    5 -> painterResource(R.drawable.ic_thumb_up_filled)
-                                    10 -> painterResource(R.drawable.ic_thumb_up_double_filled)
-                                    else -> painterResource(R.drawable.ic_thumb_up)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (animatedMovie.hasRated != 0) {
+                                    val ratIcon = when (animatedMovie.hasRated) {
+                                        -5 -> painterResource(R.drawable.ic_thumb_down_filled)
+                                        5 -> painterResource(R.drawable.ic_thumb_up_filled)
+                                        10 -> painterResource(R.drawable.ic_thumb_up_double_filled)
+                                        else -> painterResource(R.drawable.ic_thumb_up)
+                                    }
+
+                                    Icon(
+                                        painter = ratIcon,
+                                        contentDescription = "like status",
+                                        tint = Color.White, // always white
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    //Bullets()
+                                    //Spacer(Modifier.width(2.dp))
                                 }
+                                MetaText(animatedMovie.m_year)
+                                Spacer(Modifier.width(2.dp))
+                                Bullets()
+                                Spacer(Modifier.width(2.dp))
+                                MetaText(animatedMovie.mGenre)
+                                Spacer(Modifier.width(2.dp))
+                                Bullets()
+                                Spacer(Modifier.width(2.dp))
+                                MetaText(displayDuration)
+                                Spacer(Modifier.width(2.dp))
+                                Bullets()
+                                Spacer(Modifier.width(2.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .background(
+                                            Color(0xFF444444),
+                                            shape = RoundedCornerShape(4.dp)
+                                        )
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    MetaText(animatedMovie.m_content.convertContentRating())
+                                }
+                            }
 
+                            val rtState = animatedMovie.rt_state
+
+                            val rtIconRes = when {
+                                rtState == "rotten" -> R.drawable.rotten
+                                rtState == "fresh" -> R.drawable.fresh
+                                else -> R.drawable.certifiedfresh
+                            }
+
+                            val rtAudience = animatedMovie.audience_state
+
+                            val rtAudienceRes = when {
+                                rtAudience == "upright" -> R.drawable.upright
+                                else -> R.drawable.spill
+                            }
+
+                            Spacer(Modifier.height(8.dp))
+
+                            Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
-                                    painter = ratIcon,
-                                    contentDescription = "like status",
-                                    tint = Color.White, // always white
-                                    modifier = Modifier.size(12.dp)
+                                    painter = painterResource(id = R.drawable.imdb),
+                                    contentDescription = "IMDb",
+                                    modifier = Modifier.size(22.dp),
+                                    tint = Color.Unspecified
                                 )
-                                Spacer(Modifier.width(4.dp))
-                                //Bullets()
-                                //Spacer(Modifier.width(2.dp))
-                            }
-                            MetaText(animatedMovie.m_year)
-                            Spacer(Modifier.width(2.dp))
-                            Bullets()
-                            Spacer(Modifier.width(2.dp))
-                            MetaText(animatedMovie.mGenre)
-                            Spacer(Modifier.width(2.dp))
-                            Bullets()
-                            Spacer(Modifier.width(2.dp))
-                            MetaText(displayDuration)
-                            Spacer(Modifier.width(2.dp))
-                            Bullets()
-                            Spacer(Modifier.width(2.dp))
-                            Box(
-                                modifier = Modifier
-                                    .background(Color(0xFF444444), shape = RoundedCornerShape(4.dp))
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                            ) {
-                                MetaText(animatedMovie.m_content.convertContentRating())
-                            }
-                        }
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    text = animatedMovie.m_rating,
+                                    color = Color.White,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
 
-                        val rtState = animatedMovie.rt_state
+                                Spacer(Modifier.width(12.dp))
 
-                        val rtIconRes = when {
-                            rtState == "rotten" -> R.drawable.rotten
-                            rtState == "fresh" -> R.drawable.fresh
-                            else -> R.drawable.certifiedfresh
-                        }
-
-                        val rtAudience = animatedMovie.audience_state
-
-                        val rtAudienceRes = when {
-                            rtAudience == "upright" -> R.drawable.upright
-                            else -> R.drawable.spill
-                        }
-
-                        Spacer(Modifier.height(8.dp))
-
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.imdb),
-                                contentDescription = "IMDb",
-                                modifier = Modifier.size(22.dp),
-                                tint = Color.Unspecified
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                text = animatedMovie.m_rating,
-                                color = Color.White,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-
-                            Spacer(Modifier.width(12.dp))
-
-                            Icon(
-                                painter = painterResource(id = rtIconRes),
-                                contentDescription = "Rotten Tomatoes",
-                                modifier = Modifier.size(20.dp),
-                                tint = Color.Unspecified
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                text = animatedMovie.rt_score.toString() + "%",
-                                color = Color.White,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-
-                            Spacer(Modifier.width(8.dp))
-
-                            if (rtAudienceRes != 0 && animatedMovie.audience_score != 0) {
                                 Icon(
-                                    painter = painterResource(id = rtAudienceRes),
-                                    contentDescription = "Audience Score",
+                                    painter = painterResource(id = rtIconRes),
+                                    contentDescription = "Rotten Tomatoes",
                                     modifier = Modifier.size(20.dp),
                                     tint = Color.Unspecified
                                 )
                                 Spacer(Modifier.width(6.dp))
                                 Text(
-                                    text = "${animatedMovie.audience_score}%",
+                                    text = animatedMovie.rt_score.toString() + "%",
                                     color = Color.White,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Medium
                                 )
+
+                                Spacer(Modifier.width(8.dp))
+
+                                if (rtAudienceRes != 0 && animatedMovie.audience_score != 0) {
+                                    Icon(
+                                        painter = painterResource(id = rtAudienceRes),
+                                        contentDescription = "Audience Score",
+                                        modifier = Modifier.size(20.dp),
+                                        tint = Color.Unspecified
+                                    )
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(
+                                        text = "${animatedMovie.audience_score}%",
+                                        color = Color.White,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
                             }
-                        }
 
-                        Spacer(Modifier.height(8.dp))
-
-                        if (animatedMovie.m_title != "") {
-                            Text(
-                                text = animatedMovie.m_title.fixEncoding(),
-                                color = Color.White,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
-                            )
                             Spacer(Modifier.height(8.dp))
-                        }
 
-                        // DESCRIPTION (this now overlaps image)
-                        Text(
-                            text = animatedMovie.m_description.fixEncoding(),
-                            color = Color(0xFF91A3B0),
-                            fontSize = 14.sp,
-                            maxLines = 5
-                        )
-
-                        val showExtraInfo = animatedMovie.c_remaining == 0 && !isBottomExpanded
-
-                        AnimatedVisibility(
-                            visible = showExtraInfo,
-                            enter = fadeIn() + expandVertically(),
-                            exit = fadeOut() + shrinkVertically()
-                        ) {
-                            Column {
+                            if (animatedMovie.m_title != "") {
+                                Text(
+                                    text = animatedMovie.m_title.fixEncoding(),
+                                    color = Color.White,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
                                 Spacer(Modifier.height(8.dp))
-                                Text(
-                                    text = buildAnnotatedString {
-                                        withStyle(
-                                            style = SpanStyle(
-                                                color = Color(0xFFB3B3B3),
-                                                fontSize = 12.sp,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                        ) {
-                                            append("Cast: ")
-                                        }
-                                        withStyle(
-                                            style = SpanStyle(
-                                                color = Color(0xFFB3B3B3),
-                                                fontSize = 12.sp
-                                            )
-                                        ) {
-                                            append(animatedMovie.m_starring.fixEncoding())
-                                        }
-                                    },
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-
-
-                                val theMaster =
-                                    if (animatedMovie.m_id.startsWith("MOV")) "Director: " else "Creator: "
-                                Text(
-                                    text = buildAnnotatedString {
-                                        withStyle(
-                                            style = SpanStyle(
-                                                color = Color(0xFFB3B3B3),
-                                                fontSize = 12.sp,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                        ) {
-                                            append(theMaster)
-                                        }
-                                        withStyle(
-                                            style = SpanStyle(
-                                                color = Color(0xFFB3B3B3),
-                                                fontSize = 12.sp
-                                            )
-                                        ) {
-                                            append(animatedMovie.m_director.fixEncoding())
-                                        }
-                                    },
-                                    style = MaterialTheme.typography.bodySmall
-                                )
                             }
 
-                        }
+                            // DESCRIPTION (this now overlaps image)
+                            Text(
+                                text = animatedMovie.m_description.fixEncoding(),
+                                color = Color(0xFF91A3B0),
+                                fontSize = 14.sp,
+                                maxLines = 5
+                            )
 
-                        Spacer(Modifier.height(12.dp))
+                            val showExtraInfo = animatedMovie.c_remaining == 0 && !isBottomExpanded
+
+                            AnimatedVisibility(
+                                visible = showExtraInfo,
+                                enter = fadeIn() + expandVertically(),
+                                exit = fadeOut() + shrinkVertically()
+                            ) {
+                                Column {
+                                    Spacer(Modifier.height(8.dp))
+                                    Text(
+                                        text = buildAnnotatedString {
+                                            withStyle(
+                                                style = SpanStyle(
+                                                    color = Color(0xFFB3B3B3),
+                                                    fontSize = 12.sp,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                            ) {
+                                                append("Cast: ")
+                                            }
+                                            withStyle(
+                                                style = SpanStyle(
+                                                    color = Color(0xFFB3B3B3),
+                                                    fontSize = 12.sp
+                                                )
+                                            ) {
+                                                append(animatedMovie.m_starring.fixEncoding())
+                                            }
+                                        },
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+
+
+                                    val theMaster =
+                                        if (animatedMovie.m_id.startsWith("MOV")) "Director: " else "Creator: "
+                                    Text(
+                                        text = buildAnnotatedString {
+                                            withStyle(
+                                                style = SpanStyle(
+                                                    color = Color(0xFFB3B3B3),
+                                                    fontSize = 12.sp,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                            ) {
+                                                append(theMaster)
+                                            }
+                                            withStyle(
+                                                style = SpanStyle(
+                                                    color = Color(0xFFB3B3B3),
+                                                    fontSize = 12.sp
+                                                )
+                                            ) {
+                                                append(animatedMovie.m_director.fixEncoding())
+                                            }
+                                        },
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+
+                            }
+
+                            Spacer(Modifier.height(12.dp))
 
 //                val btnFocusRequester = remember { FocusRequester() }
 //                val thumbsFocusRequester = remember { FocusRequester() }
 
-                        // local state – ONLY for this block
+                            // local state – ONLY for this block
 //                var selectedIndex by remember { mutableStateOf(0) }
 //                var isBottomExpanded by remember { mutableStateOf(false) }
 //                val bottomFocusRequester = remember { FocusRequester() }
@@ -684,24 +708,24 @@ fun ViewMovieDetail(
 //                    }
 //                }
 
-                        LaunchedEffect(isActive) {
-                            if (isActive) {
-                                selectedIndex = initialSelectedIndex ?: 0
-                                onSelectedIndexSnapshot(selectedIndex)
+                            LaunchedEffect(isActive) {
+                                if (isActive) {
+                                    selectedIndex = initialSelectedIndex ?: 0
+                                    onSelectedIndexSnapshot(selectedIndex)
+                                }
                             }
-                        }
 
 
-                        val collapseThumbs = selectedIndex >= 2
+                            val collapseThumbs = selectedIndex >= 2
 
-                        LaunchedEffect(collapseThumbs) {
-                            if (collapseThumbs && focusArea == FocusArea.MENU) {
-                                btnFocusRequester.requestFocus()
+                            LaunchedEffect(collapseThumbs) {
+                                if (collapseThumbs && focusArea == FocusArea.MENU) {
+                                    btnFocusRequester.requestFocus()
+                                }
                             }
-                        }
 
 
-                        val listState = rememberLazyListState()
+                            val listState = rememberLazyListState()
 
 //                LaunchedEffect(selectedIndex) {
 //                    listState.animateScrollToItem(
@@ -709,262 +733,266 @@ fun ViewMovieDetail(
 //                    )
 //                }
 
-                        LaunchedEffect(selectedIndex) {
-                            if (selectedIndex >= 0) {
-                                listState.animateScrollToItem(
-                                    index = maxOf(0, selectedIndex - 2)
-                                )
+                            LaunchedEffect(selectedIndex) {
+                                if (selectedIndex >= 0) {
+                                    listState.animateScrollToItem(
+                                        index = maxOf(0, selectedIndex - 2)
+                                    )
+                                }
                             }
-                        }
 
-                        //var hasRated by remember { mutableStateOf(animatedMovie.hasRated) }
+                            //var hasRated by remember { mutableStateOf(animatedMovie.hasRated) }
 
-                        var hasRated by remember(animatedMovie.hasRated) {
-                            mutableStateOf(animatedMovie.hasRated)
-                        }
+                            var hasRated by remember(animatedMovie.hasRated) {
+                                mutableStateOf(animatedMovie.hasRated)
+                            }
 
-                        Column(
-                            modifier = Modifier
-                                //.border(1.dp, Color.White)
-                                .focusRequester(btnFocusRequester)
-                                .focusable()
-                                .onPreviewKeyEvent { event ->
-                                    if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                            Column(
+                                modifier = Modifier
+                                    //.border(1.dp, Color.White)
+                                    .focusRequester(btnFocusRequester)
+                                    .focusable()
+                                    .onPreviewKeyEvent { event ->
+                                        if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
 
-                                    when (event.key) {
-                                        Key.DirectionUp -> {
-                                            if (selectedIndex == 0) {
-                                                focusArea = FocusArea.THUMBS
-                                                selectedIndex =
-                                                    -1          // 👈 menu is now inactive
-                                                onSelectedIndexSnapshot(selectedIndex)
-                                                thumbIndex = 0              // 👈 ALWAYS thumb_down
-                                                thumbsFocusRequester.requestFocus()
-                                                true
-                                            } else if (selectedIndex > 0) {
-                                                selectedIndex -= 1
-                                                onSelectedIndexSnapshot(selectedIndex)
-                                                true
-                                            } else {
-                                                false
-                                            }
-                                        }
-
-
-                                        Key.DirectionDown -> {
-                                            if (focusArea == FocusArea.THUMBS) {
-                                                focusArea = FocusArea.MENU
-                                                selectedIndex = 0
-                                                onSelectedIndexSnapshot(selectedIndex)
-                                                true
-                                            } else {
-                                                if (selectedIndex == actionButtons.lastIndex && franchiseCount > 0) {
-                                                    // 🔥 Expand bottom panel
-                                                    isBottomExpanded = true
-                                                    selectedIndex = 99
-                                                    bottomFocusRequester.requestFocus()
+                                        when (event.key) {
+                                            Key.DirectionUp -> {
+                                                if (selectedIndex == 0) {
+                                                    focusArea = FocusArea.THUMBS
+                                                    selectedIndex =
+                                                        -1          // 👈 menu is now inactive
+                                                    onSelectedIndexSnapshot(selectedIndex)
+                                                    thumbIndex =
+                                                        0              // 👈 ALWAYS thumb_down
+                                                    thumbsFocusRequester.requestFocus()
+                                                    true
+                                                } else if (selectedIndex > 0) {
+                                                    selectedIndex -= 1
+                                                    onSelectedIndexSnapshot(selectedIndex)
                                                     true
                                                 } else {
-                                                    selectedIndex =
-                                                        (selectedIndex + 1).coerceAtMost(
-                                                            actionButtons.lastIndex
-                                                        )
-                                                    onSelectedIndexSnapshot(selectedIndex)
-                                                    true
+                                                    false
                                                 }
                                             }
-                                        }
-
-                                        Key.Enter, Key.NumPadEnter, Key.DirectionCenter -> {
-                                            when (actionButtons.getOrNull(selectedIndex)?.id) {
-
-                                                "play" -> {
-                                                    onPlay(animatedMovie.playId)
-                                                    true
-                                                }
-
-                                                "episodes" -> {
-                                                    onSelectedIndexSnapshot(selectedIndex)
-                                                    onOpenEpisodes(animatedMovie.m_id)
-                                                    true
-                                                }
-
-                                                "similar" -> {
-                                                    onSelectedIndexSnapshot(selectedIndex)
-                                                    onOpenMoreLikeThis(animatedMovie.m_id)
-                                                    true
-                                                }
-
-                                                else -> false
-                                            }
-                                        }
 
 
-                                        else -> false
-                                    }
-                                },
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-
-                            // ───────── THUMBS (same width as buttons) ─────────
-                            AnimatedVisibility(visible = !collapseThumbs) {
-                                Row(
-                                    modifier = Modifier
-                                        .width(300.dp)
-                                        //.padding(start = 12.dp)
-                                        .focusRequester(thumbsFocusRequester)
-                                        .focusable()
-                                        .onPreviewKeyEvent { event ->
-                                            if (focusArea != FocusArea.THUMBS) return@onPreviewKeyEvent false
-                                            if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-
-                                            when (event.key) {
-                                                Key.DirectionUp -> {
-                                                    true   // 👈 consume it, do nothing
-                                                }
-
-                                                Key.DirectionRight -> {
-                                                    thumbIndex = (thumbIndex + 1).coerceAtMost(2)
-                                                    true
-                                                }
-
-                                                Key.DirectionLeft -> {
-                                                    thumbIndex = (thumbIndex - 1).coerceAtLeast(0)
-                                                    true
-                                                }
-
-                                                Key.DirectionDown -> {
+                                            Key.DirectionDown -> {
+                                                if (focusArea == FocusArea.THUMBS) {
                                                     focusArea = FocusArea.MENU
                                                     selectedIndex = 0
                                                     onSelectedIndexSnapshot(selectedIndex)
-                                                    btnFocusRequester.requestFocus()
                                                     true
+                                                } else {
+                                                    if (selectedIndex == actionButtons.lastIndex && franchiseCount > 0) {
+                                                        // 🔥 Expand bottom panel
+                                                        isBottomExpanded = true
+                                                        selectedIndex = 99
+                                                        bottomFocusRequester.requestFocus()
+                                                        true
+                                                    } else {
+                                                        selectedIndex =
+                                                            (selectedIndex + 1).coerceAtMost(
+                                                                actionButtons.lastIndex
+                                                            )
+                                                        onSelectedIndexSnapshot(selectedIndex)
+                                                        true
+                                                    }
                                                 }
-
-                                                Key.Back -> {
-                                                    focusArea = FocusArea.MENU
-                                                    selectedIndex = 0
-                                                    btnFocusRequester.requestFocus()
-                                                    true
-                                                }
-
-                                                else -> false
                                             }
-                                        },
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    // thumb down (0)
-                                    val isDownFocused =
-                                        focusArea == FocusArea.THUMBS && thumbIndex == 0
 
-                                    // thumb up (1)
-                                    val isUpFocused =
-                                        focusArea == FocusArea.THUMBS && thumbIndex == 1
+                                            Key.Enter, Key.NumPadEnter, Key.DirectionCenter -> {
+                                                when (actionButtons.getOrNull(selectedIndex)?.id) {
 
-                                    // thumb up double (2)
-                                    val isDoubleFocused =
-                                        focusArea == FocusArea.THUMBS && thumbIndex == 2
+                                                    "play" -> {
+                                                        currentPlayId = animatedMovie.playId
+                                                        showPlayer = true
+                                                        true
+                                                    }
+
+                                                    "episodes" -> {
+                                                        onSelectedIndexSnapshot(selectedIndex)
+                                                        onOpenEpisodes(animatedMovie.m_id)
+                                                        true
+                                                    }
+
+                                                    "similar" -> {
+                                                        onSelectedIndexSnapshot(selectedIndex)
+                                                        onOpenMoreLikeThis(animatedMovie.m_id)
+                                                        true
+                                                    }
+
+                                                    else -> false
+                                                }
+                                            }
 
 
-                                    Box(
-                                        modifier = Modifier.padding(top = 6.dp),
-                                        contentAlignment = Alignment.Center
+                                            else -> false
+                                        }
+                                    },
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+
+                                // ───────── THUMBS (same width as buttons) ─────────
+                                AnimatedVisibility(visible = !collapseThumbs) {
+                                    Row(
+                                        modifier = Modifier
+                                            .width(300.dp)
+                                            //.padding(start = 12.dp)
+                                            .focusRequester(thumbsFocusRequester)
+                                            .focusable()
+                                            .onPreviewKeyEvent { event ->
+                                                if (focusArea != FocusArea.THUMBS) return@onPreviewKeyEvent false
+                                                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+
+                                                when (event.key) {
+                                                    Key.DirectionUp -> {
+                                                        true   // 👈 consume it, do nothing
+                                                    }
+
+                                                    Key.DirectionRight -> {
+                                                        thumbIndex =
+                                                            (thumbIndex + 1).coerceAtMost(2)
+                                                        true
+                                                    }
+
+                                                    Key.DirectionLeft -> {
+                                                        thumbIndex =
+                                                            (thumbIndex - 1).coerceAtLeast(0)
+                                                        true
+                                                    }
+
+                                                    Key.DirectionDown -> {
+                                                        focusArea = FocusArea.MENU
+                                                        selectedIndex = 0
+                                                        onSelectedIndexSnapshot(selectedIndex)
+                                                        btnFocusRequester.requestFocus()
+                                                        true
+                                                    }
+
+                                                    Key.Back -> {
+                                                        focusArea = FocusArea.MENU
+                                                        selectedIndex = 0
+                                                        btnFocusRequester.requestFocus()
+                                                        true
+                                                    }
+
+                                                    else -> false
+                                                }
+                                            },
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        MovieAction(
+                                        // thumb down (0)
+                                        val isDownFocused =
+                                            focusArea == FocusArea.THUMBS && thumbIndex == 0
+
+                                        // thumb up (1)
+                                        val isUpFocused =
+                                            focusArea == FocusArea.THUMBS && thumbIndex == 1
+
+                                        // thumb up double (2)
+                                        val isDoubleFocused =
+                                            focusArea == FocusArea.THUMBS && thumbIndex == 2
+
+
+                                        Box(
+                                            modifier = Modifier.padding(top = 6.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            MovieAction(
 //                                    icon = painterResource(
 //                                        if (hasRated == -5)
 //                                            R.drawable.ic_thumb_down_filled
 //                                        else
 //                                            R.drawable.ic_thumb_down
 //                                    ),
-                                            icon = painterResource(
-                                                resolveThumbIcon(
-                                                    base = R.drawable.ic_thumb_down,
-                                                    filled = R.drawable.ic_thumb_down_filled,
-                                                    apiState = hasRated == -5,
-                                                    isFocused = isDownFocused
-                                                )
-                                            ),
-                                            label = "",
-                                            iconType = "down",
-                                            isSelected = isDownFocused
-                                        ) {}
-                                    }
+                                                icon = painterResource(
+                                                    resolveThumbIcon(
+                                                        base = R.drawable.ic_thumb_down,
+                                                        filled = R.drawable.ic_thumb_down_filled,
+                                                        apiState = hasRated == -5,
+                                                        isFocused = isDownFocused
+                                                    )
+                                                ),
+                                                label = "",
+                                                iconType = "down",
+                                                isSelected = isDownFocused
+                                            ) {}
+                                        }
 
-                                    Box(
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        MovieAction(
+                                        Box(
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            MovieAction(
 //                                    icon = painterResource(
 //                                        if (hasRated == 5)
 //                                            R.drawable.ic_thumb_up_filled
 //                                        else
 //                                            R.drawable.ic_thumb_up
 //                                    ),
-                                            icon = painterResource(
-                                                resolveThumbIcon(
-                                                    base = R.drawable.ic_thumb_up,
-                                                    filled = R.drawable.ic_thumb_up_filled,
-                                                    apiState = hasRated == 5,
-                                                    isFocused = isUpFocused
-                                                )
-                                            ),
-                                            label = "",
-                                            iconType = "up",
-                                            isSelected = isUpFocused
-                                        ) {}
-                                    }
+                                                icon = painterResource(
+                                                    resolveThumbIcon(
+                                                        base = R.drawable.ic_thumb_up,
+                                                        filled = R.drawable.ic_thumb_up_filled,
+                                                        apiState = hasRated == 5,
+                                                        isFocused = isUpFocused
+                                                    )
+                                                ),
+                                                label = "",
+                                                iconType = "up",
+                                                isSelected = isUpFocused
+                                            ) {}
+                                        }
 
-                                    Box(
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        MovieAction(
+                                        Box(
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            MovieAction(
 //                                    icon = painterResource(
 //                                        if (hasRated == 10)
 //                                            R.drawable.ic_thumb_up_double_filled
 //                                        else
 //                                            R.drawable.ic_thumb_up_double
 //                                    ),
-                                            icon = painterResource(
-                                                resolveThumbIcon(
-                                                    base = R.drawable.ic_thumb_up_double,
-                                                    filled = R.drawable.ic_thumb_up_double_filled,
-                                                    apiState = hasRated == 10,
-                                                    isFocused = isDoubleFocused
-                                                )
-                                            ),
-                                            label = "",
-                                            iconType = "up_double",
-                                            isSelected = isDoubleFocused
-                                        ) {}
+                                                icon = painterResource(
+                                                    resolveThumbIcon(
+                                                        base = R.drawable.ic_thumb_up_double,
+                                                        filled = R.drawable.ic_thumb_up_double_filled,
+                                                        apiState = hasRated == 10,
+                                                        isFocused = isDoubleFocused
+                                                    )
+                                                ),
+                                                label = "",
+                                                iconType = "up_double",
+                                                isSelected = isDoubleFocused
+                                            ) {}
+                                        }
                                     }
                                 }
-                            }
 
-                            //Spacer(modifier = Modifier.height(6.dp))
+                                //Spacer(modifier = Modifier.height(6.dp))
 
-                            //var selectedIndex by remember { mutableIntStateOf(0) }
-                            val buttonHeight = 44.dp
-                            val buttonSpacing = 8.dp
-                            val visibleCount = 3
+                                //var selectedIndex by remember { mutableIntStateOf(0) }
+                                val buttonHeight = 44.dp
+                                val buttonSpacing = 8.dp
+                                val visibleCount = 3
 
-                            val menuHeight =
-                                buttonHeight * visibleCount +
-                                        buttonSpacing * (visibleCount - 1)
+                                val menuHeight =
+                                    buttonHeight * visibleCount +
+                                            buttonSpacing * (visibleCount - 1)
 
-                            val selectedTextColor = Color.Black
-                            val normalTextColor = Color.White.copy(alpha = 0.4f)
-                            val fadedTextColor = Color.White.copy(alpha = 0.2f)
+                                val selectedTextColor = Color.Black
+                                val normalTextColor = Color.White.copy(alpha = 0.4f)
+                                val fadedTextColor = Color.White.copy(alpha = 0.2f)
 
-                            // ───────── SCROLLABLE MENU ─────────
-                            val collapsedHeight =
-                                menuHeight - ((menuHeight / 4) + 4.dp)
+                                // ───────── SCROLLABLE MENU ─────────
+                                val collapsedHeight =
+                                    menuHeight - ((menuHeight / 4) + 4.dp)
 
-                            val expandedHeight = menuHeight - 8.dp
+                                val expandedHeight = menuHeight - 8.dp
 
-                            val currentMenuHeight =
-                                if (selectedIndex >= 2) expandedHeight else collapsedHeight
+                                val currentMenuHeight =
+                                    if (selectedIndex >= 2) expandedHeight else collapsedHeight
 
 //                    val progress = remember(animatedMovie.cProgress, animatedMovie.m_duration) {
 //                        if (animatedMovie.m_duration > 0)
@@ -972,119 +1000,301 @@ fun ViewMovieDetail(
 //                        else 0f
 //                    }
 
-                            val progress =
-                                (animatedMovie.c_percent?.toFloat() ?: 0f).coerceIn(0f, 1f)
-                            val gap = 1.dp
+                                val progress =
+                                    (animatedMovie.c_percent?.toFloat() ?: 0f).coerceIn(0f, 1f)
+                                val gap = 1.dp
 
-                            Box(
-                                modifier = Modifier
-                                    .width(300.dp)
-                                    .height(currentMenuHeight)   // 👈 THIS IS THE KEY
-                                    //.heightIn(max = 168.dp)
-                                    .clipToBounds()
-                            ) {
-                                LazyColumn(
-                                    state = listState,
-                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                Box(
+                                    modifier = Modifier
+                                        .width(300.dp)
+                                        .height(currentMenuHeight)   // 👈 THIS IS THE KEY
+                                        //.heightIn(max = 168.dp)
+                                        .clipToBounds()
                                 ) {
-                                    itemsIndexed(actionButtons) { index, item ->
-                                        val lastIndex = actionButtons.lastIndex
+                                    LazyColumn(
+                                        state = listState,
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        itemsIndexed(actionButtons) { index, item ->
+                                            val lastIndex = actionButtons.lastIndex
 
-                                        val textColor = when {
-                                            // 1. Selected item: always solid
-                                            selectedIndex == index ->
-                                                selectedTextColor
+                                            val textColor = when {
+                                                // 1. Selected item: always solid
+                                                selectedIndex == index ->
+                                                    selectedTextColor
 
-                                            // 2. Initial state: fade the 3rd item
-                                            selectedIndex == 0 && index == 2 ->
-                                                fadedTextColor
+                                                // 2. Initial state: fade the 3rd item
+                                                selectedIndex == 0 && index == 2 ->
+                                                    fadedTextColor
 
-                                            // 3. Reached bottom: fade topmost visible item
-                                            selectedIndex >= 2 &&
-                                                    selectedIndex == lastIndex &&
-                                                    index == selectedIndex - 3 ->
-                                                fadedTextColor
+                                                // 3. Reached bottom: fade topmost visible item
+                                                selectedIndex >= 2 &&
+                                                        selectedIndex == lastIndex &&
+                                                        index == selectedIndex - 3 ->
+                                                    fadedTextColor
 
-                                            // 4. Normal scrolling: fade item two above selection
-                                            selectedIndex >= 2 &&
-                                                    selectedIndex != lastIndex &&
-                                                    index == selectedIndex - 2 ->
-                                                fadedTextColor
+                                                // 4. Normal scrolling: fade item two above selection
+                                                selectedIndex >= 2 &&
+                                                        selectedIndex != lastIndex &&
+                                                        index == selectedIndex - 2 ->
+                                                    fadedTextColor
 
 //                                    selectedIndex >= 1 &&
 //                                            index == selectedIndex + 1 ->
 //                                        fadedTextColor
 
-                                            // 5. Normal unselected
-                                            else ->
-                                                normalTextColor
-                                        }
-
-                                        SecondaryTextButton(
-                                            isActive = focusArea == FocusArea.MENU && selectedIndex == index,
-                                            modifier = Modifier.width(300.dp)
-                                        ) {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                modifier = Modifier.fillMaxWidth()
-                                            ) {
-
-                                                // ICON
-                                                Icon(
-                                                    painter = painterResource(item.iconRes),
-                                                    contentDescription = item.label,
-                                                    tint = textColor,
-                                                    modifier = Modifier.size(14.dp)
-                                                )
-
-                                                Spacer(Modifier.width(12.dp))
-
-                                                // TEXT
-                                                Text(
-                                                    text = item.label,
-                                                    color = textColor,
-                                                    fontSize = 14.sp,
-                                                    maxLines = 1
-                                                )
-
-                                                // PUSH EVERYTHING ELSE TO THE RIGHT
-                                                Spacer(Modifier.weight(0.5f))
-
-                                                // ───── PROGRESS BAR (ONLY FIRST BUTTON & cProgress >= 10) ─────
-                                                if (index == 0 && selectedIndex == 0 && animatedMovie.cProgress >= 10) {
-
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .width(56.dp)        // 👈 small, subtle
-                                                            .height(4.dp)
-                                                            //.clip(RoundedCornerShape(2.dp))
-                                                            .background(Color.Gray.copy(alpha = 0.25f))
-                                                    ) {
-                                                        Box(
-                                                            modifier = Modifier
-                                                                .fillMaxHeight()
-                                                                .fillMaxWidth(progress)
-                                                                .background(Color.Red)
-                                                        )
-                                                    }
-
-                                                }
+                                                // 5. Normal unselected
+                                                else ->
+                                                    normalTextColor
                                             }
 
+                                            SecondaryTextButton(
+                                                isActive = focusArea == FocusArea.MENU && selectedIndex == index,
+                                                modifier = Modifier.width(300.dp)
+                                            ) {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    modifier = Modifier.fillMaxWidth()
+                                                ) {
+
+                                                    // ICON
+                                                    Icon(
+                                                        painter = painterResource(item.iconRes),
+                                                        contentDescription = item.label,
+                                                        tint = textColor,
+                                                        modifier = Modifier.size(14.dp)
+                                                    )
+
+                                                    Spacer(Modifier.width(12.dp))
+
+                                                    // TEXT
+                                                    Text(
+                                                        text = item.label,
+                                                        color = textColor,
+                                                        fontSize = 14.sp,
+                                                        maxLines = 1
+                                                    )
+
+                                                    // PUSH EVERYTHING ELSE TO THE RIGHT
+                                                    Spacer(Modifier.weight(0.5f))
+
+                                                    // ───── PROGRESS BAR (ONLY FIRST BUTTON & cProgress >= 10) ─────
+                                                    if (index == 0 && selectedIndex == 0 && animatedMovie.cProgress >= 10) {
+
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .width(56.dp)        // 👈 small, subtle
+                                                                .height(4.dp)
+                                                                //.clip(RoundedCornerShape(2.dp))
+                                                                .background(Color.Gray.copy(alpha = 0.25f))
+                                                        ) {
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .fillMaxHeight()
+                                                                    .fillMaxWidth(progress)
+                                                                    .background(Color.Red)
+                                                            )
+                                                        }
+
+                                                    }
+                                                }
+
+                                            }
                                         }
                                     }
                                 }
+
                             }
 
                         }
+                    }
+                    if (isLoading) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black.copy(alpha = 0.4f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            //CircularProgressIndicator(color = Color.Red)
+                        }
+                    }
 
+                }
+            }
+
+            val collapsedHeight = 64.dp //maxHeight * 0.06f
+            //val expandedHeight = maxHeight * 0.45f
+            val expandedHeight = screenHeight * 0.45f
+
+            val animatedHeight by animateDpAsState(
+                targetValue = if (isBottomExpanded) expandedHeight else collapsedHeight,
+                label = "bottomPanelHeight"
+            )
+
+            val collapsedOffset = expandedHeight - 60.dp
+
+            val animatedOffset by animateDpAsState(
+                targetValue = if (isBottomExpanded) 0.dp else collapsedOffset,
+                label = "bottomOffset"
+            )
+
+            if (franchiseCount > 0) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .fillMaxWidth()
+                        .height(expandedHeight)
+                        .offset(y = animatedOffset)
+                        .background(Color(0xFF000000))
+                        //.clipToBounds()
+                        .focusRequester(bottomFocusRequester)
+                        .focusable()
+                        .onPreviewKeyEvent { event ->
+                            if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+
+                            when (event.key) {
+
+                                Key.DirectionUp -> {
+                                    isBottomExpanded = false
+                                    selectedIndex = 0   // 👈 Play button
+                                    onSelectedIndexSnapshot(selectedIndex)
+                                    btnFocusRequester.requestFocus()
+                                    true
+                                }
+
+                                Key.Back -> {
+                                    isBottomExpanded = false
+                                    selectedIndex = actionButtons.lastIndex  // 👈 last button
+                                    onSelectedIndexSnapshot(selectedIndex)
+                                    btnFocusRequester.requestFocus()
+                                    true
+                                }
+
+                                Key.DirectionLeft -> {
+                                    if (selectedThumbIndex > 0) {
+                                        selectedThumbIndex--
+                                        val newItem = franchiseItems[selectedThumbIndex]
+
+                                        coroutineScope.launch {
+                                            rowState.animateScrollToItem(selectedThumbIndex)
+                                        }
+
+                                        selectedMovieId = newItem.mId
+                                        //onMovieChange(newItem.mId)
+                                    }
+                                    true
+                                }
+
+                                Key.DirectionRight -> {
+                                    if (selectedThumbIndex < franchiseItems.lastIndex) {
+                                        selectedThumbIndex++
+                                        val newItem = franchiseItems[selectedThumbIndex]
+
+                                        coroutineScope.launch {
+                                            rowState.animateScrollToItem(selectedThumbIndex)
+                                        }
+
+                                        selectedMovieId = newItem.mId
+                                        //onMovieChange(newItem.mId)
+                                    }
+                                    true
+                                }
+
+                                Key.Enter, Key.NumPadEnter, Key.DirectionCenter -> {
+                                    // Make focused thumb the large one
+                                    largeThumbIndex = selectedThumbIndex
+                                    true
+                                }
+
+                                Key.DirectionDown -> true
+
+                                else -> false
+                            }
+
+                        }
+                ) {
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = horizontalInset)
+                    ) {
+
+                        // 🔴 TEXT (always first)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(top = 8.dp, bottom = 12.dp)
+                        ) {
+
+                            Icon(
+                                painter = painterResource(R.drawable.library),
+                                contentDescription = "Library",
+                                tint = Color.White.copy(alpha = 0.6f),
+                                modifier = Modifier.size(16.dp)
+                            )
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            Text(
+                                text = franchise?.gName?.fixEncoding() ?: "",
+                                color = Color.White.copy(alpha = 0.6f),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        // 🔵 IMAGES (only when expanded)
+                        //if (isBottomExpanded) {
+
+                        //Spacer(modifier = Modifier.height(24.dp))
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.TopStart   // 👈 top + left
+                        ) {
+                            LazyRow(
+                                state = rowState,
+                                modifier = Modifier.wrapContentWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(
+                                    4.dp,
+                                    Alignment.CenterHorizontally
+                                ),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+//                        val franchiseItems = franchise?.items.orEmpty()
+
+                                items(franchiseItems.size) { index ->
+
+                                    val isSelected = index == selectedThumbIndex
+                                    val showBorder = isSelected && isBottomExpanded
+
+                                    val item = franchiseItems[index]
+                                    val imageUrl = item.cvrUrl
+
+                                    //val showBorder = isHighlighted && isBottomExpanded
+
+                                    AsyncImage(
+                                        model = imageUrl,
+                                        contentDescription = null,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .width(if (index == largeThumbIndex) 130.dp else 110.dp)
+                                            .aspectRatio(2f / 3f)
+                                            .then(
+                                                if (showBorder) Modifier.border(1.dp, Color.White)
+                                                else Modifier
+                                            )
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
                 if (isLoading) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(Color.Black.copy(alpha = 0.4f)),
+                            //.background(Color.Black.copy(alpha = 0.5f))
+                            .onPreviewKeyEvent { true }, // 👈 hard block
                         contentAlignment = Alignment.Center
                     ) {
                         //CircularProgressIndicator(color = Color.Red)
@@ -1094,184 +1304,20 @@ fun ViewMovieDetail(
             }
         }
 
-        val collapsedHeight = 64.dp //maxHeight * 0.06f
-        val expandedHeight = maxHeight * 0.45f
-
-        val animatedHeight by animateDpAsState(
-            targetValue = if (isBottomExpanded) expandedHeight else collapsedHeight,
-            label = "bottomPanelHeight"
-        )
-
-        val collapsedOffset = expandedHeight - 60.dp
-
-        val animatedOffset by animateDpAsState(
-            targetValue = if (isBottomExpanded) 0.dp else collapsedOffset,
-            label = "bottomOffset"
-        )
-
-        if (franchiseCount > 0) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .fillMaxWidth()
-                    .height(expandedHeight)
-                    .offset(y = animatedOffset)
-                    .background(Color(0xFF000000))
-                    //.clipToBounds()
-                    .focusRequester(bottomFocusRequester)
-                    .focusable()
-                    .onPreviewKeyEvent { event ->
-                        if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-
-                        when (event.key) {
-
-                            Key.DirectionUp -> {
-                                isBottomExpanded = false
-                                selectedIndex = 0   // 👈 Play button
-                                onSelectedIndexSnapshot(selectedIndex)
-                                btnFocusRequester.requestFocus()
-                                true
-                            }
-
-                            Key.Back -> {
-                                isBottomExpanded = false
-                                selectedIndex = actionButtons.lastIndex  // 👈 last button
-                                onSelectedIndexSnapshot(selectedIndex)
-                                btnFocusRequester.requestFocus()
-                                true
-                            }
-
-                            Key.DirectionLeft -> {
-                                if (selectedThumbIndex > 0) {
-                                    selectedThumbIndex--
-                                    val newItem = franchiseItems[selectedThumbIndex]
-
-                                    coroutineScope.launch {
-                                        rowState.animateScrollToItem(selectedThumbIndex)
-                                    }
-
-                                    selectedMovieId = newItem.mId
-                                    //onMovieChange(newItem.mId)
-                                }
-                                true
-                            }
-
-                            Key.DirectionRight -> {
-                                if (selectedThumbIndex < franchiseItems.lastIndex) {
-                                    selectedThumbIndex++
-                                    val newItem = franchiseItems[selectedThumbIndex]
-
-                                    coroutineScope.launch {
-                                        rowState.animateScrollToItem(selectedThumbIndex)
-                                    }
-
-                                    selectedMovieId = newItem.mId
-                                    //onMovieChange(newItem.mId)
-                                }
-                                true
-                            }
-
-                            Key.Enter, Key.NumPadEnter, Key.DirectionCenter -> {
-                                // Make focused thumb the large one
-                                largeThumbIndex = selectedThumbIndex
-                                true
-                            }
-
-                            Key.DirectionDown -> true
-
-                            else -> false
-                        }
-
+        AnimatedVisibility(
+            visible = showPlayer,
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
+            currentPlayId?.let { id ->
+                MainPlayerScreen(
+                    mId = id,
+                    isActive = true,
+                    onClose = {
+                        showPlayer = false
                     }
-            ) {
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = horizontalInset)
-                ) {
-
-                    // 🔴 TEXT (always first)
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(top = 8.dp, bottom = 12.dp)
-                    ) {
-
-                        Icon(
-                            painter = painterResource(R.drawable.library),
-                            contentDescription = "Library",
-                            tint = Color.White.copy(alpha = 0.6f),
-                            modifier = Modifier.size(16.dp)
-                        )
-
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        Text(
-                            text = franchise?.gName?.fixEncoding() ?: "",
-                            color = Color.White.copy(alpha = 0.6f),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    // 🔵 IMAGES (only when expanded)
-                    //if (isBottomExpanded) {
-
-                    //Spacer(modifier = Modifier.height(24.dp))
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.TopStart   // 👈 top + left
-                    ) {
-                        LazyRow(
-                            state = rowState,
-                            modifier = Modifier.wrapContentWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(
-                                4.dp,
-                                Alignment.CenterHorizontally
-                            ),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-//                        val franchiseItems = franchise?.items.orEmpty()
-
-                            items(franchiseItems.size) { index ->
-
-                                val isSelected = index == selectedThumbIndex
-                                val showBorder = isSelected && isBottomExpanded
-
-                                val item = franchiseItems[index]
-                                val imageUrl = item.cvrUrl
-
-                                //val showBorder = isHighlighted && isBottomExpanded
-
-                                AsyncImage(
-                                    model = imageUrl,
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier
-                                        .width(if (index == largeThumbIndex) 130.dp else 110.dp)
-                                        .aspectRatio(2f / 3f)
-                                        .then(
-                                            if (showBorder) Modifier.border(1.dp, Color.White)
-                                            else Modifier
-                                        )
-                                )
-                            }
-                        }
-                    }
-                }
+                )
             }
-            if (isLoading) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        //.background(Color.Black.copy(alpha = 0.5f))
-                        .onPreviewKeyEvent { true }, // 👈 hard block
-                    contentAlignment = Alignment.Center
-                ) {
-                    //CircularProgressIndicator(color = Color.Red)
-                }
-            }
-
         }
     }
 }
