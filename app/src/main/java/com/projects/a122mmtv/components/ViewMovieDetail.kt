@@ -1260,6 +1260,18 @@ fun ViewMovieDetail(
                     }
                 }
             }
+            if (isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        //.background(Color.Black.copy(alpha = 0.5f))
+                        .onPreviewKeyEvent { true }, // 👈 hard block
+                    contentAlignment = Alignment.Center
+                ) {
+                    //CircularProgressIndicator(color = Color.Red)
+                }
+            }
+
         }
     }
 }
