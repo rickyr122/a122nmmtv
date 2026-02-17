@@ -288,10 +288,14 @@ fun ViewContinue(
 
     var stepIndex by remember { mutableStateOf(0) }
     val shouldShowLazyRow = totalCount > 1
-    val visibleCount = remember(stepIndex, totalCount) {
+    val visibleCount = remember(stepIndex, totalCount, isActive) {
         if (!shouldShowLazyRow) 0
-        else (totalCount - stepIndex - 1).coerceAtLeast(0)
+        else if (isActive)
+            (totalCount - stepIndex - 1).coerceAtLeast(0) // hero removed
+        else
+            totalCount // show all when inactive
     }
+
 
 //    val visibleItems = remember(items, visibleCount) {
 //        items.take(minOf(visibleCount, items.size))
