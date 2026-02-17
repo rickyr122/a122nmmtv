@@ -105,6 +105,7 @@ import com.projects.a122mmtv.helper.fixEncoding
 import com.projects.a122mmtv.screen.MainPlayerScreen
 import com.projects.a122mmtv.utility.formatDurationFromMinutes
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -266,6 +267,13 @@ fun ViewMovieDetail(
             }
         }
 
+        LaunchedEffect(isActive) {
+            if (isActive) {
+                awaitFrame()
+                btnFocusRequester.requestFocus()
+            }
+        }
+
         val actionButtons = remember(movie) {
             buildList {
 
@@ -396,14 +404,14 @@ fun ViewMovieDetail(
                         "Season $1: Episode $2"
                     )
 
-                    val playCaption =
-                        if (animatedMovie.m_id.startsWith("MOV")) {
-                            if (animatedMovie.cProgress > 10) "Resume Playing" else "Play"
-                        } else {
-                            val title =
-                                if (animatedMovie.cProgress > 10) titleStarted else titleNotStarted
-                            "${if (animatedMovie.cProgress > 10) "Resume" else "Play"} $title"
-                        }
+//                    val playCaption =
+//                        if (animatedMovie.m_id.startsWith("MOV")) {
+//                            if (animatedMovie.cProgress > 10) "Resume Playing" else "Play"
+//                        } else {
+//                            val title =
+//                                if (animatedMovie.cProgress > 10) titleStarted else titleNotStarted
+//                            "${if (animatedMovie.cProgress > 10) "Resume" else "Play"} $title"
+//                        }
 
                     Box(
                         modifier = Modifier
@@ -715,6 +723,14 @@ fun ViewMovieDetail(
                                 }
                             }
 
+//                            LaunchedEffect(isActive) {
+//                                if (isActive && selectedIndex == 0) {
+//                                    selectedIndex = initialSelectedIndex ?: 0
+//                                    onSelectedIndexSnapshot(selectedIndex)
+//                                }
+//                            }
+
+
 
                             val collapseThumbs = selectedIndex >= 2
 
@@ -811,7 +827,7 @@ fun ViewMovieDetail(
 
                                                     "episodes" -> {
                                                         onSelectedIndexSnapshot(selectedIndex)
-                                                        onOpenEpisodes(animatedMovie.m_id)
+                                                        onOpenEpisodes(animatedMovie.gId)
                                                         true
                                                     }
 

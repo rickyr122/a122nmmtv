@@ -321,4 +321,22 @@ interface AuthApiService {
         val gOrder: Int
     )
 
+    @GET("gettvseasoncount")
+    suspend fun getTvSeasonCount(
+        @Query("code") code: String
+    ): TvSeasonCountResponse
+
+    data class TvSeasonCountResponse(
+        val t_id: String,
+        val logoUrl: String,
+        val m_year: String,
+        val total_season: String,
+        val seasons: List<SeasonItem>
+    )
+
+    data class SeasonItem(
+        val season: Int,
+        val episodes: Int
+    )
+
 }
