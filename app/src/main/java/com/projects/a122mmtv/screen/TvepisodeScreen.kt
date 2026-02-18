@@ -203,11 +203,13 @@ fun TvEpisodeScreen(
             val firstIndex = episodes.indexOfFirst {
                 it.sId == selectedSeason.season.toString()
             }
-            if (firstIndex >= 0) {
+
+            if (firstIndex >= 0 && selectedEpisodeIndex < firstIndex) {
                 selectedEpisodeIndex = firstIndex
                 episodeListState.scrollToItem(firstIndex)
             }
         }
+
 
         LaunchedEffect(selectedEpisodeIndex) {
             episodeListState.animateScrollToItem(
@@ -303,11 +305,20 @@ fun TvEpisodeScreen(
 
                     Spacer(Modifier.height(12.dp))
 
-                    val prefixSeason = if(tv.total_season.toInt() > 1) "Seasons" else "Season"
+                    val seasonCount = tv.seasons.size
+
+                    val metaSeason = if (seasonCount > 1) {
+                        "$seasonCount Seasons"
+                    } else {
+                        val totalEpisodes = tv.seasons.firstOrNull()?.episodes ?: 0
+                        "$totalEpisodes Episodes"
+                    }
+
+
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         MetaText(tv.m_year)
                         Bullets()
-                        MetaText("${tv.total_season} $prefixSeason")
+                        MetaText(metaSeason)
                     }
 
                     Spacer(Modifier.height(32.dp))
