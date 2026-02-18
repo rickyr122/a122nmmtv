@@ -2,6 +2,7 @@ package com.projects.a122mmtv.screen
 
 import android.util.Log
 import android.view.KeyEvent
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -33,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,6 +47,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -80,6 +83,8 @@ fun TvEpisodeScreen(
         ApiClient.create(AuthApiService::class.java)
     }
 
+    val context = LocalContext.current
+
     var data by remember { mutableStateOf<TvSeasonCountResponse?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
@@ -112,6 +117,7 @@ fun TvEpisodeScreen(
 
     var selectedSeasonIndex by remember { mutableStateOf(0) }
     val seasonListState = rememberLazyListState()
+    var selectedEpisodeIndex by remember { mutableStateOf(0) }
 
     LaunchedEffect(selectedSeasonIndex) {
         val firstVisibleIndex =
@@ -133,8 +139,6 @@ fun TvEpisodeScreen(
     }
 
     val episodeListState = rememberLazyListState()
-
-
 
 //    LaunchedEffect(selectedSeasonIndex) {
 //        seasonListState.animateScrollToItem(
@@ -196,9 +200,44 @@ fun TvEpisodeScreen(
                 it.sId == selectedSeason.season.toString()
             }
             if (firstIndex >= 0) {
-                episodeListState.animateScrollToItem(firstIndex)
+                selectedEpisodeIndex = firstIndex
+                episodeListState.scrollToItem(firstIndex)
             }
         }
+
+        LaunchedEffect(selectedEpisodeIndex) {
+            episodeListState.animateScrollToItem(
+                index = selectedEpisodeIndex,
+                scrollOffset = 0
+            )
+        }
+
+        LaunchedEffect(episodeListState, episodes) {
+            snapshotFlow { episodeListState.firstVisibleItemIndex }
+                .collect { topIndex ->
+
+                    if (episodes.isEmpty()) return@collect
+                    val topEpisode = episodes[topIndex]
+                    val seasonNumber = topEpisode.sId.toIntOrNull() ?: return@collect
+                    val newSeasonIndex = tv.seasons.indexOfFirst {
+                        it.season == seasonNumber
+                    }
+                    if (newSeasonIndex != -1 && newSeasonIndex != selectedSeasonIndex) {
+                        selectedSeasonIndex = newSeasonIndex
+                    }
+                }
+        }
+
+
+//        LaunchedEffect(selectedSeasonIndex, episodes) {
+//            val selectedSeason = tv.seasons[selectedSeasonIndex]
+//            val firstIndex = episodes.indexOfFirst {
+//                it.sId == selectedSeason.season.toString()
+//            }
+//            if (firstIndex >= 0) {
+//                episodeListState.animateScrollToItem(firstIndex)
+//            }
+//        }
 
         Row(Modifier.fillMaxSize()) {
 
@@ -326,6 +365,44 @@ fun TvEpisodeScreen(
                     .focusRequester(rightFocusRequester)
                     .onFocusChanged { rightFocused = it.isFocused }
                     .focusable()
+                    .onPreviewKeyEvent { event ->
+                        if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+
+                        when (event.nativeKeyEvent.keyCode) {
+
+                            KeyEvent.KEYCODE_DPAD_DOWN -> {
+                                selectedEpisodeIndex =
+                                    (selectedEpisodeIndex + 1).coerceAtMost(episodes.lastIndex)
+                                true
+                            }
+
+                            KeyEvent.KEYCODE_DPAD_UP -> {
+                                selectedEpisodeIndex =
+                                    (selectedEpisodeIndex - 1).coerceAtLeast(0)
+                                true
+                            }
+
+                            KeyEvent.KEYCODE_DPAD_LEFT -> {
+                                leftFocusRequester.requestFocus()
+                                true
+                            }
+
+                            KeyEvent.KEYCODE_DPAD_CENTER,
+                            KeyEvent.KEYCODE_ENTER -> {
+                                if (episodes.isNotEmpty()) {
+                                    val episode = episodes[selectedEpisodeIndex]
+                                    Toast
+                                        .makeText(context, episode.tvId, Toast.LENGTH_SHORT)
+                                        .show()
+                                }
+                                true
+                            }
+
+
+                            else -> false
+                        }
+                    }
+
 //                    .border(
 //                        width = if (rightFocused) 3.dp else 0.dp,
 //                        color = Color.White
@@ -379,28 +456,36 @@ fun TvEpisodeScreen(
 
                         Spacer(Modifier.height(12.dp))
                     }
-
                     // 👉 Episode list go here
                     LazyColumn(
                         state = episodeListState,
+                        contentPadding = PaddingValues(bottom = 400.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
+                        val firstVisibleIndex = episodeListState.firstVisibleItemIndex
 
-                        items(episodes) { episode ->
-
+                        itemsIndexed(episodes) { index, episode ->
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-
                                 /* Thumbnail */
+                                val isTopItem = index == firstVisibleIndex
                                 Box (
                                     modifier = Modifier
                                         .fillMaxWidth(0.4f)
                                         .aspectRatio(16f / 9f)
                                         .clip(RoundedCornerShape(2.dp))
-                                        //.padding(horizontal = 0.dp)
+                                        .then(
+                                            if (isTopItem)
+                                                Modifier.border(
+                                                    width = 2.dp,
+                                                    color = Color.White,
+                                                    shape = RoundedCornerShape(2.dp)
+                                                )
+                                            else Modifier
+                                        )
                                 ){
                                     AsyncImage(
                                         model = episode.tvCvrUrl,
