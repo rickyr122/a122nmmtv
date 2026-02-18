@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,13 +35,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -47,13 +52,16 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.projects.a122mmtv.auth.AuthApiService
 import com.projects.a122mmtv.auth.AuthApiService.TvSeasonCountResponse
+import com.projects.a122mmtv.auth.AuthApiService.TvEpisodeResponse
 import com.projects.a122mmtv.dataclass.ApiClient
 import com.projects.a122mmtv.helper.Bullets
 import com.projects.a122mmtv.helper.BulletsContinue
 import com.projects.a122mmtv.helper.MetaText
 import com.projects.a122mmtv.helper.MetaTextContinue
 import com.projects.a122mmtv.helper.convertContentRating
+import com.projects.a122mmtv.helper.fixEncoding
 import kotlinx.coroutines.android.awaitFrame
+import com.projects.a122mmtv.utility.formatDurationFromMinutes
 
 @Composable
 fun TvEpisodeScreen(
@@ -95,7 +103,6 @@ fun TvEpisodeScreen(
     var leftFocused by remember { mutableStateOf(false) }
     var rightFocused by remember { mutableStateOf(false) }
 
-
     LaunchedEffect(isActive, isLoading) {
         if (isActive && !isLoading) {
             awaitFrame()
@@ -111,6 +118,23 @@ fun TvEpisodeScreen(
             (selectedSeasonIndex - 5).coerceAtLeast(0)
         seasonListState.animateScrollToItem(firstVisibleIndex)
     }
+
+    var episodes by remember { mutableStateOf<List<TvEpisodeResponse>>(emptyList()) }
+    var episodeLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(mId) {
+        episodeLoading = true
+        try {
+            episodes = api.getTvEpisodesAll(code = mId)
+        } catch (e: Exception) {
+            episodes = emptyList()
+        }
+        episodeLoading = false
+    }
+
+    val episodeListState = rememberLazyListState()
+
+
 
 //    LaunchedEffect(selectedSeasonIndex) {
 //        seasonListState.animateScrollToItem(
@@ -166,6 +190,16 @@ fun TvEpisodeScreen(
 
         val tv = data ?: return@Box
 
+        LaunchedEffect(selectedSeasonIndex, episodes) {
+            val selectedSeason = tv.seasons[selectedSeasonIndex]
+            val firstIndex = episodes.indexOfFirst {
+                it.sId == selectedSeason.season.toString()
+            }
+            if (firstIndex >= 0) {
+                episodeListState.animateScrollToItem(firstIndex)
+            }
+        }
+
         Row(Modifier.fillMaxSize()) {
 
             /* =========================
@@ -204,15 +238,15 @@ fun TvEpisodeScreen(
                         }
                     }
 
-                    .border(
-                        width = if (leftFocused) 3.dp else 0.dp,
-                        color = Color.White
-                    )
+//                    .border(
+//                        width = if (leftFocused) 3.dp else 0.dp,
+//                        color = Color.White
+//                    )
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(top = horizontalInset, start = 48.dp, end = 48.dp, bottom = 48.dp)
+                        .padding(top = horizontalInset, start = 24.dp, end = 48.dp, bottom = 48.dp)
                 ) {
 
                     AsyncImage(
@@ -292,16 +326,16 @@ fun TvEpisodeScreen(
                     .focusRequester(rightFocusRequester)
                     .onFocusChanged { rightFocused = it.isFocused }
                     .focusable()
-                    .border(
-                        width = if (rightFocused) 3.dp else 0.dp,
-                        color = Color.White
-                    )
+//                    .border(
+//                        width = if (rightFocused) 3.dp else 0.dp,
+//                        color = Color.White
+//                    )
             ) {
 
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(top = horizontalInset, start = 48.dp, end = 48.dp)
+                        .padding(top = horizontalInset, start = 24.dp, end = 48.dp)
                 ) {
 
                     /* =========================
@@ -322,9 +356,7 @@ fun TvEpisodeScreen(
                             )
 
                             Spacer(Modifier.width(4.dp))
-
                             BulletsContinue()   // 👈 your existing bullet helper
-
                             Spacer(Modifier.width(4.dp))
 
                             Box(
@@ -345,9 +377,116 @@ fun TvEpisodeScreen(
                             }
                         }
 
-                        Spacer(Modifier.height(24.dp))
+                        Spacer(Modifier.height(12.dp))
                     }
-                    // 👉 Episode list will go here later
+
+                    // 👉 Episode list go here
+                    LazyColumn(
+                        state = episodeListState,
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+
+                        items(episodes) { episode ->
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+
+                                /* Thumbnail */
+                                Box (
+                                    modifier = Modifier
+                                        .fillMaxWidth(0.4f)
+                                        .aspectRatio(16f / 9f)
+                                        .clip(RoundedCornerShape(2.dp))
+                                        //.padding(horizontal = 0.dp)
+                                ){
+                                    AsyncImage(
+                                        model = episode.tvCvrUrl,
+                                        contentDescription = episode.tvId,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                    )
+
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.BottomCenter)
+                                            .fillMaxWidth()
+                                            .height(40.dp)
+                                            .background(
+                                                brush = Brush.verticalGradient(
+                                                    colors = listOf(
+                                                        Color.Transparent,
+                                                        Color.Black.copy(alpha = 0.85f)
+                                                    )
+                                                )
+                                            )
+                                    )
+
+                                    Text(
+                                        text = "S${episode.sId}: E${episode.epsNum}",
+                                        color = Color.White,
+                                        fontSize = 12.sp,
+                                        modifier = Modifier
+                                            .align(Alignment.BottomStart)
+                                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+
+                                Spacer(Modifier.width(14.dp))
+
+                                /* Episode Info */
+                                Column(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight(),
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+
+                                    Text(
+                                        text = episode.tvTitle.fixEncoding(),
+                                        color = Color.White,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+
+                                    Spacer(Modifier.height(4.dp))
+
+                                    val rawDesc = episode.tvDescription.fixEncoding()
+
+                                    val displayDesc =
+                                        if (rawDesc.length > 255) {
+                                            val firstPeriod = rawDesc.indexOf(".")
+                                            if (firstPeriod != -1) {
+                                                rawDesc.substring(0, firstPeriod + 1)
+                                            } else {
+                                                rawDesc.take(255)
+                                            }
+                                        } else {
+                                            rawDesc
+                                        }
+
+                                    Text(
+                                        text = displayDesc,
+                                        color = Color.LightGray,
+                                        fontSize = 10.sp,
+                                        lineHeight = 14.sp
+                                    )
+
+                                    Spacer(Modifier.height(4.dp))
+
+                                    Text(
+                                        text = "(${formatDurationFromMinutes(episode.tvDuration)})",
+                                        color = Color.Gray,
+                                        fontSize = 10.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
+
                 }
             }
 

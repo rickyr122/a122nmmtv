@@ -340,4 +340,20 @@ interface AuthApiService {
         val episodes: Int
     )
 
+    @GET("gettvepisodesall")
+    suspend fun getTvEpisodesAll(
+        @Query("code") code: String
+    ): List<TvEpisodeResponse>
+
+    data class TvEpisodeResponse(
+        val tvId: String,
+        val sId: String,
+        val epsNum: Int,
+        val tvTitle: String,
+        val tvDuration: Int,
+        val tvCvrUrl: String,
+        val tvDescription: String,
+        val selectedEps: Int
+    )
+
 }
