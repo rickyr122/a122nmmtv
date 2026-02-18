@@ -4,6 +4,7 @@ import android.util.Log
 import android.view.KeyEvent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
@@ -37,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -139,6 +141,8 @@ fun TvEpisodeScreen(
     }
 
     val episodeListState = rememberLazyListState()
+    var topImageLoaded by remember { mutableStateOf(false) }
+
 
 //    LaunchedEffect(selectedSeasonIndex) {
 //        seasonListState.animateScrollToItem(
@@ -246,7 +250,7 @@ fun TvEpisodeScreen(
             ========================= */
             Box(
                 modifier = Modifier
-                    .weight(0.4f)
+                    .weight(0.35f)
                     .fillMaxHeight()
                     .focusRequester(leftFocusRequester)
                     .onFocusChanged { leftFocused = it.isFocused }
@@ -360,7 +364,7 @@ fun TvEpisodeScreen(
             ========================= */
             Box(
                 modifier = Modifier
-                    .weight(0.6f)
+                    .weight(0.65f)
                     .fillMaxHeight()
                     .focusRequester(rightFocusRequester)
                     .onFocusChanged { rightFocused = it.isFocused }
@@ -408,10 +412,15 @@ fun TvEpisodeScreen(
 //                        color = Color.White
 //                    )
             ) {
+                val rightAlpha by animateFloatAsState(
+                    targetValue = if (rightFocused) 1f else 0.6f,
+                    label = "rightPanelAlpha"
+                )
 
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
+                        .alpha(rightAlpha)
                         .padding(top = horizontalInset, start = 24.dp, end = 48.dp)
                 ) {
 
@@ -448,7 +457,7 @@ fun TvEpisodeScreen(
                                 Text(
                                     text = tv.tvContent.convertContentRating(),   // or whatever your field is
                                     color = Color.White,
-                                    fontSize = 12.sp,
+                                    fontSize = 10.sp,
                                     fontWeight = FontWeight.Medium
                                 )
                             }
@@ -457,124 +466,151 @@ fun TvEpisodeScreen(
                         Spacer(Modifier.height(12.dp))
                     }
                     // 👉 Episode list go here
-                    LazyColumn(
-                        state = episodeListState,
-                        contentPadding = PaddingValues(bottom = 400.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    Box(
                         modifier = Modifier.fillMaxSize()
                     ) {
                         val firstVisibleIndex = episodeListState.firstVisibleItemIndex
-
-                        itemsIndexed(episodes) { index, episode ->
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                /* Thumbnail */
-                                val isTopItem = index == firstVisibleIndex
-                                Box (
-                                    modifier = Modifier
-                                        .fillMaxWidth(0.4f)
-                                        .aspectRatio(16f / 9f)
-                                        .clip(RoundedCornerShape(2.dp))
-                                        .then(
-                                            if (isTopItem)
-                                                Modifier.border(
-                                                    width = 2.dp,
-                                                    color = Color.White,
-                                                    shape = RoundedCornerShape(2.dp)
-                                                )
-                                            else Modifier
-                                        )
-                                ){
-                                    AsyncImage(
-                                        model = episode.tvCvrUrl,
-                                        contentDescription = episode.tvId,
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                    )
-
+                        LazyColumn(
+                            state = episodeListState,
+                            contentPadding = PaddingValues(bottom = 400.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            itemsIndexed(episodes) { index, episode ->
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    /* Thumbnail */
+                                    val isTopItem = index == firstVisibleIndex
                                     Box(
                                         modifier = Modifier
-                                            .align(Alignment.BottomCenter)
-                                            .fillMaxWidth()
-                                            .height(40.dp)
-                                            .background(
-                                                brush = Brush.verticalGradient(
-                                                    colors = listOf(
-                                                        Color.Transparent,
-                                                        Color.Black.copy(alpha = 0.85f)
+                                            .fillMaxWidth(0.4f)
+                                            .aspectRatio(16f / 9f)
+                                            .clip(RoundedCornerShape(2.dp))
+//                                            .then(
+//                                                if (isTopItem)
+//                                                    Modifier.border(
+//                                                        width = 2.dp,
+//                                                        color = Color.White,
+//                                                        shape = RoundedCornerShape(2.dp)
+//                                                    )
+//                                                else Modifier
+//                                            )
+                                    ) {
+                                        AsyncImage(
+                                            model = episode.tvCvrUrl,
+                                            contentDescription = episode.tvId,
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier
+                                                .fillMaxSize(),
+                                            onSuccess = {
+                                                if (isTopItem) {
+                                                    topImageLoaded = true
+                                                }
+                                            },
+                                            onLoading = {
+                                                if (isTopItem) {
+                                                    topImageLoaded = false
+                                                }
+                                            }
+                                        )
+
+                                        Box(
+                                            modifier = Modifier
+                                                .align(Alignment.BottomCenter)
+                                                .fillMaxWidth()
+                                                .height(40.dp)
+                                                .background(
+                                                    brush = Brush.verticalGradient(
+                                                        colors = listOf(
+                                                            Color.Transparent,
+                                                            Color.Black.copy(alpha = 0.85f)
+                                                        )
                                                     )
                                                 )
-                                            )
-                                    )
+                                        )
 
-                                    Text(
-                                        text = "S${episode.sId}: E${episode.epsNum}",
-                                        color = Color.White,
-                                        fontSize = 12.sp,
+                                        Text(
+                                            text = "S${episode.sId}: E${episode.epsNum}",
+                                            color = Color.White,
+                                            fontSize = 12.sp,
+                                            modifier = Modifier
+                                                .align(Alignment.BottomStart)
+                                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                                        )
+                                    }
+
+                                    Spacer(Modifier.width(14.dp))
+
+                                    /* Episode Info */
+                                    Column(
                                         modifier = Modifier
-                                            .align(Alignment.BottomStart)
-                                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                                    )
-                                }
+                                            .weight(1f)
+                                            .fillMaxHeight(),
+                                        verticalArrangement = Arrangement.Center
+                                    ) {
 
-                                Spacer(Modifier.width(14.dp))
+                                        Text(
+                                            text = episode.tvTitle.fixEncoding(),
+                                            color = Color.White,
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
 
-                                /* Episode Info */
-                                Column(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .fillMaxHeight(),
-                                    verticalArrangement = Arrangement.Center
-                                ) {
+                                        Spacer(Modifier.height(4.dp))
 
-                                    Text(
-                                        text = episode.tvTitle.fixEncoding(),
-                                        color = Color.White,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
+                                        val rawDesc = episode.tvDescription.fixEncoding()
 
-                                    Spacer(Modifier.height(4.dp))
-
-                                    val rawDesc = episode.tvDescription.fixEncoding()
-
-                                    val displayDesc =
-                                        if (rawDesc.length > 255) {
-                                            val firstPeriod = rawDesc.indexOf(".")
-                                            if (firstPeriod != -1) {
-                                                rawDesc.substring(0, firstPeriod + 1)
+                                        val displayDesc =
+                                            if (rawDesc.length > 255) {
+                                                val firstPeriod = rawDesc.indexOf(".")
+                                                if (firstPeriod != -1) {
+                                                    rawDesc.substring(0, firstPeriod + 1)
+                                                } else {
+                                                    rawDesc.take(255)
+                                                }
                                             } else {
-                                                rawDesc.take(255)
+                                                rawDesc
                                             }
-                                        } else {
-                                            rawDesc
-                                        }
 
-                                    Text(
-                                        text = displayDesc,
-                                        color = Color.LightGray,
-                                        fontSize = 10.sp,
-                                        lineHeight = 14.sp
-                                    )
+                                        Text(
+                                            text = displayDesc,
+                                            color = Color.LightGray,
+                                            fontSize = 10.sp,
+                                            lineHeight = 14.sp
+                                        )
 
-                                    Spacer(Modifier.height(4.dp))
+                                        Spacer(Modifier.height(4.dp))
 
-                                    Text(
-                                        text = "(${formatDurationFromMinutes(episode.tvDuration)})",
-                                        color = Color.Gray,
-                                        fontSize = 10.sp
-                                    )
+                                        Text(
+                                            text = "(${formatDurationFromMinutes(episode.tvDuration)})",
+                                            color = Color.Gray,
+                                            fontSize = 10.sp
+                                        )
+                                    }
                                 }
                             }
+                        }
+
+                        // 👇 STATIC SELECTION FRAME
+                        if (rightFocused && topImageLoaded) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.TopStart)
+                                    .fillMaxWidth(0.4f)   // match thumbnail width
+                                    .aspectRatio(16f / 9f)
+                                    .border(
+                                        1.dp,
+                                        Color.White,
+                                        RoundedCornerShape(2.dp)
+                                    )
+                            )
                         }
                     }
 
                 }
             }
-
         }
     }
 }
