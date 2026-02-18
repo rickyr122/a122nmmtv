@@ -132,7 +132,7 @@ fun ViewMovieDetail(
     onSelectedIndexSnapshot: (Int) -> Unit,
     onClose: () -> Unit,
     onPlay: (String) -> Unit,
-    onOpenEpisodes: (String) -> Unit,
+    onOpenEpisodes: (String, Int?, Int?) -> Unit,
     onOpenMoreLikeThis: (String) -> Unit
 ) {
     //if (!isActive) return
@@ -827,7 +827,12 @@ fun ViewMovieDetail(
 
                                                     "episodes" -> {
                                                         onSelectedIndexSnapshot(selectedIndex)
-                                                        onOpenEpisodes(animatedMovie.gId)
+                                                        onOpenEpisodes(
+                                                            animatedMovie.gId,
+                                                            animatedMovie.activeSeason.toInt(),
+                                                            animatedMovie.activeEps
+                                                        )
+
                                                         true
                                                     }
 

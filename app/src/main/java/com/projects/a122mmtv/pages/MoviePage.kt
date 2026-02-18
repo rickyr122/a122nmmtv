@@ -186,6 +186,8 @@ fun MoviePage(
         mutableIntStateOf(0)
     }
 
+    var detailActiveSeason by rememberSaveable { mutableStateOf<Int?>(null) }
+    var detailActiveEpisode by rememberSaveable { mutableStateOf<Int?>(null) }
 
 //    val requestMenuFocus: () -> Unit = {
 //        menuBarFocusRequester.requestFocus()
@@ -474,8 +476,10 @@ fun MoviePage(
                     playerMovieId = mId
                     interactionLayer = InteractionLayer.PLAYER
                 },
-                onOpenEpisodes = { mId ->
+                onOpenEpisodes = { mId, season, eps ->
                     episodeSourceMovieId = mId
+                    detailActiveSeason = season
+                    detailActiveEpisode = eps
                     interactionLayer = InteractionLayer.EPISODES
                 },
                 onOpenMoreLikeThis = { mId ->
@@ -490,6 +494,8 @@ fun MoviePage(
                 mId = mId,
                 horizontalInset = horizontalInset,
                 isActive = interactionLayer == InteractionLayer.EPISODES,
+                activeSeason = detailActiveSeason,   // 👈 store this
+                activeEpisode = detailActiveEpisode, // 👈 store this
                 onClose = {
                     episodeSourceMovieId = null
                     interactionLayer = InteractionLayer.DETAIL

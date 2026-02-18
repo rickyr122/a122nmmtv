@@ -73,6 +73,8 @@ fun TvEpisodeScreen(
     mId: String,
     horizontalInset: Dp,
     isActive: Boolean,
+    activeSeason: Int? = null,   // 👈 add
+    activeEpisode: Int? = null,  // 👈 add
     onClose: () -> Unit
 ) {
     if (!isActive) return
@@ -89,6 +91,11 @@ fun TvEpisodeScreen(
 
     var data by remember { mutableStateOf<TvSeasonCountResponse?>(null) }
     var isLoading by remember { mutableStateOf(true) }
+    var episodes by remember { mutableStateOf<List<TvEpisodeResponse>>(emptyList()) }
+    var episodeLoading by remember { mutableStateOf(true) }
+
+    val isScreenLoading = isLoading || episodeLoading
+
 
     // 🔥 Load API
     LaunchedEffect(mId) {
@@ -110,12 +117,23 @@ fun TvEpisodeScreen(
     var leftFocused by remember { mutableStateOf(false) }
     var rightFocused by remember { mutableStateOf(false) }
 
-    LaunchedEffect(isActive, isLoading) {
-        if (isActive && !isLoading) {
+//    LaunchedEffect(isActive, isLoading) {
+//        if (isActive && !isLoading) {
+//            awaitFrame()
+//            rightFocusRequester.requestFocus()
+//        }
+//    }
+
+    var initialFocusDone by remember { mutableStateOf(false) }
+
+    LaunchedEffect(isActive, isScreenLoading) {
+        if (isActive && !isScreenLoading && !initialFocusDone) {
+            initialFocusDone = true
             awaitFrame()
             rightFocusRequester.requestFocus()
         }
     }
+
 
     var selectedSeasonIndex by remember { mutableStateOf(0) }
     val seasonListState = rememberLazyListState()
@@ -127,8 +145,7 @@ fun TvEpisodeScreen(
         seasonListState.animateScrollToItem(firstVisibleIndex)
     }
 
-    var episodes by remember { mutableStateOf<List<TvEpisodeResponse>>(emptyList()) }
-    var episodeLoading by remember { mutableStateOf(true) }
+
 
     LaunchedEffect(mId) {
         episodeLoading = true
@@ -181,8 +198,10 @@ fun TvEpisodeScreen(
             }
     ) {
 
-        if (isLoading) {
-            Box(
+        //if (isLoading) {
+        if (isScreenLoading) {
+
+                Box(
                 modifier = Modifier
                     .fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -233,6 +252,34 @@ fun TvEpisodeScreen(
                     }
                 }
         }
+
+        LaunchedEffect(data, episodes, activeSeason, activeEpisode) {
+
+            val tv = data ?: return@LaunchedEffect
+            if (episodes.isEmpty()) return@LaunchedEffect
+            if (activeSeason == null || activeEpisode == null) return@LaunchedEffect
+
+            // 1️⃣ Set left panel season index
+            val seasonIndex = tv.seasons.indexOfFirst {
+                it.season == activeSeason
+            }
+
+            if (seasonIndex != -1) {
+                selectedSeasonIndex = seasonIndex
+            }
+
+            // 2️⃣ Set right panel episode index
+            val episodeIndex = episodes.indexOfFirst {
+                it.sId.toIntOrNull() == activeSeason &&
+                        it.epsNum == activeEpisode
+            }
+
+            if (episodeIndex != -1) {
+                selectedEpisodeIndex = episodeIndex
+                episodeListState.scrollToItem(episodeIndex)
+            }
+        }
+
 
 
 //        LaunchedEffect(selectedSeasonIndex, episodes) {
