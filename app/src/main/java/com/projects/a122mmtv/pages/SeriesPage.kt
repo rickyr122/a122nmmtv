@@ -488,6 +488,7 @@ fun SeriesPage(
             TvEpisodeScreen(
                 mId = mId,
                 isActive = interactionLayer == InteractionLayer.EPISODES,
+                horizontalInset = horizontalInset,
                 onClose = {
                     episodeSourceMovieId = null
                     interactionLayer = InteractionLayer.DETAIL

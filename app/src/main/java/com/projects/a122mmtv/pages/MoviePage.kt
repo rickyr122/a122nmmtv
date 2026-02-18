@@ -488,6 +488,7 @@ fun MoviePage(
         episodeSourceMovieId?.let { mId ->
             TvEpisodeScreen(
                 mId = mId,
+                horizontalInset = horizontalInset,
                 isActive = interactionLayer == InteractionLayer.EPISODES,
                 onClose = {
                     episodeSourceMovieId = null

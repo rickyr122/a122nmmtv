@@ -9,6 +9,7 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -40,6 +41,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -50,11 +52,13 @@ import com.projects.a122mmtv.helper.Bullets
 import com.projects.a122mmtv.helper.BulletsContinue
 import com.projects.a122mmtv.helper.MetaText
 import com.projects.a122mmtv.helper.MetaTextContinue
+import com.projects.a122mmtv.helper.convertContentRating
 import kotlinx.coroutines.android.awaitFrame
 
 @Composable
 fun TvEpisodeScreen(
     mId: String,
+    horizontalInset: Dp,
     isActive: Boolean,
     onClose: () -> Unit
 ) {
@@ -107,6 +111,13 @@ fun TvEpisodeScreen(
             (selectedSeasonIndex - 5).coerceAtLeast(0)
         seasonListState.animateScrollToItem(firstVisibleIndex)
     }
+
+//    LaunchedEffect(selectedSeasonIndex) {
+//        seasonListState.animateScrollToItem(
+//            index = selectedSeasonIndex,
+//            scrollOffset = 0
+//        )
+//    }
 
     Box(
         modifier = Modifier
@@ -201,11 +212,11 @@ fun TvEpisodeScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(48.dp)
+                        .padding(top = horizontalInset, start = 48.dp, end = 48.dp, bottom = 48.dp)
                 ) {
 
                     AsyncImage(
-                        model = tv.logoUrl,
+                        model = tv.logoUrl, 
                         contentDescription = null,
                         modifier = Modifier
                             .fillMaxWidth()          // 👈 take full width
@@ -227,6 +238,7 @@ fun TvEpisodeScreen(
                     LazyColumn(
                         modifier = Modifier.fillMaxWidth(),
                         state = seasonListState,
+                        //contentPadding = PaddingValues(bottom = 400.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         itemsIndexed(tv.seasons) { index, season ->
@@ -278,15 +290,67 @@ fun TvEpisodeScreen(
                     .weight(0.6f)
                     .fillMaxHeight()
                     .focusRequester(rightFocusRequester)
-                    .onFocusChanged { rightFocused  = it.isFocused }
+                    .onFocusChanged { rightFocused = it.isFocused }
                     .focusable()
                     .border(
                         width = if (rightFocused) 3.dp else 0.dp,
                         color = Color.White
                     )
             ) {
-                // future episode list
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = horizontalInset, start = 48.dp, end = 48.dp)
+                ) {
+
+                    /* =========================
+                       RIGHT HEADER
+                    ========================= */
+
+                    val selectedSeason = tv.seasons[selectedSeasonIndex]
+
+                    if (tv.total_season.toInt() > 1) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Season ${selectedSeason.season}",
+                                color = Color.White,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+
+                            Spacer(Modifier.width(4.dp))
+
+                            BulletsContinue()   // 👈 your existing bullet helper
+
+                            Spacer(Modifier.width(4.dp))
+
+                            Box(
+                                modifier = Modifier
+                                    .border(
+                                        width = 1.dp,
+                                        color = Color.White,
+                                        shape = RoundedCornerShape(2.dp)
+                                    )
+                                    .padding(horizontal = 2.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = tv.tvContent.convertContentRating(),   // or whatever your field is
+                                    color = Color.White,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+
+                        Spacer(Modifier.height(24.dp))
+                    }
+                    // 👉 Episode list will go here later
+                }
             }
+
         }
     }
 }
