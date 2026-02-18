@@ -427,7 +427,6 @@ fun TvEpisodeScreen(
                     /* =========================
                        RIGHT HEADER
                     ========================= */
-
                     val selectedSeason = tv.seasons[selectedSeasonIndex]
 
                     if (tv.total_season.toInt() > 1) {
@@ -452,7 +451,8 @@ fun TvEpisodeScreen(
                                         color = Color.White,
                                         shape = RoundedCornerShape(2.dp)
                                     )
-                                    .padding(horizontal = 2.dp, vertical = 2.dp)
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    //.padding(horizontal = 2.5.dp, vertical = 3.dp)
                             ) {
                                 Text(
                                     text = tv.tvContent.convertContentRating(),   // or whatever your field is
