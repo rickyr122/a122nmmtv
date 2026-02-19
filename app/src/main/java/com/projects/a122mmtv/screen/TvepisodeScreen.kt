@@ -51,6 +51,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -145,8 +146,6 @@ fun TvEpisodeScreen(
         seasonListState.animateScrollToItem(firstVisibleIndex)
     }
 
-
-
     LaunchedEffect(mId) {
         episodeLoading = true
         try {
@@ -160,6 +159,7 @@ fun TvEpisodeScreen(
     val episodeListState = rememberLazyListState()
     var topImageLoaded by remember { mutableStateOf(false) }
 
+    var seasonChangedFromLeft by remember { mutableStateOf(false) }
 
 //    LaunchedEffect(selectedSeasonIndex) {
 //        seasonListState.animateScrollToItem(
@@ -217,18 +217,34 @@ fun TvEpisodeScreen(
 
         val tv = data ?: return@Box
 
+//        LaunchedEffect(selectedSeasonIndex, episodes) {
+//            val selectedSeason = tv.seasons[selectedSeasonIndex]
+//            val firstIndex = episodes.indexOfFirst {
+//                it.sId == selectedSeason.season.toString()
+//            }
+//
+//            if (firstIndex >= 0) { // && selectedEpisodeIndex < firstIndex) {
+//                selectedEpisodeIndex = firstIndex
+//                episodeListState.scrollToItem(firstIndex)
+//            }
+//        }
+
         LaunchedEffect(selectedSeasonIndex, episodes) {
+
+            if (!seasonChangedFromLeft) return@LaunchedEffect
+
             val selectedSeason = tv.seasons[selectedSeasonIndex]
             val firstIndex = episodes.indexOfFirst {
                 it.sId == selectedSeason.season.toString()
             }
 
-            if (firstIndex >= 0 && selectedEpisodeIndex < firstIndex) {
+            if (firstIndex >= 0) {
                 selectedEpisodeIndex = firstIndex
                 episodeListState.scrollToItem(firstIndex)
             }
-        }
 
+            seasonChangedFromLeft = false
+        }
 
         LaunchedEffect(selectedEpisodeIndex) {
             episodeListState.animateScrollToItem(
@@ -310,12 +326,14 @@ fun TvEpisodeScreen(
                         when (event.nativeKeyEvent.keyCode) {
 
                             KeyEvent.KEYCODE_DPAD_DOWN -> {
+                                seasonChangedFromLeft = true
                                 selectedSeasonIndex =
                                     (selectedSeasonIndex + 1).coerceAtMost(tv.seasons.lastIndex)
                                 true
                             }
 
                             KeyEvent.KEYCODE_DPAD_UP -> {
+                                seasonChangedFromLeft = true
                                 selectedSeasonIndex =
                                     (selectedSeasonIndex - 1).coerceAtLeast(0)
                                 true
@@ -369,6 +387,14 @@ fun TvEpisodeScreen(
                     }
 
                     Spacer(Modifier.height(32.dp))
+
+                    val totalSeasons = tv.seasons.size
+                    val maxVisible = 9
+
+                    val firstVisibleIndex = seasonListState.firstVisibleItemIndex
+                    val lastVisibleIndex = firstVisibleIndex + maxVisible - 1
+
+                    val isAtBottom = lastVisibleIndex >= totalSeasons - 1
 
                     LazyColumn(
                         modifier = Modifier.fillMaxWidth(),
@@ -635,8 +661,10 @@ fun TvEpisodeScreen(
                                         Text(
                                             text = displayDesc,
                                             color = Color.LightGray,
-                                            fontSize = 10.sp,
-                                            lineHeight = 14.sp
+                                            fontSize = 12.sp,
+                                            lineHeight = 14.sp,
+                                            maxLines = 5,
+                                            overflow = TextOverflow.Ellipsis
                                         )
 
                                         Spacer(Modifier.height(4.dp))
@@ -644,7 +672,7 @@ fun TvEpisodeScreen(
                                         Text(
                                             text = "(${formatDurationFromMinutes(episode.tvDuration)})",
                                             color = Color.Gray,
-                                            fontSize = 10.sp
+                                            fontSize = 12.sp
                                         )
                                     }
                                 }
