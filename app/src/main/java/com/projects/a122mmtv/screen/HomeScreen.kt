@@ -777,7 +777,7 @@ private fun BackActionPopup(
             )
 
             TvPopupIconItem(
-                text = "Exit RR Movies",
+                text = "Exit 122 Movies",
                 icon = Icons.Filled.ExitToApp,
                 scale = scale,
                 index = 2,
