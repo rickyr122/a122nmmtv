@@ -5,6 +5,7 @@ import android.view.KeyEvent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -40,15 +42,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -76,7 +81,8 @@ fun TvEpisodeScreen(
     isActive: Boolean,
     activeSeason: Int? = null,   // 👈 add
     activeEpisode: Int? = null,  // 👈 add
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    onPlayEpisode: (String) -> Unit
 ) {
     if (!isActive) return
 
@@ -379,7 +385,6 @@ fun TvEpisodeScreen(
                         "$totalEpisodes Episodes"
                     }
 
-
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         MetaText(tv.m_year)
                         Bullets()
@@ -423,14 +428,37 @@ fun TvEpisodeScreen(
                                     .fillMaxWidth()
                                     .background(backgroundColor, RoundedCornerShape(50))
                                     .padding(horizontal = 20.dp, vertical = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = "Season ${season.season}",
-                                    color = textColor,
-                                    fontSize = 14.sp
-                                )
+
+                                val seasonLabel =
+                                    if (seasonCount == 1) tv.tName
+                                    else "Season ${season.season}"
+
+                                if (
+                                    seasonCount == 1 &&
+                                    isSelected &&
+                                    leftFocused
+                                ) {
+                                    Box(modifier = Modifier.weight(1f)) {
+                                        MarqueeTextOnce(
+                                            text = tv.tName,
+                                            trigger = isSelected && leftFocused,
+                                            textColor = textColor
+                                        )
+                                    }
+                                } else {
+                                    Text(
+                                        text = seasonLabel,
+                                        color = textColor,
+                                        fontSize = 14.sp,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f)   // 🔥 THIS IS THE KEY
+                                    )
+                                    }
+
+                                Spacer(modifier = Modifier.width(8.dp))
 
                                 Text(
                                     text = "${season.episodes} episodes",
@@ -479,9 +507,10 @@ fun TvEpisodeScreen(
                             KeyEvent.KEYCODE_ENTER -> {
                                 if (episodes.isNotEmpty()) {
                                     val episode = episodes[selectedEpisodeIndex]
-                                    Toast
-                                        .makeText(context, episode.tvId, Toast.LENGTH_SHORT)
-                                        .show()
+                                    onPlayEpisode(episode.tvId)
+//                                    Toast
+//                                        .makeText(context, episode.tvId, Toast.LENGTH_SHORT)
+//                                        .show()
                                 }
                                 true
                             }
@@ -698,5 +727,92 @@ fun TvEpisodeScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun MarqueeTextOnce(
+    text: String,
+    trigger: Boolean,
+    textColor: Color,
+    fontSize: Int = 14
+) {
+    if (text.length < 23) {
+        Text(
+            text = text,
+            color = textColor,
+            fontSize = fontSize.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        return
+    }
+
+    val textMeasurer = androidx.compose.ui.text.rememberTextMeasurer()
+    val density = androidx.compose.ui.platform.LocalDensity.current
+
+    var containerWidth by remember { mutableStateOf(0f) }
+    var isAnimating by remember { mutableStateOf(false) }
+
+    val offsetX = remember { androidx.compose.animation.core.Animatable(0f) }
+
+    val layout = textMeasurer.measure(
+        text = text,
+        style = androidx.compose.ui.text.TextStyle(fontSize = fontSize.sp)
+    )
+
+    val fullTextWidth = layout.size.width.toFloat()
+    val overflow = (fullTextWidth - containerWidth).coerceAtLeast(0f)
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clipToBounds()
+            .onSizeChanged { containerWidth = it.width.toFloat() }
+    ) {
+
+        if (!isAnimating) {
+            Text(
+                text = text,
+                color = textColor,
+                fontSize = fontSize.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        } else {
+            Text(
+                text = text,
+                color = textColor,
+                fontSize = fontSize.sp,
+                softWrap = false,
+                overflow = TextOverflow.Visible,
+                modifier = Modifier.graphicsLayer {
+                    translationX = offsetX.value
+                }
+            )
+        }
+    }
+
+    LaunchedEffect(trigger) {
+        if (!trigger) return@LaunchedEffect
+        if (containerWidth == 0f) return@LaunchedEffect
+        if (overflow <= 0f) return@LaunchedEffect
+
+        isAnimating = true
+        offsetX.snapTo(0f)
+
+        // duration proportional to overflow
+        val duration = (overflow * 8).toInt()
+
+        offsetX.animateTo(
+            targetValue = -overflow,
+            animationSpec = tween(
+                durationMillis = duration,
+                easing = androidx.compose.animation.core.LinearEasing
+            )
+        )
+
+        offsetX.snapTo(0f)
+        isAnimating = false
     }
 }

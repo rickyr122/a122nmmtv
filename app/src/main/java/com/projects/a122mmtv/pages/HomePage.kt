@@ -530,6 +530,16 @@ fun HomePage(
                 onClose = {
                     episodeSourceMovieId = null
                     interactionLayer = InteractionLayer.DETAIL
+                },
+                onPlayEpisode = { playId ->
+
+                    // close episode screen
+                    episodeSourceMovieId = null
+
+                    // open player
+                    playerSource = PlayerSource.DETAIL
+                    playerMovieId = playId
+                    interactionLayer = InteractionLayer.PLAYER
                 }
             )
         }

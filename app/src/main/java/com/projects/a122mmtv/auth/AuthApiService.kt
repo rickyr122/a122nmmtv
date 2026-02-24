@@ -328,6 +328,7 @@ interface AuthApiService {
 
     data class TvSeasonCountResponse(
         val t_id: String,
+        val tName: String,
         val logoUrl: String,
         val tvContent: String,
         val m_year: String,
